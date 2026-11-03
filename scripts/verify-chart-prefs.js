@@ -1,6 +1,6 @@
 /**
- * Verify — Chart preferences wired into the Session Live price chart.
- * Probes (in ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Chart preferences wired into the Session Live price chart.
+ * Probes (in ONE SPA session - the mock store reseeds on full reload):
  *  1. Default: chart-style=CANDLES, show-volume=false, show-grid=true
  *  2. Style LINE → session chart reflects LINE
  *  3. Style AREA → session chart reflects AREA
@@ -19,7 +19,7 @@ const BASE = "http://localhost:3000";
 
   const errors = [];
   // Failed network loads surface as console errors WITHOUT the URL in
-  // msg.text() — track responses directly so the noise filter can match.
+  // msg.text() - track responses directly so the noise filter can match.
   page.on("response", (res) => {
     if (res.status() >= 400) errors.push(`${res.status()} ${res.url()}`);
   });
@@ -27,7 +27,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const chartAttrs = async () => {
     const el = page.locator('[data-testid="price-chart"]');
@@ -109,13 +109,13 @@ const BASE = "http://localhost:3000";
   );
 
   // ── 6. Console health (socket.io 404 + candles 400 are documented noise
-  // from the offline market service — identical without this feature) ──────
+  // from the offline market service - identical without this feature) ──────
   const noise = errors.filter(
     (e) => e.includes("socket.io") || (e.includes("404") && e.includes("candles")),
   );
   check("Zero console errors (known market-service noise excluded)", errors.length - noise.length === 0, errors.slice(0, 3).join(" | "));
 
-  console.log("\n═══ CHART PREFS WIRING — RESULTS ═══");
+  console.log("\n═══ CHART PREFS WIRING - RESULTS ═══");
   results.forEach((r) => console.log(r));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} PASS`);

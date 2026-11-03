@@ -1,15 +1,15 @@
 /**
  * OCR recognition persistence (Phase 19 §24/§30/§32/§49/§50).
  *
- * Owns OcrAsset + OcrRecognition — the recognition aggregate. Discipline:
+ * Owns OcrAsset + OcrRecognition - the recognition aggregate. Discipline:
  *   - narrow row shapes cross into services (no Prisma types leak, §49);
  *   - state transitions are GUARDED single-statement updates
  *     (UPDATE … WHERE status IN (…)) so concurrent actors (§51: two tabs,
  *     delete racing completion) cannot corrupt the lifecycle;
- *   - idempotency rides on the (userId, idempotencyKey) unique constraint —
+ *   - idempotency rides on the (userId, idempotencyKey) unique constraint -
  *     a lost race is mapped back to the winning row (§32);
- *   - keyset pagination on (createdAt DESC, id DESC) — the Phase 16 house
- *     pattern (§49) — with an opaque base64url cursor;
+ *   - keyset pagination on (createdAt DESC, id DESC) - the Phase 16 house
+ *     pattern (§49) - with an opaque base64url cursor;
  *   - deletion of the recognition and its (last-referenced) asset is ONE
  *     transaction (§50); the binary removal happens AFTER commit in the
  *     service (external I/O never inside a DB transaction, §50);
@@ -18,7 +18,7 @@
  *     requestedPlatform/mode/draft(s)/draftUpdatedAt/importedTradeId(s)/
  *     quality/reprocessedFromJobId/cancelledAt, asset perceptualHash/
  *     documentPageCount/duplicateWarned, and the OcrEvent, OcrCorrection,
- *     OcrRecognitionGroup, OcrCollectionAsset tables — are bridged through
+ *     OcrRecognitionGroup, OcrCollectionAsset tables - are bridged through
  *     PARAMETERIZED raw SQL at the same narrow-row boundary: uuid/jsonb/
  *     boolean parameters are explicitly cast, jsonb payloads go out via
  *     JSON.stringify(...)::jsonb, and every write keeps the guarded
@@ -40,7 +40,7 @@ import type {
 import type { TradeDraftRecord } from "../../shared/contracts";
 
 /** Stored trade-draft JSONB shape (OcrRecognition.draft/drafts, group
- * fusedDraft) — re-exported so the service and mapper import it from here. */
+ * fusedDraft) - re-exported so the service and mapper import it from here. */
 export type { TradeDraftRecord } from "../../shared/contracts";
 
 // ── Narrow row shapes ────────────────────────────────────────────────────────
@@ -52,27 +52,27 @@ export interface OcrAssetRow {
   originalName: string;
   mime: string;
   sizeBytes: number;
-  /** V2 — null for PDF statements (pages carry the rendering). */
+  /** V2 - null for PDF statements (pages carry the rendering). */
   width: number | null;
   height: number | null;
   checksumSha256: string;
-  /** 64-bit dHash hex — null for rows created before the engine-quality phase. */
+  /** 64-bit dHash hex - null for rows created before the engine-quality phase. */
   phashHex: string | null;
-  /** V2 — sidecar dHash of the ORIGINAL upload (duplicate verdict input). */
+  /** V2 - sidecar dHash of the ORIGINAL upload (duplicate verdict input). */
   perceptualHash: string | null;
-  /** V2 — PDF statements: rendered page count (null for plain screenshots). */
+  /** V2 - PDF statements: rendered page count (null for plain screenshots). */
   documentPageCount: number | null;
-  /** V3 §62 — a visually similar upload was already seen for this asset. */
+  /** V3 §62 - a visually similar upload was already seen for this asset. */
   duplicateWarned: boolean;
   createdAt: Date;
 }
 
-/** result JSON payload — the validated machine result (untrusted→checked). */
+/** result JSON payload - the validated machine result (untrusted→checked). */
 export interface OcrResultPayload {
   classification: unknown | null;
   fields: unknown[];
   warnings: string[];
-  /** V2 — grouped per-trade reads (engine row clustering); pageIndex is
+  /** V2 - grouped per-trade reads (engine row clustering); pageIndex is
    * 0-based. Absent on the mono path and on older pipeline answers. */
   trades?: { pageIndex: number; fields: unknown[] }[] | null;
   engine: {
@@ -82,7 +82,7 @@ export interface OcrResultPayload {
     contractVersion: string;
   } | null;
   durationMs: number | null;
-  /** Multi-trade drafts (engine quality §2.2) — absent for the mono path. */
+  /** Multi-trade drafts (engine quality §2.2) - absent for the mono path. */
   candidates?: { fields: unknown[] }[] | null;
   /** Advisory duplicate flag (engine quality §2.1). */
   duplicateOf?: {
@@ -90,7 +90,7 @@ export interface OcrResultPayload {
     createdAt: string;
     tradeId: string | null;
   } | null;
-  /** Playbook tag suggestions (engine quality §3.3) — set at confirmation. */
+  /** Playbook tag suggestions (engine quality §3.3) - set at confirmation. */
   suggestedTags?: string[];
   /** Grouped confirmation canonical payloads (engine quality §2.2). */
   batches?: { corrections: Record<string, string | null>; include: boolean }[] | null;
@@ -98,16 +98,16 @@ export interface OcrResultPayload {
   passes?: string[];
   layoutTemplate?: string | null;
   deskewDeg?: number | null;
-  /** Content-based trade duplicate flag (V2 §4) — advisory, set at processing. */
+  /** Content-based trade duplicate flag (V2 §4) - advisory, set at processing. */
   possibleTradeDuplicate?: {
     tradeId: string;
     matchedOn: string[];
     detectedAt: string;
   } | null;
   /** Whether the recognized symbol resolved against the instrument catalog
-   * (V2 §16 UNKNOWN_SYMBOL input) — null when no symbol was recognized. */
+   * (V2 §16 UNKNOWN_SYMBOL input) - null when no symbol was recognized. */
   symbolInCatalog?: boolean | null;
-  /** V2 §32 — set when this row was produced by an explicit reprocess. */
+  /** V2 §32 - set when this row was produced by an explicit reprocess. */
   reprocessedFrom?: string | null;
 }
 
@@ -128,33 +128,33 @@ export interface OcrRecognitionRow {
   processingFinishedAt: Date | null;
   corrections: Record<string, string | null> | null;
   confirmedAt: Date | null;
-  /// Phase 21 — canonical Trade created from the confirmed values (§77).
+  /// Phase 21 - canonical Trade created from the confirmed values (§77).
   tradeId: string | null;
-  /// Grouped confirmation — every imported Trade id (engine quality §2.2).
+  /// Grouped confirmation - every imported Trade id (engine quality §2.2).
   tradeIds: string[];
   /// ACCOUNTS attachment (engine quality §3.1).
   accountId: string | null;
-  /// Retention — when the stored binary was purged (engine quality §4.2).
+  /// Retention - when the stored binary was purged (engine quality §4.2).
   screenshotPurgedAt: Date | null;
-  /// V2 — platform the job was REQUESTED for ("AUTO" when unspecified;
+  /// V2 - platform the job was REQUESTED for ("AUTO" when unspecified;
   /// NOT NULL in the table with an 'AUTO' default).
   requestedPlatform: string;
-  /// V2 — requested recognition mode (NOT NULL, 'AUTOMATIC' default).
+  /// V2 - requested recognition mode (NOT NULL, 'AUTOMATIC' default).
   mode: string;
-  /// V2 §72 — stored draft for trade index 1 (V1 scalar mirror).
+  /// V2 §72 - stored draft for trade index 1 (V1 scalar mirror).
   draft: TradeDraftRecord | null;
-  /// V2 §72 — stored drafts keyed by 1-based trade index.
+  /// V2 §72 - stored drafts keyed by 1-based trade index.
   drafts: Record<string, TradeDraftRecord> | null;
   draftUpdatedAt: Date | null;
-  /// V2 §79 — FIRST imported trade id (the idempotent replay anchor).
+  /// V2 §79 - FIRST imported trade id (the idempotent replay anchor).
   importedTradeId: string | null;
-  /// V2 §79 — every imported trade id, in confirmation order.
+  /// V2 §79 - every imported trade id, in confirmation order.
   importedTradeIds: string[] | null;
-  /// V3 §28 — deterministic quality score (persisted, additive evidence).
+  /// V3 §28 - deterministic quality score (persisted, additive evidence).
   quality: unknown;
-  /// V3 §45 — the job this row was explicitly reprocessed from.
+  /// V3 §45 - the job this row was explicitly reprocessed from.
   reprocessedFromJobId: string | null;
-  /// V3 §71 — when the job was cancelled.
+  /// V3 §71 - when the job was cancelled.
   cancelledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -222,7 +222,7 @@ export function encodeOcrCursor(createdAt: Date, id: string): string {
   return Buffer.from(`${createdAt.toISOString()}|${id}`, "utf8").toString("base64url");
 }
 
-/** Returns null for malformed cursors — callers map that to 400. */
+/** Returns null for malformed cursors - callers map that to 400. */
 export function decodeOcrCursor(raw: string): { createdAt: Date; id: string } | null {
   try {
     const decoded = Buffer.from(raw, "base64url").toString("utf8");
@@ -263,7 +263,7 @@ export class OcrRepository {
   /**
    * Recent perceptual hashes for the user (duplicate detection pool,
    * engine quality §2.1). Excludes the given asset (the upload's own row)
-   * — the caller computes Hamming distances in JS (no native bitcount).
+   * - the caller computes Hamming distances in JS (no native bitcount).
    */
   async recentPhashesForUser(
     userId: string,
@@ -284,7 +284,7 @@ export class OcrRepository {
     );
   }
 
-  /** Oldest recognition carrying a given asset — the duplicate target. */
+  /** Oldest recognition carrying a given asset - the duplicate target. */
   async findOldestRecognitionForAsset(assetId: string): Promise<{
     id: string;
     createdAt: Date;
@@ -320,9 +320,9 @@ export class OcrRepository {
     width: number | null;
     height: number | null;
     checksumSha256: string;
-    /** engine-quality fingerprint — computed after processing (best-effort). */
+    /** engine-quality fingerprint - computed after processing (best-effort). */
     phashHex?: string | null;
-    /** V2 — sidecar dHash of the ORIGINAL upload (duplicate verdict input). */
+    /** V2 - sidecar dHash of the ORIGINAL upload (duplicate verdict input). */
     perceptualHash: string | null;
   }): Promise<OcrAssetRow> {
     return this.prisma.ocrAsset.create({ data: { userId, ...asset } });
@@ -342,7 +342,7 @@ export class OcrRepository {
       idempotencyKey: string;
       requestId: string | null;
       accountId?: string | null;
-      /** V2 — requested platform ("AUTO" default) + mode (§68). */
+      /** V2 - requested platform ("AUTO" default) + mode (§68). */
       requestedPlatform: string;
       mode: string;
     },
@@ -372,7 +372,7 @@ export class OcrRepository {
     return row ?? null;
   }
 
-  /** Owner-scoped single read — the IDOR boundary (§39). */
+  /** Owner-scoped single read - the IDOR boundary (§39). */
   async findForUser(id: string, userId: string): Promise<OcrRecognitionRow | null> {
     const row = await this.prisma.ocrRecognition.findFirst({
       where: { id, userId },
@@ -393,7 +393,7 @@ export class OcrRepository {
       limit: number;
       cursor: { createdAt: Date; id: string } | null;
       status: string | null;
-      /** V2 §62 — detected-platform / screenshot-type jsonb path filters. */
+      /** V2 §62 - detected-platform / screenshot-type jsonb path filters. */
       platform?: string | null;
       screenshotType?: string | null;
     },
@@ -501,7 +501,7 @@ export class OcrRepository {
   }
 
   /**
-   * Phase 21 — link the canonical Trade produced by the confirmation bridge
+   * Phase 21 - link the canonical Trade produced by the confirmation bridge
    * and append the import warnings to the result payload. Guarded on
    * status=CONFIRMED (the link can only follow the confirmation, §76).
    * Returns the fresh row, or null when a concurrent transition won.
@@ -581,7 +581,7 @@ export class OcrRepository {
     });
   }
 
-  /** Corrections memory — upsert the (field, raw → corrected) patterns (§2.3). */
+  /** Corrections memory - upsert the (field, raw → corrected) patterns (§2.3). */
   async upsertCorrectionPatterns(
     userId: string,
     entries: { fieldKey: string; rawValue: string; correctedValue: string }[],
@@ -611,7 +611,7 @@ export class OcrRepository {
   }
 
   /**
-   * Best suggestion per (fieldKey, rawValue) for the given machine readings —
+   * Best suggestion per (fieldKey, rawValue) for the given machine readings -
    * ordered by recurrence; advisory only (§21: never auto-applied).
    */
   async findSuggestionsForRawValues(
@@ -642,7 +642,7 @@ export class OcrRepository {
    * Delete the recognition; when no sibling recognition still references the
    * asset, delete the asset row too. Returns the storage key whose BINARY
    * the service must remove after commit (never inside the transaction, §50).
-   * The linked Trade (tradeId) is NEVER touched — one-way provenance (§77).
+   * The linked Trade (tradeId) is NEVER touched - one-way provenance (§77).
    */
   async deleteForUser(id: string, userId: string): Promise<{ storageKey: string | null; deleted: boolean } | null> {
     return this.prisma.$transaction(async (tx) => {
@@ -661,7 +661,7 @@ export class OcrRepository {
     });
   }
 
-  // ── OcrRecognitionOpsRepository (folded into OcrRepository — the service injects ONE repository) ──
+  // ── OcrRecognitionOpsRepository (folded into OcrRepository - the service injects ONE repository) ──
 
   /** Append one funnel/audit event (V2 analytics backbone). Best-effort by
    * contract: the service never lets event failures break the pipeline. */
@@ -756,13 +756,13 @@ export class OcrRepository {
     };
   }
 
-  // ── OcrCorrectionsRepository (folded into OcrRepository — the service injects ONE repository) ──
+  // ── OcrCorrectionsRepository (folded into OcrRepository - the service injects ONE repository) ──
 
-  /** Record one observed correction (unique per user+field+raw+corrected —
+  /** Record one observed correction (unique per user+field+raw+corrected -
    * the useCount increments instead of duplicating the row). */
   async recordCorrection(input: CorrectionInput): Promise<void> {
     if (input.rawValue === null) {
-      // A nullable unique component cannot ride the compound where — the
+      // A nullable unique component cannot ride the compound where - the
       // null-raw case (user added a value the machine never read) is the
       // rare branch and takes the explicit find-then-write path.
       const existing = await this.prisma.ocrCorrection.findFirst({
@@ -843,7 +843,7 @@ export class OcrRepository {
     }));
   }
 
-  // ── OcrDuplicateRepository (folded into OcrRepository — the service injects ONE repository) ──
+  // ── OcrDuplicateRepository (folded into OcrRepository - the service injects ONE repository) ──
 
   /** Recent perceptual-hash anchors (V2 duplicate pool, closest-match scan). */
   async listRecentHashedAssets(userId: string, take: number): Promise<Array<{ assetId: string; perceptualHash: string }>> {
@@ -907,7 +907,7 @@ export class OcrRepository {
     });
   }
 
-  /** V3 §62 — the duplicate warning is a persistent ASSET facet. */
+  /** V3 §62 - the duplicate warning is a persistent ASSET facet. */
   async markAssetDuplicateWarned(assetId: string): Promise<void> {
     await this.prisma.ocrAsset.update({
       where: { id: assetId },
@@ -916,9 +916,9 @@ export class OcrRepository {
     });
   }
 
-  // ── OcrRecognitionLifecycleRepository (folded into OcrRepository — the service injects ONE repository) ──
+  // ── OcrRecognitionLifecycleRepository (folded into OcrRepository - the service injects ONE repository) ──
 
-  /** Guarded cancel — only a QUEUED/PROCESSING job can be cancelled (§71). */
+  /** Guarded cancel - only a QUEUED/PROCESSING job can be cancelled (§71). */
   async markCancelled(id: string): Promise<OcrRecognitionRow | null> {
     const row = await this.prisma.ocrRecognition.updateMany({
       where: { id, status: { in: ["QUEUED", "PROCESSING"] } },
@@ -929,7 +929,7 @@ export class OcrRepository {
     return updated === null ? null : toRecognitionRow(updated);
   }
 
-  /** Guarded result rewrite — recrop merges land only on reviewable rows. */
+  /** Guarded result rewrite - recrop merges land only on reviewable rows. */
   async updateResult(id: string, result: OcrResultPayload): Promise<OcrRecognitionRow | null> {
     const row = await this.prisma.ocrRecognition.updateMany({
       where: { id, status: { in: ["REVIEW_REQUIRED", "PROCESSING"] } },
@@ -949,7 +949,7 @@ export class OcrRepository {
   }
 
   /**
-   * V2 §72 — store the validated draft for ONE trade index. The drafts map
+   * V2 §72 - store the validated draft for ONE trade index. The drafts map
    * is the per-trade source of truth; index 1 mirrors into the V1 scalar
    * `draft` column so the single-trade flow keeps its fast read.
    */
@@ -992,7 +992,7 @@ export class OcrRepository {
     return updated === null ? null : toRecognitionRow(updated);
   }
 
-  /** §146 rollback — back to REVIEW_REQUIRED so the user can fix and retry. */
+  /** §146 rollback - back to REVIEW_REQUIRED so the user can fix and retry. */
   async rollbackConfirmation(id: string): Promise<void> {
     await this.prisma.ocrRecognition.updateMany({
       where: { id, status: "CONFIRMED", tradeId: null, importedTradeId: null },
@@ -1000,7 +1000,7 @@ export class OcrRepository {
     });
   }
 
-  /** §79 — persist every imported trade id after a successful multi-import. */
+  /** §79 - persist every imported trade id after a successful multi-import. */
   async finalizeImportMulti(id: string, tradeIds: string[]): Promise<void> {
     await this.prisma.ocrRecognition.updateMany({
       where: { id, status: "CONFIRMED" },
@@ -1012,7 +1012,7 @@ export class OcrRepository {
     });
   }
 
-  /** §45 — record the reprocess lineage (the job this row was re-read from). */
+  /** §45 - record the reprocess lineage (the job this row was re-read from). */
   async attachReprocessLineage(newRecognitionId: string, sourceRecognitionId: string): Promise<void> {
     await this.prisma.ocrRecognition.updateMany({
       where: { id: newRecognitionId },
@@ -1020,7 +1020,7 @@ export class OcrRepository {
     });
   }
 
-  /** V2 §62 — server-side history list (no filters, newest first). */
+  /** V2 §62 - server-side history list (no filters, newest first). */
   async listLatestForUser(userId: string, take: number): Promise<OcrRecognitionRow[]> {
     const rows = await this.prisma.ocrRecognition.findMany({
       where: { userId },
@@ -1031,7 +1031,7 @@ export class OcrRepository {
     return rows.map(toRecognitionRow);
   }
 
-  /** V2 §62 — server-side history filters (status/platform/mime/duplicate/window). */
+  /** V2 §62 - server-side history filters (status/platform/mime/duplicate/window). */
   async listLatestForUserFiltered(
     userId: string,
     filters: {
@@ -1063,7 +1063,7 @@ export class OcrRepository {
   }
 
   /**
-   * §4 retention — delete recognitions older than the cutoff (one
+   * §4 retention - delete recognitions older than the cutoff (one
    * transaction), returning the storage keys of assets whose LAST reference
    * disappeared (binary removal happens AFTER commit in the service).
    */
@@ -1105,7 +1105,7 @@ export class OcrRepository {
     return rows;
   }
 
-  /** §37 — storage footprint of one user's uploads. */
+  /** §37 - storage footprint of one user's uploads. */
   async assetStorageStats(userId: string): Promise<{ assetsCount: number; totalBytes: number; oldestUploadAt: Date | null }> {
     const [assetsCount, aggregate] = await this.prisma.$transaction([
       this.prisma.ocrAsset.count({ where: { userId } }),
@@ -1118,9 +1118,9 @@ export class OcrRepository {
     };
   }
 
-  // ── OcrGroupRepository (folded into OcrRepository — the service injects ONE repository) ──
+  // ── OcrGroupRepository (folded into OcrRepository - the service injects ONE repository) ──
 
-  /** §31 — persist the fused group (the fusion outcome is computed in the
+  /** §31 - persist the fused group (the fusion outcome is computed in the
    * service; this is the pure write). */
   async createGroup(input: {
     userId: string;
@@ -1167,7 +1167,7 @@ export class OcrRepository {
     return rows.map(toGroupRow);
   }
 
-  /** Guarded fused-draft save — CONFIRMED/DISCARDED groups are frozen. */
+  /** Guarded fused-draft save - CONFIRMED/DISCARDED groups are frozen. */
   async saveGroupDraft(id: string, draft: TradeDraftRecord): Promise<OcrGroupRow | null> {
     const row = await this.prisma.ocrRecognitionGroup.updateMany({
       where: { id, status: { in: ["PROPOSED", "ACTIVE"] } },
@@ -1191,7 +1191,7 @@ export class OcrRepository {
     return updated === null ? null : toGroupRow(updated);
   }
 
-  /** §146 rollback — back to ACTIVE so the fused draft can be fixed. */
+  /** §146 rollback - back to ACTIVE so the fused draft can be fixed. */
   async rollbackGroupConfirmation(id: string): Promise<void> {
     await this.prisma.ocrRecognitionGroup.updateMany({
       where: { id, status: "CONFIRMED", importedTradeId: null },
@@ -1206,7 +1206,7 @@ export class OcrRepository {
     });
   }
 
-  /** Dissolve — every member recognition stays intact (§15). */
+  /** Dissolve - every member recognition stays intact (§15). */
   async discardGroup(id: string): Promise<void> {
     await this.prisma.ocrRecognitionGroup.updateMany({
       where: { id, status: { in: ["PROPOSED", "ACTIVE"] } },
@@ -1214,7 +1214,7 @@ export class OcrRepository {
     });
   }
 
-  // ── OcrAssetCollectionRepository (folded into OcrRepository — the service injects ONE repository) ──
+  // ── OcrAssetCollectionRepository (folded into OcrRepository - the service injects ONE repository) ──
 
   async createCollection(input: { userId: string; name: string; description: string | null }): Promise<string> {
     const row = await this.prisma.ocrCollection.create({
@@ -1265,7 +1265,7 @@ export class OcrRepository {
 }
 
 
-// ── V2 — recognition sets (multi-screenshot fusion) ─────────────────────────
+// ── V2 - recognition sets (multi-screenshot fusion) ─────────────────────────
 
 export interface OcrSetItemRow {
   setId: string;
@@ -1370,7 +1370,7 @@ export class OcrSetRepository {
     return rows.map(toRecognitionRow);
   }
 
-  /** Keyset page for the set list (V2 §62 — sets in the history surface). */
+  /** Keyset page for the set list (V2 §62 - sets in the history surface). */
   async listSetsPageForUser(
     userId: string,
     input: { limit: number; cursor: { createdAt: Date; id: string } | null },
@@ -1403,7 +1403,7 @@ export class OcrSetRepository {
   }
 
   /**
-   * Guarded confirmation transition (§51 discipline) — only REVIEW_REQUIRED
+   * Guarded confirmation transition (§51 discipline) - only REVIEW_REQUIRED
    * rows confirm, in one transaction with the trade links.
    */
   async confirmSet(
@@ -1447,7 +1447,7 @@ export class OcrSetRepository {
   }
 }
 
-// ── V2 §28 — screenshot collections ─────────────────────────────────────────
+// ── V2 §28 - screenshot collections ─────────────────────────────────────────
 
 export interface OcrCollectionItemRow {
   recognitionId: string;
@@ -1535,7 +1535,7 @@ export class OcrCollectionRepository {
 }
 
 // ════════════════════════════════════════════════════════════════════════════
-// RECONCILIATION — the V2/V3 recognition surfaces (jobs history filters,
+// RECONCILIATION - the V2/V3 recognition surfaces (jobs history filters,
 // drafts per trade index, confirmation mutex + rollback, groups, asset
 // collections, corrections memory, event ledger, retention) against the
 // OcrRecognitionGroup / OcrCorrection / OcrEvent / OcrCollectionAsset tables.
@@ -1543,7 +1543,7 @@ export class OcrCollectionRepository {
 // single-statement transitions, $transaction for multi-write.
 // ════════════════════════════════════════════════════════════════════════════
 
-/** Narrow group row (OcrRecognitionGroup) — JSON payloads typed pragmatically. */
+/** Narrow group row (OcrRecognitionGroup) - JSON payloads typed pragmatically. */
 export interface OcrGroupRow {
   id: string;
   userId: string;
@@ -1582,7 +1582,7 @@ function toGroupRow(row: Prisma.OcrRecognitionGroupGetPayload<null>): OcrGroupRo
   };
 }
 
-/** V3 collection row — the collection + its member assets (bounded reads). */
+/** V3 collection row - the collection + its member assets (bounded reads). */
 export interface OcrCollectionDetailRow {
   id: string;
   userId: string;

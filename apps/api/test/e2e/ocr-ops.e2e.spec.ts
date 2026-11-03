@@ -1,6 +1,6 @@
 /**
- * e2e — ops phase (engine quality §3.2/§4.1/§4.2): OCR-quality analytics,
- * storage indicator, retention purge, SSE progress stream — against the
+ * e2e - ops phase (engine quality §3.2/§4.1/§4.2): OCR-quality analytics,
+ * storage indicator, retention purge, SSE progress stream - against the
  * REAL AppModule, the REAL database and the DETERMINISTIC mock engine.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -122,7 +122,7 @@ describe("screenshot retention", () => {
     const created = await upload(a.authHeader);
     const recognition = created.body.recognition;
 
-    // Confirm the recognition (memory row — the purger only touches
+    // Confirm the recognition (memory row - the purger only touches
     // CONFIRMED/FAILED after the hard window, REVIEW_REQUIRED after 2×).
     await app.inject({
       method: "POST",
@@ -185,7 +185,7 @@ describe("GET /ocr/recognitions/:id/events (SSE)", () => {
     });
     expect(res.statusCode).toBe(200);
     expect(res.headers["content-type"]).toContain("text/event-stream");
-    // The mock pipeline settles synchronously — the stream carries the
+    // The mock pipeline settles synchronously - the stream carries the
     // current status event and closes (bounded window, no hang).
     expect(res.body).toContain("event: status");
     expect(res.body).toContain("REVIEW_REQUIRED");

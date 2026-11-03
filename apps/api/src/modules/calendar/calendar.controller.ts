@@ -1,5 +1,5 @@
 /**
- * Calendar controller (B7) — eco events, marked blocks and the trading
+ * Calendar controller (B7) - eco events, marked blocks and the trading
  * calendar overlay. Global JwtAuthGuard, ZodValidationPipe on the block
  * body, uuid/ISO-validated params. Mirrors `mocks/handlers/eco.ts` (6
  * routes). The `from`/`to` window is validated in the service (422 parity).
@@ -44,7 +44,7 @@ export class CalendarBlocksController {
     return calendarBlocksResponseSchema.parse(response);
   }
 
-  /** PUT (upsert) — mark a day off / news blocked. */
+  /** PUT (upsert) - mark a day off / news blocked. */
   @Put()
   async upsert(
     @CurrentUser() principal: AuthPrincipal,

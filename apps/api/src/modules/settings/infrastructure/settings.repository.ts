@@ -2,7 +2,7 @@
  * Settings data access (infrastructure, Phase 15).
  *
  * The ONLY place in the settings context that touches Prisma. All methods
- * return narrow row projections — no Prisma type crosses into services or
+ * return narrow row projections - no Prisma type crosses into services or
  * controllers (Phase 1 §10 boundary, Identity repository precedent).
  *
  * Concurrency (§36): the frontend PATCHes one domain at a time from multiple
@@ -10,7 +10,7 @@
  * read-modify-write inside ONE transaction holding a row lock (SELECT … FOR
  * UPDATE). Two concurrent patches on DIFFERENT domains serialize instead of
  * losing an update; same-domain patches keep last-write-wins per field group
- * — the semantics the UI contract implies — without inventing an optimistic
+ * - the semantics the UI contract implies - without inventing an optimistic
  * concurrency protocol the client does not speak.
  */
 import { Injectable } from "@nestjs/common";

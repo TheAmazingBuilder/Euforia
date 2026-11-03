@@ -6,7 +6,7 @@ import { LayoutGrid, Library, RotateCcw, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /**
- * Edit-mode toolbar (Phase 01 §5) — the editing transaction's control
+ * Edit-mode toolbar (Phase 01 §5) - the editing transaction's control
  * surface: Add Widget, Layouts & templates, Reset, then Cancel/Save.
  * Save is disabled until the draft actually differs (§ no fake actions);
  * a persistence error renders inline (role=alert) and keeps the draft.

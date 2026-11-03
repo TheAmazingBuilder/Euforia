@@ -18,7 +18,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 /**
  * Template library (§18): ten starting points that pre-fill identity, market
  * profile, conditions, risk frame and invalidations of a new DRAFT strategy.
- * They are starting points — NEVER claims that these approaches are profitable.
+ * They are starting points - NEVER claims that these approaches are profitable.
  */
 export function TemplatesPanel() {
   const { dict } = useI18n();

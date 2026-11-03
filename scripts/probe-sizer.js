@@ -1,4 +1,4 @@
-/** Probe: why does the sizer stay "—" in the capture modal? */
+/** Probe: why does the sizer stay "-" in the capture modal? */
 const { chromium } = require("playwright");
 
 (async () => {

@@ -35,14 +35,15 @@ import { OryonInstrumentSelector } from "@/components/oryon/oryon-instrument-sel
 import { OryonTimeframeSelector } from "@/components/oryon/oryon-timeframe-selector";
 import type { OryonChartType } from "@/lib/charting/oryon-chart-engine";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /**
- * Oryon panel header — the compact per-chart control strip (Phase 7 §6):
+ * Oryon panel header - the compact per-chart control strip (Phase 7 §6):
  * instrument, timeframe and chart type for THIS panel, the active-panel
  * badge and a panel menu (duplicate / remove / return to latest).
  *
  * In a single-chart workspace the selectors stay in the toolbar (they
- * already target the only panel) — the header shows identity + actions
+ * already target the only panel) - the header shows identity + actions
  * only, so no control is ever duplicated on screen. From two panels on,
  * every panel carries its own full control set.
  *
@@ -137,7 +138,7 @@ export function OryonPanelHeader({
           active ? "text-foreground" : "text-muted-foreground",
         )}
       >
-        {instrument?.symbol ?? "—"}
+        {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : "-"}
       </span>
       <span
         data-testid={`${prefix}-identity-interval`}
@@ -195,9 +196,9 @@ export function OryonPanelHeader({
       ) : null}
 
       <div className="ml-auto flex shrink-0 items-center">
-        {/* Analysis menu (Phase 9 §7) — per-panel structure + key-level
+        {/* Analysis menu (Phase 9 §7) - per-panel structure + key-level
             config. Grouped, whitelist-validated values (radios over bounded
-            vocabularies — no free numeric input can produce an invalid
+            vocabularies - no free numeric input can produce an invalid
             calculation parameter). */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -452,7 +453,7 @@ export function OryonPanelHeader({
             </DropdownMenuLabel>
           </DropdownMenuContent>
         </DropdownMenu>
-        {/* Temporal-context menu (Phase 8 §12) — per-panel display prefs.
+        {/* Temporal-context menu (Phase 8 §12) - per-panel display prefs.
             Session shading and event markers toggle INDEPENDENTLY; the
             importance threshold only ever widens/narrows the marker set. */}
         <DropdownMenu>
@@ -560,7 +561,7 @@ export function OryonPanelHeader({
   );
 }
 
-/** Segmented chart-type button (candles / line — the implemented set). */
+/** Segmented chart-type button (candles / line - the implemented set). */
 function PanelTypeButton({
   active,
   icon: Icon,

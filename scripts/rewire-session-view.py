@@ -4,7 +4,7 @@
 Targeted transformations, preserving every data hook / dialog unchanged:
 1. Trim the import block (workspace-internal imports moved to charty/*).
 2. Delete the old Workspace function + TIMEFRAMES (now charty-owned).
-3. Root: full-width (no max-w) — header/journaling get max-w containers.
+3. Root: full-width (no max-w) - header/journaling get max-w containers.
 4. Replace <Workspace> with <ChartyWorkspace onSymbolChange=...>.
 5. Remove the old market-selector row (symbol pill lives in the terminal).
 """
@@ -86,7 +86,7 @@ s = s[:start_idx] + s[end_idx:]
 s = s.replace(
     '''    <div className="mx-auto w-full max-w-[1600px] space-y-4 sm:space-y-6">
       <GhostSettlementNotifier ghosts={pendingGhosts} />
-      {/* Live-feed level events (TP/SL touched) — toasts, invisible UI */}
+      {/* Live-feed level events (TP/SL touched) - toasts, invisible UI */}
       <PriceAlertToaster trades={trades} instruments={instruments} quotes={quotes} />
 
       <header className="space-y-3">
@@ -98,7 +98,7 @@ s = s.replace(
       </header>''',
     '''    <div className="space-y-4 sm:space-y-6">
       <GhostSettlementNotifier ghosts={pendingGhosts} />
-      {/* Live-feed level events (TP/SL touched) — toasts, invisible UI */}
+      {/* Live-feed level events (TP/SL touched) - toasts, invisible UI */}
       <PriceAlertToaster trades={trades} instruments={instruments} quotes={quotes} />
 
       <header className="mx-auto w-full max-w-[1600px] space-y-3">
@@ -137,7 +137,7 @@ s = s.replace(
 
 # ── 4. Remove the market-selector row + replace Workspace with ChartyWorkspace
 old_block = s[s.index("          {/* ── Market selector row"):s.index("          {/* ── Journaling flow")]
-new_block = '''          {/* ── Charty terminal — full-width chart workspace ────────────── */}
+new_block = '''          {/* ── Charty terminal - full-width chart workspace ────────────── */}
           {symbol !== "" ? (
             <ChartyWorkspace
               key={symbol}

@@ -1,9 +1,9 @@
 /**
- * Stats pure helpers — shared by the stats module (overview, analytics,
+ * Stats pure helpers - shared by the stats module (overview, analytics,
  * analytics-suite) AND the discipline module (mistake ledger, emotion
  * matrix). NOTHING here may import Nest or Prisma: pure functions over
  * normalized rows, mirroring the mock-store algorithms the frontend already
- * renders (single source of computation — the client only formats).
+ * renders (single source of computation - the client only formats).
  */
 import {
   ANALYTICS_HOUR_BUCKETS,
@@ -118,7 +118,7 @@ export interface StatsContext {
   ecoEvents: StatsEcoEventRow[];
   /** tradeId → tag ids (suite tag filter). */
   tradeTags: Map<string, Set<string>>;
-  /** User timezone — the server trading-day clock (§56). */
+  /** User timezone - the server trading-day clock (§56). */
   timezone: string;
   /** Main account currency (the response `currency`). */
   currency: Currency;
@@ -167,7 +167,7 @@ export const niceStep = (raw: number): number => {
   return 10 * magnitude;
 };
 
-/** Deterministic PRNG — Monte Carlo bootstrap must be reproducible (§25). */
+/** Deterministic PRNG - Monte Carlo bootstrap must be reproducible (§25). */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -201,7 +201,7 @@ export const stdOf = (values: number[]): number | null => {
   return Math.sqrt(values.reduce((sum, v) => sum + (v - m) ** 2, 0) / (values.length - 1));
 };
 
-// ── Period resolution (server trading-day clock — the client never derives
+// ── Period resolution (server trading-day clock - the client never derives
 // "today"; CUSTOM falls back to ALL when bounds are absent) ──────────────────
 
 export function resolvePeriodRange(
@@ -323,7 +323,7 @@ export interface MistakeLedgerResult {
 }
 
 /**
- * All-time (or windowed) mistake ledger — most expensive first: cost
+ * All-time (or windowed) mistake ledger - most expensive first: cost
  * dominates, then frequency. `since` is a date key ("0000-01-01" = all).
  */
 export function computeMistakeLedger(ctx: StatsContext, since: string): MistakeLedgerResult {

@@ -1,5 +1,5 @@
 /**
- * Review context data access (B8) — the ONLY place the review context
+ * Review context data access (B8) - the ONLY place the review context
  * touches Prisma. Rows land in the shared reviewRow table with a context
  * `kind` (REVIEW | GOAL); reviews additionally carry tradeId.
  */
@@ -55,7 +55,7 @@ export class ReviewRepository {
   }
 
   async insertGoal(userId: string, id: string, data: Prisma.InputJsonValue): Promise<ReviewTableRow> {
-    // The row id IS the goal id — PATCH/DELETE address the entity directly.
+    // The row id IS the goal id - PATCH/DELETE address the entity directly.
     const row = await this.prisma.reviewRow.create({
       data: { id, userId, kind: "GOAL", data },
     });

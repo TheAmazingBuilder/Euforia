@@ -33,7 +33,7 @@ import type { OryonDrawingTool } from "@/lib/oryon/drawings/interaction";
  * Tool → icon map for the Drawing toolbar v2 surfaces (rail, flyouts,
  * favorites bar). The object list keeps its own drawing-TYPE map (icons
  * there describe persisted objects); this one describes INTERACTION tools
- * — cursor variants and the eraser have no persisted type.
+ * - cursor variants and the eraser have no persisted type.
  */
 export const ORYON_TOOL_ICONS: Record<OryonDrawingTool, LucideIcon> = {
   cursor: MousePointer2,

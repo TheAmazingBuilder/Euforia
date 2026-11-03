@@ -20,7 +20,7 @@ import { ConnectAccountDialog } from "./connect-account-dialog";
 import { AccountDetailDrawer } from "./account-detail-drawer";
 
 /**
- * Accounts overview (Phase 02 Step Four) — the at-a-glance surface. Reads
+ * Accounts overview (Phase 02 Step Four) - the at-a-glance surface. Reads
  * ONLY the /trading-accounts list (details per account, snapshot embedded);
  * no positions/orders/deals are fetched here (they load on demand inside the
  * detail drawer). Aggregate metrics stay per-account: accounts may use
@@ -70,7 +70,7 @@ export function AccountsView() {
         <header className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div className="space-y-2">
-              <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">{P.title}</h1>
+              <h1 className="page-title">{P.title}</h1>
               <p className="max-w-2xl text-sm text-muted-foreground">{P.subtitle}</p>
             </div>
             <Button onClick={() => setConnectOpen(true)} data-testid="accounts-add-button">
@@ -114,7 +114,7 @@ export function AccountsView() {
                     aria-hidden
                   />
                   <span className="font-medium text-foreground">{provider.providerName}</span>
-                  <span>— connectable now ({provider.isMock ? "simulated" : provider.platform})</span>
+                  <span>- connectable now ({provider.isMock ? "simulated" : provider.platform})</span>
                 </li>
               ))}
               <li className="flex items-center gap-2 text-muted-foreground">

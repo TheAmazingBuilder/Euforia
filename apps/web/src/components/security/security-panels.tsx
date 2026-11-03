@@ -7,7 +7,6 @@ import {
   Fingerprint,
   KeyRound,
   Laptop,
-  Link2,
   LockKeyhole,
   MonitorSmartphone,
   ScrollText,
@@ -17,9 +16,9 @@ import {
 } from "lucide-react";
 import type {
   ApiKeyView,
-  ConnectedAccount,
   LoginRecord,
   SecurityEvent,
+  SecurityEventType,
   SecurityOverviewResponse,
   SecuritySession,
   SessionRevokeInput,
@@ -44,24 +43,51 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/shared/date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/settings/settings-primitives";
-import {
-  KindChip,
-  PERMISSION_LABELS,
-  StatusBadge,
-} from "@/components/integrations/hub-shared";
 import { cn } from "@/lib/utils";
+import { EVENT_TYPE_META } from "@/lib/security/event-label";
 import { EventBadge, EventOutcomeIcon, utc } from "./security-primitives";
 
 /**
  * Tab panels of the Security center (MASTER PROMPT §3):
  * Overview · Authentication · Sessions · Two-Factor · API Keys ·
- * Connected Accounts · Security Events · Login History · Active Devices.
- * Presentation only — every mutation and re-auth flow lives in the parent.
+ * Security Events · Login History · Active Devices.
+ * Presentation only - every mutation and re-auth flow lives in the parent.
  */
 
+
 type Overview = SecurityOverviewResponse;
+
+export type EventHistoryFilters = {
+  type: SecurityEventType | "ALL";
+  outcome: "ALL" | "SUCCESS" | "FAILURE";
+  from: string;
+  to: string;
+};
+
+export type LoginHistoryFilters = {
+  outcome: "ALL" | "SUCCESS" | "FAILURE";
+  from: string;
+  to: string;
+};
+
+export type HistoryPagination = {
+  isLoading: boolean;
+  isError: boolean;
+  errorMessage: string | null;
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  onLoadMore: () => void;
+};
 
 export const API_SCOPE_META: Record<ApiKeyView["scopes"][number], { label: string; detail: string }> = {
   "read:trades": { label: "read:trades", detail: "Read trade history and journal entries" },
@@ -99,14 +125,6 @@ export function OverviewPanel({
       value: String(activeKeys.length),
       tab: "api-keys",
     },
-    {
-      id: "connected",
-      label: "Connected accounts",
-      value: String(
-        overview.connectedAccounts.filter((account) => account.status === "CONNECTED").length,
-      ),
-      tab: "connected-accounts",
-    },
   ];
 
   return (
@@ -119,7 +137,7 @@ export function OverviewPanel({
           </CardTitle>
           <CardDescription>
             Every check is a hard fact about the account, evaluated with the stated methodology.
-            The score is derived from those same checks — real state, never vibes.
+            The score is derived from those same checks - real state, never vibes.
           </CardDescription>
         </CardHeader>
         {/* Real-state score banner (module upgrade) */}
@@ -136,9 +154,9 @@ export function OverviewPanel({
           >
             <p className="font-mono text-3xl font-bold tabular-nums">{overview.securityScore.score}</p>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold">{overview.securityScore.rating} — {overview.securityScore.passed}/{overview.securityScore.total} checks pass</p>
+              <p className="text-sm font-semibold">{overview.securityScore.rating} - {overview.securityScore.passed}/{overview.securityScore.total} checks pass</p>
               <p className="text-xs text-muted-foreground">
-                Fix the ACTION items below to raise the score — it recomputes from the live engine state on every read.
+                Fix the ACTION items below to raise the score - it recomputes from the live engine state on every read.
               </p>
             </div>
             <div className="h-2 w-28 overflow-hidden rounded-full bg-muted">
@@ -187,7 +205,7 @@ export function OverviewPanel({
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-3">
         {stats.map((stat) => (
           <button
             key={stat.id}
@@ -238,7 +256,7 @@ export function OverviewPanel({
   );
 }
 
-// ── §5 Authentication — the Password card design is preserved ────────────────
+// ── §5 Authentication - the Password card design is preserved ────────────────
 
 export function AuthenticationPanel({
   overview,
@@ -276,7 +294,7 @@ export function AuthenticationPanel({
               Password
             </CardTitle>
             <CardDescription>
-              Change it any time — journal data stays untouched.
+              Change it any time - journal data stays untouched.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-3">
@@ -348,7 +366,7 @@ export function AuthenticationPanel({
               Account &amp; verification
             </CardTitle>
             <CardDescription>
-              Identity basics — verified email, password policy, throttling.
+              Identity basics - verified email, password policy, throttling.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-2 text-sm">
@@ -357,7 +375,7 @@ export function AuthenticationPanel({
                 <p className="font-medium">{overview.auth.email}</p>
                 <p className="text-xs text-muted-foreground">
                   {overview.auth.emailVerified
-                    ? "Verified — confirmation link used."
+                    ? "Verified - confirmation link used."
                     : "Not verified yet."}
                 </p>
               </div>
@@ -370,7 +388,7 @@ export function AuthenticationPanel({
               <p className="text-xs text-muted-foreground">
                 Minimum length{" "}
                 <span className="font-mono tabular-nums">{overview.auth.passwordMinLength}</span>{" "}
-                characters — changes require re-authentication and are logged.
+                characters - changes require re-authentication and are logged.
               </p>
             </div>
             <div className="rounded-lg border border-border bg-background/60 px-3 py-2.5">
@@ -494,7 +512,7 @@ export function SessionsPanel({
         title={confirmScope === "all" ? "Logout all sessions?" : "Logout other sessions?"}
         description={
           confirmScope === "all"
-            ? "Every device is signed out — including this one. In production the current session ends immediately; the demo keeps you signed in."
+            ? "Every device is signed out - including this one. In production the current session ends immediately; the demo keeps you signed in."
             : "All other devices are signed out immediately. Unsaved work on those devices is lost."
         }
         confirmLabel={confirmScope === "all" ? "Logout all" : "Logout others"}
@@ -510,18 +528,28 @@ export function SessionsPanel({
   );
 }
 
-// ── §6 Two-Factor — the 2FA card design is preserved ────────────────────────
+// ── §6 Two-Factor - the 2FA card design is preserved ────────────────────────
 
 export function TwoFactorPanel({
   overview,
   onEnable,
+  onEnableEmail,
+  emailEnrollmentPending,
+  emailEnrollCode,
+  onEmailEnrollCodeChange,
+  onConfirmEmailEnrollment,
   onDisable,
   onRegenerate,
   pending,
 }: {
   overview: Overview;
   onEnable: () => void;
-  /** Disable goes through a confirm first — the parent owns both steps. */
+  onEnableEmail: () => void;
+  emailEnrollmentPending: boolean;
+  emailEnrollCode: string;
+  onEmailEnrollCodeChange: (value: string) => void;
+  onConfirmEmailEnrollment: () => void;
+  /** Disable goes through a confirm first - the parent owns both steps. */
   onDisable: () => void;
   onRegenerate: () => void;
   pending: boolean;
@@ -552,11 +580,11 @@ export function TwoFactorPanel({
         {twoFactor.enabled ? (
           <>
             <p>
-              You are asked for a rotating code at each new sign-in. Recovery
-              codes were shown once at setup — they are never displayed again.
+              You are asked for a one-time code at each new sign-in. Recovery
+              codes were shown once at setup - they are never displayed again.
             </p>
             <div className="grid gap-1.5 rounded-lg border border-border bg-background/60 px-3 py-2.5 font-mono text-xs tabular-nums">
-              <span>method · authenticator app</span>
+              <span>method · {twoFactor.method === "EMAIL" ? "email code" : "authenticator app"}</span>
               <span>enabled · {utc(twoFactor.enabledAt)}</span>
               <span>last verified · {utc(twoFactor.lastVerifiedAt)}</span>
               <span>
@@ -577,13 +605,44 @@ export function TwoFactorPanel({
               </Button>
             </div>
           </>
+        ) : emailEnrollmentPending || twoFactor.pendingMethod === "EMAIL" ? (
+          <div className="grid max-w-sm gap-2 rounded-lg border border-border bg-background/60 p-3">
+            <p className="text-sm text-foreground">Enter the 6-digit code sent to your verified email. The code expires shortly.</p>
+            <Label htmlFor="email-mfa-enrollment-code">Email verification code</Label>
+            <Input
+              id="email-mfa-enrollment-code"
+              value={emailEnrollCode}
+              onChange={(event) => onEmailEnrollCodeChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="123456"
+              data-testid="email-mfa-enrollment-code"
+            />
+            <Button onClick={onConfirmEmailEnrollment} disabled={pending || emailEnrollCode.length !== 6} data-testid="email-mfa-enrollment-confirm">
+              Confirm email and enable 2FA
+            </Button>
+            <Button variant="outline" onClick={onEnableEmail} disabled={pending} data-testid="email-mfa-enrollment-resend">Send a new code</Button>
+          </div>
         ) : twoFactor.pending ? (
-          <p>Setup in progress — confirm the authenticator challenge to activate 2FA.</p>
+          <p>Setup in progress - confirm the authenticator challenge to activate 2FA.</p>
         ) : (
-          <p>
-            Recommended — an authenticator app is all it takes. Setup issues 10
-            recovery codes, shown once, then stored only as a count.
-          </p>
+          <>
+            <p>
+              Choose an authenticator app (TOTP) or a one-time code sent to your verified email.
+              Setup issues 10 recovery codes, shown once, then stored only as a count.
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onEnableEmail}
+              disabled={pending}
+              className="mt-1 w-fit"
+              data-testid="tfa-enable-email"
+            >
+              Use email verification codes
+            </Button>
+          </>
         )}
       </CardContent>
     </Card>
@@ -609,7 +668,7 @@ export function ApiKeysPanel({
   const [expiresInDays, setExpiresInDays] = React.useState<number | null>(90);
   const [revokeTarget, setRevokeTarget] = React.useState<ApiKeyView | null>(null);
 
-  // Snapshot once per mount — expiry display only, recomputed on next visit.
+  // Snapshot once per mount - expiry display only, recomputed on next visit.
   const [nowMs] = React.useState(() => Date.now());
 
   const submitCreate = () => {
@@ -704,7 +763,7 @@ export function ApiKeysPanel({
         })}
         {overview.apiKeys.length === 0 && (
           <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-            No API keys yet — create a scoped key instead of sharing your password.
+            No API keys yet - create a scoped key instead of sharing your password.
           </p>
         )}
       </CardContent>
@@ -756,22 +815,20 @@ export function ApiKeysPanel({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="api-key-expiry">Expiration</Label>
-              <select
-                id="api-key-expiry"
+              <Select
                 value={expiresInDays === null ? "never" : String(expiresInDays)}
-                onChange={(event) =>
-                  setExpiresInDays(
-                    event.target.value === "never" ? null : Number(event.target.value),
-                  )
-                }
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                data-testid="api-key-expiry"
+                onValueChange={(value) => setExpiresInDays(value === "never" ? null : Number(value))}
               >
-                <option value="30">30 days</option>
-                <option value="60">60 days</option>
-                <option value="90">90 days — recommended</option>
-                <option value="never">Never expires (weakens the protection score)</option>
-              </select>
+                <SelectTrigger id="api-key-expiry" className="h-9 w-full" data-testid="api-key-expiry">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="60">60 days</SelectItem>
+                  <SelectItem value="90">90 days - recommended</SelectItem>
+                  <SelectItem value="never">Never expires (weakens the protection score)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -783,7 +840,7 @@ export function ApiKeysPanel({
               disabled={name.trim().length === 0 || scopes.length === 0}
               data-testid="api-key-dialog-create"
             >
-              Continue — confirm identity
+              Continue - confirm identity
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -804,66 +861,6 @@ export function ApiKeysPanel({
         testid="api-key-revoke-confirm"
       />
     </Card>
-  );
-}
-
-// ── §9 Connected accounts ────────────────────────────────────────────────────
-
-export function ConnectedAccountsPanel({ overview }: { overview: Overview }) {
-  return (
-    <Card className="border-border bg-surface">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-heading text-base font-semibold">
-          <Link2 className="size-4 text-accent" aria-hidden="true" />
-          Connected accounts
-        </CardTitle>
-        <CardDescription>
-          Security&apos;s view over Integrations — derived live from the hub.
-          Passwords, private keys and secret tokens are never shown here: only
-          masked hints from the vault.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-2">
-        {overview.connectedAccounts.map((account) => (
-          <ConnectedAccountRow key={account.providerId} account={account} />
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
-function ConnectedAccountRow({ account }: { account: ConnectedAccount }) {
-  return (
-    <div
-      className="flex flex-wrap items-center justify-between gap-4 rounded-lg border border-border bg-background/60 px-3 py-2.5"
-      data-testid={`connected-${account.providerId}`}
-    >
-      <div className="min-w-0">
-        <p className="flex items-center gap-2 text-sm font-medium">
-          {account.providerName}
-          <KindChip kind={account.kind} />
-        </p>
-        <p className="font-mono text-xs tabular-nums text-muted-foreground">
-          {account.identifier} · credential {account.credentialHint}
-        </p>
-        <p className="mt-1 flex flex-wrap gap-1.5">
-          {account.permissions.map((permission) => (
-            <span
-              key={permission}
-              className="rounded-full border border-border px-2 py-0.5 text-[10px] text-muted-foreground"
-            >
-              {PERMISSION_LABELS[permission] ?? permission}
-            </span>
-          ))}
-        </p>
-      </div>
-      <div className="text-right">
-        <StatusBadge status={account.status} />
-        <p className="mt-1 font-mono text-[11px] tabular-nums text-muted-foreground">
-          last sync {account.lastSyncAt === null ? "never" : utc(account.lastSyncAt)}
-        </p>
-      </div>
-    </div>
   );
 }
 
@@ -925,7 +922,25 @@ function EventRow({ event, compact, detailed = false }: { event: SecurityEvent; 
   );
 }
 
-export function EventsPanel({ overview }: { overview: Overview }) {
+export function EventsPanel({
+  overview,
+  events,
+  filters,
+  onFiltersChange,
+  onResetFilters,
+  pagination,
+}: {
+  overview: Overview;
+  events: SecurityEvent[];
+  filters: EventHistoryFilters;
+  onFiltersChange: (filters: EventHistoryFilters) => void;
+  onResetFilters: () => void;
+  pagination: HistoryPagination;
+}) {
+  const eventTypes = Object.entries(EVENT_TYPE_META) as Array<
+    [SecurityEventType, { readonly label: string }]
+  >;
+
   return (
     <Card className="border-border bg-surface">
       <CardHeader>
@@ -943,10 +958,106 @@ export function EventsPanel({ overview }: { overview: Overview }) {
           .
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
-        {overview.events.map((event) => (
-          <EventRow key={event.id} event={event} detailed />
-        ))}
+      <CardContent className="grid gap-3">
+        <div className="grid gap-3 rounded-lg border border-border bg-background/50 p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            <span>Event type</span>
+            <Select
+              value={filters.type}
+              onValueChange={(value) =>
+                onFiltersChange({ ...filters, type: value as EventHistoryFilters["type"] })
+              }
+            >
+              <SelectTrigger className="h-9 w-full" aria-label="Filter events by type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All event types</SelectItem>
+                {eventTypes.map(([type, meta]) => (
+                  <SelectItem key={type} value={type}>{meta.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            <span>Outcome</span>
+            <Select
+              value={filters.outcome}
+              onValueChange={(value) =>
+                onFiltersChange({ ...filters, outcome: value as EventHistoryFilters["outcome"] })
+              }
+            >
+              <SelectTrigger className="h-9 w-full" aria-label="Filter events by outcome">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All outcomes</SelectItem>
+                <SelectItem value="SUCCESS">Success</SelectItem>
+                <SelectItem value="FAILURE">Failure</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-events-from">
+            <span>From (UTC)</span>
+            <DatePicker
+              id="security-events-from"
+              value={filters.from}
+              onChange={(value) => onFiltersChange({ ...filters, from: value })}
+              ariaLabel="Filter events from date (UTC)"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-events-to">
+            <span>To (UTC)</span>
+            <DatePicker
+              id="security-events-to"
+              value={filters.to}
+              onChange={(value) => onFiltersChange({ ...filters, to: value })}
+              ariaLabel="Filter events to date (UTC)"
+            />
+          </label>
+          <div className="flex items-end justify-end sm:col-span-2 lg:col-span-4">
+            <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
+              Clear filters
+            </Button>
+          </div>
+        </div>
+
+        {pagination.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {pagination.errorMessage ?? "Could not load security events."}
+          </p>
+        )}
+        {pagination.isLoading && events.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground" aria-busy="true">
+            Loading security events…
+          </p>
+        )}
+        <div className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
+          {events.map((event) => (
+            <EventRow key={event.id} event={event} detailed />
+          ))}
+          {events.length === 0 && !pagination.isLoading && (
+            <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+              No security events match these filters.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {events.length} event{events.length === 1 ? "" : "s"} loaded
+          </p>
+          {pagination.hasNextPage && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pagination.onLoadMore}
+              disabled={pagination.isFetchingNextPage}
+            >
+              {pagination.isFetchingNextPage ? "Loading…" : "Load older events"}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -989,7 +1100,21 @@ function LoginRow({ login, compact }: { login: LoginRecord; compact?: boolean })
   );
 }
 
-export function LoginHistoryPanel({ overview }: { overview: Overview }) {
+export function LoginHistoryPanel({
+  overview,
+  logins,
+  filters,
+  onFiltersChange,
+  onResetFilters,
+  pagination,
+}: {
+  overview: Overview;
+  logins: LoginRecord[];
+  filters: LoginHistoryFilters;
+  onFiltersChange: (filters: LoginHistoryFilters) => void;
+  onResetFilters: () => void;
+  pagination: HistoryPagination;
+}) {
   return (
     <Card className="border-border bg-surface">
       <CardHeader>
@@ -998,7 +1123,7 @@ export function LoginHistoryPanel({ overview }: { overview: Overview }) {
           Login history
         </CardTitle>
         <CardDescription>
-          Sign-in attempts on the account. IP addresses are partially masked —
+          Sign-in attempts on the account. IP addresses are partially masked -
           full addresses never reach the client. Retention:{" "}
           <span className="font-mono tabular-nums">
             {overview.retention.loginHistoryDays} days
@@ -1006,10 +1131,87 @@ export function LoginHistoryPanel({ overview }: { overview: Overview }) {
           .
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
-        {overview.logins.map((login) => (
-          <LoginRow key={login.id} login={login} />
-        ))}
+      <CardContent className="grid gap-3">
+        <div className="grid gap-3 rounded-lg border border-border bg-background/50 p-3 sm:grid-cols-2 lg:grid-cols-3">
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground">
+            <span>Sign-in result</span>
+            <Select
+              value={filters.outcome}
+              onValueChange={(value) =>
+                onFiltersChange({ ...filters, outcome: value as LoginHistoryFilters["outcome"] })
+              }
+            >
+              <SelectTrigger className="h-9 w-full" aria-label="Filter sign-ins by result">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All sign-ins</SelectItem>
+                <SelectItem value="SUCCESS">Successful</SelectItem>
+                <SelectItem value="FAILURE">Failed</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-logins-from">
+            <span>From (UTC)</span>
+            <DatePicker
+              id="security-logins-from"
+              value={filters.from}
+              onChange={(value) => onFiltersChange({ ...filters, from: value })}
+              ariaLabel="Filter sign-ins from date (UTC)"
+            />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-logins-to">
+            <span>To (UTC)</span>
+            <DatePicker
+              id="security-logins-to"
+              value={filters.to}
+              onChange={(value) => onFiltersChange({ ...filters, to: value })}
+              ariaLabel="Filter sign-ins to date (UTC)"
+            />
+          </label>
+          <div className="flex items-end justify-end sm:col-span-2 lg:col-span-3">
+            <Button type="button" size="sm" variant="ghost" onClick={onResetFilters}>
+              Clear filters
+            </Button>
+          </div>
+        </div>
+
+        {pagination.isError && (
+          <p role="alert" className="text-sm text-destructive">
+            {pagination.errorMessage ?? "Could not load login history."}
+          </p>
+        )}
+        {pagination.isLoading && logins.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted-foreground" aria-busy="true">
+            Loading login history…
+          </p>
+        )}
+        <div className="grid max-h-[32rem] gap-1.5 overflow-y-auto">
+          {logins.map((login) => (
+            <LoginRow key={login.id} login={login} />
+          ))}
+          {logins.length === 0 && !pagination.isLoading && (
+            <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
+              No sign-in attempts match these filters.
+            </p>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {logins.length} sign-in attempt{logins.length === 1 ? "" : "s"} loaded
+          </p>
+          {pagination.hasNextPage && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={pagination.onLoadMore}
+              disabled={pagination.isFetchingNextPage}
+            >
+              {pagination.isFetchingNextPage ? "Loading…" : "Load older sign-ins"}
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
@@ -1057,7 +1259,7 @@ export function DevicesPanel({
             </div>
           ) : (
             <p className="text-sm text-muted-foreground">
-              The current session was revoked — in production it would end now.
+              The current session was revoked - in production it would end now.
             </p>
           )}
         </CardContent>
@@ -1070,7 +1272,7 @@ export function DevicesPanel({
             Previously active devices
           </CardTitle>
           <CardDescription>
-            Other devices holding a valid session — revoke to sign them out.
+            Other devices holding a valid session - revoke to sign them out.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid gap-2">
@@ -1101,7 +1303,7 @@ export function DevicesPanel({
           ))}
           {others.length === 0 && (
             <p className="rounded-lg border border-dashed border-border px-3 py-6 text-center text-sm text-muted-foreground">
-              No other active devices — only this session is signed in.
+              No other active devices - only this session is signed in.
             </p>
           )}
         </CardContent>

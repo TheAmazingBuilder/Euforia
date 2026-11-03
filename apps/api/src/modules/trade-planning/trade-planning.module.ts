@@ -1,5 +1,5 @@
 /**
- * Trade Planning bounded context (Phase 5) — the planned trade, BEFORE
+ * Trade Planning bounded context (Phase 5) - the planned trade, BEFORE
  * execution.
  *
  * Core domain (Phase 0 §I): flat application-service + one-repository +
@@ -10,10 +10,10 @@
  *
  * Reuse over reinvention (§3): error taxonomy, ZodValidationPipe, auth guard
  * + principal decorator come from the Foundation / Identity; the Accounts
- * context is consumed through its PUBLIC contract (AccountsRepository —
+ * context is consumed through its PUBLIC contract (AccountsRepository -
  * ownership-validated account rows + latest balance snapshot); the shared
  * capture size-mode vocabulary is reused verbatim. NO second lot-size engine,
- * NO second account/ownership system, NO Playbook module (§67 — plans carry
+ * NO second account/ownership system, NO Playbook module (§67 - plans carry
  * their own frozen checklist snapshots; strategyId is a bare reference).
  *
  * Out of scope forever in this context (§30/§65–§69): broker order execution,
@@ -46,13 +46,13 @@ import {
   providers: [
     TradePlanRepository,
     TradePlanningService,
-    // Port bindings (§15/§16/§22) — swappable by future bounded contexts.
+    // Port bindings (§15/§16/§22) - swappable by future bounded contexts.
     { provide: INSTRUMENT_SPECIFICATION_PROVIDER, useClass: CatalogInstrumentSpecsProvider },
     { provide: FX_RATE_PROVIDER, useClass: PassthroughFxRateProvider },
     { provide: RISK_LIMIT_PROVIDER, useClass: NoRiskLimitsProvider },
   ],
   // Phase 6 (additive): the plan repository and the instrument-spec port are
-  // exported as the context's public contract — downstream review contexts
+  // exported as the context's public contract - downstream review contexts
   // READ plans + specs through them; plan writes stay Trade-Planning-internal.
   exports: [TradePlanRepository, INSTRUMENT_SPECIFICATION_PROVIDER],
 })

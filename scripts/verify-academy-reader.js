@@ -1,5 +1,5 @@
 /**
- * Verify — Academy Batch A (reader upgrade):
+ * Verify - Academy Batch A (reader upgrade):
  *   Resume     : opening a lesson other than the next-up pointer adds the
  *                "Pick up where you left off" row on Overview (SPA only).
  *   Checkpoint : long quiz-bearing lessons embed a server-graded Quick check.
@@ -24,7 +24,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
@@ -81,7 +81,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   const backToCatalog = async () => {
     if (await page.locator('[data-testid="academy-lesson-reader"]').isVisible().catch(() => false)) {
-      // Reader breadcrumb — first button is the course title → back to catalog
+      // Reader breadcrumb - first button is the course title → back to catalog
       await page.locator('[data-testid="academy-lesson-reader"] button').first().click();
     } else if (await page.locator('button:has-text("All courses")').first().isVisible().catch(() => false)) {
       await page.locator('button:has-text("All courses")').first().click();

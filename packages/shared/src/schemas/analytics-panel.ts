@@ -4,7 +4,7 @@ import { currencySchema } from "../enums";
 import { decimalStringSchema } from "./primitives";
 
 /**
- * The Analytics Atlas panel system (Phase 9) — a discriminated union of
+ * The Analytics Atlas panel system (Phase 9) - a discriminated union of
  * server-computed chart payloads. The server ships raw decimal strings plus
  * a unit hint; the client only formats and paints (same principle as
  * /stats/overview). Every rate keeps its n; honest at zero.
@@ -14,13 +14,13 @@ import { decimalStringSchema } from "./primitives";
 export const panelUnitSchema = z.enum(["money", "r", "count", "percent", "plain"]);
 export type PanelUnit = z.infer<typeof panelUnitSchema>;
 
-/** Ink of a panel element — the register's four semantic colors. */
+/** Ink of a panel element - the register's four semantic colors. */
 export const panelInkSchema = z.enum(["accent", "profit", "warning", "loss"]);
 export type PanelInk = z.infer<typeof panelInkSchema>;
 
 /** Shared framing for every panel (title block rendered by the section view). */
 const panelFrame = {
-  /** Subsection key — groups panels under one Atlas subsection. */
+  /** Subsection key - groups panels under one Atlas subsection. */
   subsection: z.string().min(1),
   title: z.string().min(1),
   caption: z.string().min(1),
@@ -32,7 +32,7 @@ const panelFrame = {
 export const panelKpiSchema = z.object({
   key: z.string().min(1),
   label: z.string().min(1),
-  /** Raw decimal string; null renders as "—" with no color claims. */
+  /** Raw decimal string; null renders as "-" with no color claims. */
   value: decimalStringSchema.nullable(),
   unit: panelUnitSchema,
   ink: panelInkSchema,
@@ -136,7 +136,7 @@ export const panelHeatmapSchema = z.object({
     z.object({
       row: z.number().int().min(0),
       col: z.number().int().min(0),
-      /** Average R of the cell; null (or trades = 0) renders "—". */
+      /** Average R of the cell; null (or trades = 0) renders "-". */
       avgR: decimalStringSchema.nullable(),
       trades: z.number().int().min(0),
     }),
@@ -204,7 +204,7 @@ export type AnalyticsPanel = z.infer<typeof analyticsPanelSchema>;
 
 // ── section response ─────────────────────────────────────────────────────────
 
-/** GET /stats/analytics/sections/:sectionId — one Atlas section page. */
+/** GET /stats/analytics/sections/:sectionId - one Atlas section page. */
 export const analyticsSectionResponseSchema = z.object({
   sectionId: z.string().min(1),
   currency: currencySchema,

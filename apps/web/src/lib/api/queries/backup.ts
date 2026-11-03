@@ -6,8 +6,8 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Backup domain hooks — feature 12. Export is handled as a direct download
- * in the UI (blob) — only the import needs a mutation + cache invalidation.
+ * Backup domain hooks - feature 12. Export is handled as a direct download
+ * in the UI (blob) - only the import needs a mutation + cache invalidation.
  */
 export function useImportBackup() {
   const queryClient = useQueryClient();

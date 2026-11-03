@@ -1,5 +1,5 @@
 /**
- * Oryon position domain — unit tests (bun).
+ * Oryon position domain - unit tests (bun).
  *
  * Same honest convention as oryon-indicator-tests.ts / oryon-drawing-tests.ts:
  * the repository has NO JS unit-test runner, so these are bun-run TypeScript
@@ -88,7 +88,7 @@ function makePosition(overrides: Partial<BrokerPosition> = {}): BrokerPosition {
 
 // ── 1. Symbol matching ──────────────────────────────────────────────────────
 
-console.log("— match: canonical equality");
+console.log("- match: canonical equality");
 eq("canonique trim+upper", canonicalSymbol("  eurusd "), "EURUSD");
 ok("exact match EURUSD", sameInstrument("EURUSD", "EURUSD"));
 ok("casse/espaces tolérés", sameInstrument(" eurusd", "EURUSD "));
@@ -96,7 +96,7 @@ ok("BTCUSD ≠ BTCUSDT (jamais de substring)", !sameInstrument("BTCUSD", "BTCUSD
 ok("chaîne vide ne matche rien", !sameInstrument("", "EURUSD") && !sameInstrument("EURUSD", ""));
 ok("symboles distincts", !sameInstrument("XAUUSD", "GBPUSD"));
 
-console.log("— match: filtre du graphique");
+console.log("- match: filtre du graphique");
 const mixed = [
   makePosition({ id: "p1", symbol: "EURUSD" }),
   makePosition({ id: "p2", symbol: "btcusd" }),
@@ -108,14 +108,14 @@ eq("BTCUSDT ne reçoit PAS les positions BTCUSD", positionsForChart(mixed, "BTCU
 eq("BTCUSD reçoit les deux BTCUSD (casse/trim)", positionsForChart(mixed, "BTCUSD").map((p) => p.id), ["p2", "p4"]);
 eq("symbole vide → aucune overlay", positionsForChart(mixed, "").length, 0);
 
-console.log("— match: labels");
+console.log("- match: labels");
 eq("label numérique en fin d'id", positionShortLabel("sim-abcd1234-eurusd-2"), "#2");
 eq("label de repli sur la queue", positionShortLabel("pos-9f3a"), "#9f3a");
 eq("sideLabel BUY→LONG / SELL→SHORT", [sideLabel("BUY"), sideLabel("SELL")], ["LONG", "SHORT"]);
 
 // ── 2. Sanitization ─────────────────────────────────────────────────────────
 
-console.log("— sanitize: records valides et malformés");
+console.log("- sanitize: records valides et malformés");
 const validLong = makePosition();
 const validShort = makePosition({
   id: "sim-user1234-xauusd-1",
@@ -148,11 +148,11 @@ const malformed = sanitizePositions([
   makePosition({ unrealizedPnl: "12,50" }),
 ]);
 ok("numériques malformés rejetés", malformed.positions.length === 0 && malformed.dropped === 3);
-ok("décimal négatif syntaxiquement valide passe le CONTRAT ('-1' = regex OK) — le schéma partagé fait foi",
+ok("décimal négatif syntaxiquement valide passe le CONTRAT ('-1' = regex OK) - le schéma partagé fait foi",
   sanitizePositions([makePosition({ volume: "-1" })]).positions.length === 1);
 eq("entrée vide → aucun rejet, aucune position", sanitizePositions([]).dropped, 0);
 
-console.log("— sanitize: nulls du contrat (feed gap)");
+console.log("- sanitize: nulls du contrat (feed gap)");
 const nullable = sanitizePositions([
   makePosition({ currentPrice: null, stopLoss: null, takeProfit: null, unrealizedPnl: null }),
 ]);
@@ -160,7 +160,7 @@ ok("nullable currentPrice/SL/TP/PnL acceptés (jamais devinés)", nullable.posit
 
 // ── 3. Freshness classification ─────────────────────────────────────────────
 
-console.log("— status: machine de fraîcheur");
+console.log("- status: machine de fraîcheur");
 const NOW = 1_000_000_000_000;
 eq("jamais de snapshot → connecting", classifyPositionsStatus({ connected: false, lastEventAt: 0, now: NOW }), "connecting");
 eq("connecté sans snapshot → connecting", classifyPositionsStatus({ connected: true, lastEventAt: 0, now: NOW }), "connecting");
@@ -173,7 +173,7 @@ eq("âge inconnu → null", snapshotAgeSeconds(0, NOW), null);
 
 // ── 4. View helpers ─────────────────────────────────────────────────────────
 
-console.log("— view: précisions et formats");
+console.log("- view: précisions et formats");
 eq("digits depuis decimal string", digitsFromDecimalString("1.08650"), 5);
 eq("digits entier", digitsFromDecimalString("2385"), 0);
 eq("digits invalide → null", digitsFromDecimalString("abc"), null);
@@ -188,7 +188,7 @@ eq("montant signé zéro", formatSignedAmount("0", 2), "0.00");
 eq("montant invalide → null", formatSignedAmount("n/a"), null);
 eq("tone profit/loss/neutral", [pnlTone("12.00"), pnlTone("-1.00"), pnlTone("0")], ["profit", "loss", "neutral"]);
 
-console.log("— view: agrégation P&L");
+console.log("- view: agrégation P&L");
 const book = [
   makePosition({ id: "a", unrealizedPnl: "12.34" }),
   makePosition({ id: "b", unrealizedPnl: "-2.00" }),
@@ -200,7 +200,7 @@ eq("comptés vs disponibles", [summary.counted, summary.available], [2, 2]);
 const emptyBook = summarizePnl([makePosition({ id: "d", unrealizedPnl: null })]);
 eq("aucune valeur → total null (jamais fabriqué)", emptyBook.total, null);
 
-console.log("— view: ordre de table déterministe");
+console.log("- view: ordre de table déterministe");
 const ordered = sortPositionsForTable([
   makePosition({ id: "old", symbol: "EURUSD", openedAt: "2026-10-11T08:00:00.000Z" }),
   makePosition({ id: "new", symbol: "EURUSD", openedAt: "2026-10-11T09:00:00.000Z" }),
@@ -213,7 +213,7 @@ eq("openedAt invalide → null", formatOpenedAt("nope"), null);
 
 // ── 5. Overlay specs ────────────────────────────────────────────────────────
 
-console.log("— overlay: niveaux et sélection");
+console.log("- overlay: niveaux et sélection");
 const full = makePosition({ id: "pos-1" });
 const specsFull = positionLineSpecsFor(full, null);
 eq("3 niveaux pour une position complète", specsFull.map((s) => s.level), ["entry", "sl", "tp"]);
@@ -241,7 +241,7 @@ eq("build multi-positions", batch.length, 4);
 
 // ── 6. Structural diff ──────────────────────────────────────────────────────
 
-console.log("— overlay: diff structurel");
+console.log("- overlay: diff structurel");
 const base: PositionLineSpec[] = [
   { key: "p1:entry", positionId: "p1", level: "entry", price: 10, side: "LONG", title: "LONG 1 #1", selected: false },
   { key: "p1:sl", positionId: "p1", level: "sl", price: 9, side: "LONG", title: "#1 SL", selected: false },
@@ -268,7 +268,7 @@ const mixedDiff = diffPositionLines(base, [
   { key: "p1:entry", positionId: "p1", level: "entry", price: 10.5, side: "LONG", title: "LONG 1 #1", selected: false },
   { key: "p3:tp", positionId: "p3", level: "tp", price: 12, side: "LONG", title: "#3 TP", selected: false },
 ]);
-eq("mix : remove, update (prix changé), create — ordre stable",
+eq("mix : remove, update (prix changé), create - ordre stable",
   mixedDiff.map((o) => o.op), ["remove", "update", "create"]);
 const closedSameId = makePosition({ id: "pos-1", stopLoss: null, takeProfit: null });
 const closedDiff = diffPositionLines(buildPositionLineSpecs([full], null), buildPositionLineSpecs([closedSameId], null));

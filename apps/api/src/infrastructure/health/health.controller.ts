@@ -1,14 +1,14 @@
 /**
  * Health & system module (infrastructure-oriented, Phase 1 mandate §17/§22).
  *
- * Endpoints (deliberately OUTSIDE /api/v1 versioning — infrastructure):
+ * Endpoints (deliberately OUTSIDE /api/v1 versioning - infrastructure):
  *   GET /health        → app-level status (cheap, no DB): monitoring/UI target.
  *   GET /health/live   → liveness: process is up and able to respond.
  *   GET /health/ready  → readiness: app + required dependencies (database).
  *
  * Payloads never expose secrets, connection strings, or infrastructure
  * internals (§17). A failing database makes /health/ready return 503 with a
- * plain `down` status — raw errors are logged server-side only.
+ * plain `down` status - raw errors are logged server-side only.
  *
  * This module must NOT become a general-purpose utility module: no business
  * logic, no domain concepts.
@@ -19,6 +19,7 @@ import { Public } from "../../shared/auth/public.decorator";
 import { APP_CONFIG, type AppConfig } from "../../config/app-config";
 import { COSMOZ_VERSION } from "../../shared/contracts";
 import { PrismaService } from "../prisma/prisma.service";
+import { RedisService } from "../redis/redis.service";
 import { ROOT_LOGGER, type RootLogger } from "../logging/logger.factory";
 
 const BOOTED_AT = Date.now();
@@ -29,11 +30,12 @@ const BOOTED_AT = Date.now();
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly redis: RedisService,
     @Inject(APP_CONFIG) private readonly config: AppConfig,
     @Optional() @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
   ) {}
 
-  /** App-level status — no dependency checks. */
+  /** App-level status - no dependency checks. */
   @Get()
   health() {
     return {
@@ -45,13 +47,13 @@ export class HealthController {
     };
   }
 
-  /** Liveness — if this fails, the process is beyond recovery. */
+  /** Liveness - if this fails, the process is beyond recovery. */
   @Get("live")
   live() {
     return { status: "ok" };
   }
 
-  /** Readiness — includes required infrastructure (database). */
+  /** Readiness - includes required infrastructure (database). */
   @Get("ready")
   async ready() {
     const databaseUp = await this.prisma.ping();
@@ -62,7 +64,8 @@ export class HealthController {
     }
     return {
       status: "ok",
-      checks: { database: "up" },
+      // Redis is optional: report its state without making the API unready.
+      checks: { database: "up", redis: this.redis.status },
     };
   }
 }

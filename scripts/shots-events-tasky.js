@@ -1,4 +1,4 @@
-/* Quick visual shots of /events and /tasky (desktop) — uses shared ensureLogin. */
+/* Quick visual shots of /events and /tasky (desktop) - uses shared ensureLogin. */
 const { chromium } = require("playwright");
 const fs = require("fs");
 

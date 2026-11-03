@@ -6,9 +6,9 @@ import type { OryonIndicatorInstance } from "@cosmoz/shared";
  * A Zod discriminated union cannot cross-reference fields of one member
  * (MACD fast < slow, RSI lower < upper). These rules are enforced at:
  *  - store mutations (the settings UI shows the message, the last VALID
- *    configuration is retained — spec §9);
+ *    configuration is retained - spec §9);
  *  - persistence load (rule-violating instances are dropped with a warning);
- *  - calculation (throws — a violation reaching the calc layer is a
+ *  - calculation (throws - a violation reaching the calc layer is a
  *    programmer error, never rendered as math).
  *
  * Returns null when valid, else a STABLE rule key (i18n maps it to copy).

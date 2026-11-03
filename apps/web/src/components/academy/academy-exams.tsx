@@ -13,7 +13,7 @@ import { useAcademyCertifications, useAcademyExam, useSubmitExam } from "@/lib/a
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Category certifications — a 20-question exam sampled from every course
+ * Category certifications - a 20-question exam sampled from every course
  * quiz in the track, graded server-side. Tier ladder: BRONZE ≥50%,
  * SILVER ≥70%, GOLD ≥90%. Only the best attempt is kept.
  */
@@ -147,7 +147,7 @@ function ExamRunner({ categoryId }: { categoryId: string }) {
           <div>
             <p className="flex items-center gap-2 font-heading text-lg font-semibold">
               <Award className={cn("size-5", result.passed ? "text-warning" : "text-muted-foreground")} aria-hidden="true" />
-              {result.score}/{result.total} — {result.tier === "NONE" ? V.notYetCertified : `${result.tier}${V.tierSuffix}`}
+              {result.score}/{result.total} - {result.tier === "NONE" ? V.notYetCertified : `${result.tier}${V.tierSuffix}`}
             </p>
             <p className="mt-0.5 text-xs text-muted-foreground">
               {V.bestAcrossPrefix}

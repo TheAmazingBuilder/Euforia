@@ -15,10 +15,10 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Trade Plan hooks (Phase 11 — documented reasoning, never execution).
+ * Trade Plan hooks (Phase 11 - documented reasoning, never execution).
  *
  * The plan lifecycle lives SERVER-SIDE (state machine, activation gate,
- * ownership checks, canonical-trade linkage rules) — these hooks are thin
+ * ownership checks, canonical-trade linkage rules) - these hooks are thin
  * transports. Every mutation refreshes the plan list + detail caches; trade
  * aggregates are deliberately NOT invalidated: plans never touch canonical
  * trade facts, so the journal numbers cannot change here.
@@ -30,7 +30,7 @@ export interface PlansParams {
   symbol?: string;
 }
 
-/** GET /plans — list with the server's filters (status, symbol, tradeId). */
+/** GET /plans - list with the server's filters (status, symbol, tradeId). */
 export function usePlans(params: PlansParams = {}) {
   return useQuery({
     queryKey: queryKeys.plans(params),
@@ -45,7 +45,7 @@ export function usePlans(params: PlansParams = {}) {
   });
 }
 
-/** GET /plans/:id — the plan + its planned-vs-actual comparison. */
+/** GET /plans/:id - the plan + its planned-vs-actual comparison. */
 export function usePlanDetail(planId: string | null) {
   return useQuery({
     queryKey: queryKeys.planDetail(planId ?? "none"),
@@ -55,7 +55,7 @@ export function usePlanDetail(planId: string | null) {
   });
 }
 
-/** Shared cache refresh for any plan mutation — ["plans"] is the prefix of
+/** Shared cache refresh for any plan mutation - ["plans"] is the prefix of
  *  BOTH the list keys and the detail keys, so one call covers everything. */
 function usePlanMutation<TInput, TOutput>(
   mutationFn: (input: TInput) => Promise<TOutput>,
@@ -69,7 +69,7 @@ function usePlanMutation<TInput, TOutput>(
   });
 }
 
-/** POST /plans — creates a DRAFT (or ACTIVE when activate:true). A retried
+/** POST /plans - creates a DRAFT (or ACTIVE when activate:true). A retried
  *  clientRequestId surfaces as a 422 with PLAN_TRADE_ALREADY_LINKED. */
 export function useCreatePlan() {
   return usePlanMutation((input: CreateAnalysisPlanInput) =>
@@ -80,7 +80,7 @@ export function useCreatePlan() {
   );
 }
 
-/** PATCH /plans/:id — editable in DRAFT/ACTIVE only (server-enforced).
+/** PATCH /plans/:id - editable in DRAFT/ACTIVE only (server-enforced).
  *  Named ...AnalysisPlan to stay distinct from the legacy trades useUpdatePlan. */
 export function useUpdateAnalysisPlan() {
   return usePlanMutation(({
@@ -97,7 +97,7 @@ export function useUpdateAnalysisPlan() {
   );
 }
 
-/** POST /plans/:id/activate — DRAFT → ACTIVE; requires documented
+/** POST /plans/:id/activate - DRAFT → ACTIVE; requires documented
  *  invalidation criteria (PLAN_ACTIVATION_INCOMPLETE otherwise). */
 export function useActivatePlan() {
   return usePlanMutation((planId: string) =>
@@ -107,7 +107,7 @@ export function useActivatePlan() {
   );
 }
 
-/** POST /plans/:id/invalidate — ACTIVE → INVALIDATED with a REQUIRED reason. */
+/** POST /plans/:id/invalidate - ACTIVE → INVALIDATED with a REQUIRED reason. */
 export function useInvalidatePlan() {
   return usePlanMutation(({
     planId,
@@ -123,7 +123,7 @@ export function useInvalidatePlan() {
   );
 }
 
-/** POST /plans/:id/complete — ACTIVE → COMPLETED; carries the process-focused
+/** POST /plans/:id/complete - ACTIVE → COMPLETED; carries the process-focused
  *  review (notes + neutral tags). Comparison stays derivable afterwards. */
 export function useCompletePlan() {
   return usePlanMutation(({
@@ -140,7 +140,7 @@ export function useCompletePlan() {
   );
 }
 
-/** POST /plans/:id/archive — the terminal (but non-destructive) transition. */
+/** POST /plans/:id/archive - the terminal (but non-destructive) transition. */
 export function useArchivePlan() {
   return usePlanMutation((planId: string) =>
     apiRequest<AnalysisPlanMutatedResponse>(apiPaths.planArchive(planId), {
@@ -149,9 +149,9 @@ export function useArchivePlan() {
   );
 }
 
-/** POST /plans/:id/link-trade — canonical-trade association. The server
+/** POST /plans/:id/link-trade - canonical-trade association. The server
  *  validates ownership (404) and instrument (422 PLAN_TRADE_SYMBOL_MISMATCH
- *  unless confirmSymbolMismatch — the UI asks BEFORE sending that flag). */
+ *  unless confirmSymbolMismatch - the UI asks BEFORE sending that flag). */
 export function useLinkPlanTrade() {
   return usePlanMutation(({
     planId,
@@ -167,7 +167,7 @@ export function useLinkPlanTrade() {
   );
 }
 
-/** DELETE /plans/:id/link-trade — the association only; the trade is never
+/** DELETE /plans/:id/link-trade - the association only; the trade is never
  *  touched (unlinking NEVER mutates the canonical record). */
 export function useDetachPlanTrade() {
   return usePlanMutation((planId: string) =>
@@ -177,7 +177,7 @@ export function useDetachPlanTrade() {
   );
 }
 
-/** DELETE /plans/:id — hard delete of the plan document only. */
+/** DELETE /plans/:id - hard delete of the plan document only. */
 export function useDeletePlan() {
   return usePlanMutation((planId: string) =>
     apiRequest<{ ok: true }>(apiPaths.plan(planId), { method: "DELETE" }),

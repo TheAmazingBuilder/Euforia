@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Emotion-before chips (spec §4): optional, single tap — never a form.
+ * Emotion-before chips (spec §4): optional, single tap - never a form.
  * Labels resolve through the active dictionary (dict.trades.emotions);
  * EMOTION_OPTIONS stays the structural iteration order (raw enum values).
  */

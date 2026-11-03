@@ -1,5 +1,5 @@
 /**
- * Analytics domain math (Phase 8) — pure numeric helpers.
+ * Analytics domain math (Phase 8) - pure numeric helpers.
  *
  * NO NestJS, NO Prisma, NO framework imports (§59 dependency direction).
  * Every formula here is the CANONICAL analytics definition shared with the
@@ -20,7 +20,7 @@ export function round2(value: number): number {
   return Number(value.toFixed(2));
 }
 
-/** Round to 1 decimal (number) — streak averages, histogram centers. */
+/** Round to 1 decimal (number) - streak averages, histogram centers. */
 export function round1(value: number): number {
   return Number(value.toFixed(1));
 }
@@ -37,7 +37,7 @@ export function sortedAsc(values: number[]): number[] {
 
 /**
  * Percentile with LINEAR interpolation between order statistics
- * (pos = (n−1)·p/100) — the reference percentile method of this system.
+ * (pos = (n−1)·p/100) - the reference percentile method of this system.
  */
 export function percentileOf(values: number[], p: number): number | null {
   if (values.length === 0) return null;
@@ -64,7 +64,7 @@ export function stdOf(values: number[]): number | null {
 }
 
 /**
- * Skewness / excess kurtosis of the R distribution — central moments
+ * Skewness / excess kurtosis of the R distribution - central moments
  * normalized by n, scaled by the SAMPLE std (the reference semantics; the
  * slight population/sample mix is reproduced verbatim for parity).
  */
@@ -87,7 +87,7 @@ export function niceStep(raw: number): number {
 }
 
 /**
- * mulberry32 — deterministic 32-bit PRNG (the reference implementation the
+ * mulberry32 - deterministic 32-bit PRNG (the reference implementation the
  * product mock uses). Monte Carlo MUST be reproducible: same seed + same
  * filtered R list ⇒ identical bands (§52 historical reproducibility). The
  * fixed seed is an intentional product decision, not a security feature.
@@ -106,7 +106,7 @@ export function mulberry32(seed: number): () => number {
 /**
  * Deterministic RFC-4122 v5-style UUID from a namespace + name (SHA-1).
  * Used ONLY as a stable GROUP identifier for journal symbols that have no
- * catalog row yet — never presented as a database reference.
+ * catalog row yet - never presented as a database reference.
  */
 export function uuidV5(name: string, namespace: string): string {
   const namespaceBytes = parseUuidBytes(namespace);

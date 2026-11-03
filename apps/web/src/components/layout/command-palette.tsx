@@ -10,7 +10,6 @@ import {
   BookOpen,
   CircleHelp,
   Droplet,
-  Ghost,
   GraduationCap,
   Library,
   Moon,
@@ -27,7 +26,6 @@ import { SIDEBAR_ITEMS } from "@/lib/navigation";
 import { SETTINGS_FINDER_META } from "@/components/settings/settings-view";
 import { useI18n } from "@/i18n/i18n-provider";
 import { useAcademySearch, useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
-import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { openShortcutsOverlay } from "@/lib/hooks/use-shortcuts-overlay";
 import {
@@ -37,7 +35,7 @@ import {
 } from "@/lib/hooks/use-command-palette";
 
 /**
- * Command palette (⌘K / Ctrl+K) — GLOBAL search across navigation, quick
+ * Command palette (⌘K / Ctrl+K) - GLOBAL search across navigation, quick
  * actions, themes AND the journal's own data: trades (symbol + notes),
  * strategies and a deep-link into the filtered trade log. Custom filtering +
  * listbox (no cmdk dependency), full a11y semantics.
@@ -86,7 +84,7 @@ export function CommandPalette() {
   const listRef = React.useRef<HTMLDivElement>(null);
 
   // Data search is live while the palette is open (react-query dedupes with
-  // the rest of the app — the trade log and playbook share this cache).
+  // the rest of the app - the trade log and playbook share this cache).
   const { data: tradesData } = useTrades();
   const { data: strategiesData } = useStrategies();
   const { data: instrumentsData } = useInstruments();
@@ -215,15 +213,6 @@ export function CommandPalette() {
         run: () => openTradeModal(),
       },
       {
-        id: "action-ghost",
-        label: "Log ghost trade",
-        hint: "G",
-        keywords: "setup seen not taken skipped observation",
-        icon: Ghost,
-        group: "Actions",
-        run: () => openGhostModal(),
-      },
-      {
         id: "action-shortcuts",
         label: "Keyboard shortcuts",
         hint: "?",
@@ -243,21 +232,21 @@ export function CommandPalette() {
       run: () => router.push(nav.href),
     }));
 
-    // Settings finder (module upgrade) — every settings card is reachable
+    // Settings finder (module upgrade) - every settings card is reachable
     // with one keystroke; entries carry the card's own search keywords.
     const settingsItems: PaletteItem[] = SETTINGS_FINDER_META.map((category) => ({
       id: `settings-${category.id}`,
-      label: `Settings — ${dict.settings.categories[category.id]?.label ?? category.label}`,
+      label: `Settings - ${dict.settings.categories[category.id]?.label ?? category.label}`,
       keywords: `settings preferences ${category.description} ${category.keywords}`,
       icon: category.icon,
       group: "Settings" as const,
-      run: () => router.push(`/settings#${category.id}`),
+      run: () => router.push(`/settings?tab=${encodeURIComponent(category.id)}`),
     }));
 
     const academyTabs: PaletteItem[] = [
       {
         id: "academy-tab-courses",
-        label: "Academy — Courses",
+        label: "Academy - Courses",
         keywords: "academy courses curriculum learn study lessons",
         icon: BookOpen,
         group: "Academy" as const,
@@ -265,7 +254,7 @@ export function CommandPalette() {
       },
       {
         id: "academy-tab-practice",
-        label: "Academy — Practice",
+        label: "Academy - Practice",
         keywords: "academy practice drills flashcards scenarios quiz training",
         icon: GraduationCap,
         group: "Academy" as const,
@@ -273,7 +262,7 @@ export function CommandPalette() {
       },
       {
         id: "academy-tab-glossary",
-        label: "Academy — Glossary",
+        label: "Academy - Glossary",
         keywords: "academy glossary terms definitions vocabulary",
         icon: Library,
         group: "Academy" as const,
@@ -336,7 +325,7 @@ export function CommandPalette() {
     [grouped],
   );
 
-  // Derived clamp — keeps the selection in bounds when the list shrinks,
+  // Derived clamp - keeps the selection in bounds when the list shrinks,
   // without a setState-in-effect pass.
   const activeClamped = Math.min(activeIndex, Math.max(flat.length - 1, 0));
 
@@ -359,7 +348,7 @@ export function CommandPalette() {
     node?.scrollIntoView({ block: "nearest" });
   }, [activeClamped]);
 
-  // ── Global hotkey: ⌘K / Ctrl+K (works while typing — convention) ────────
+  // ── Global hotkey: ⌘K / Ctrl+K (works while typing - convention) ────────
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {

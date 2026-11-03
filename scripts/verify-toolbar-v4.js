@@ -1,4 +1,4 @@
-// Toolbar v4 verification — the 6 TradingView-parity requirements.
+// Toolbar v4 verification - the 6 TradingView-parity requirements.
 // (1) floating toolbar full height  (2) bottom time-range selector
 // (3) timeframe back on top         (4) rail nav arrows (no scrollbar)
 // (5) objects panel on the right    (6) layout sanity at 2 viewports
@@ -21,7 +21,7 @@ async function ensureLogin(page) {
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, label, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 
 (async () => {
@@ -99,7 +99,7 @@ function check(id, label, ok, detail = "") {
       const inner = el.querySelector("div");
       return inner ? inner.scrollHeight - inner.clientHeight : -1;
     });
-    console.log(`      nav arrows — overflow=${overflow}px downOpacity(hover)=${downOpacity}`);
+    console.log(`      nav arrows - overflow=${overflow}px downOpacity(hover)=${downOpacity}`);
     if (overflow > 4 && downOpacity === "1") {
       await page.locator('[data-testid="oryon-rail-nav-down"]').click();
       await page.waitForTimeout(800);
@@ -113,7 +113,7 @@ function check(id, label, ok, detail = "") {
 
     // ── (5) Objects dock on the right ─────────────────────────────────────
     // Draw a trend line first so the list has content, then open the dock.
-    // Anchors INSIDE the price pane (like the proven phase probes — clicks
+    // Anchors INSIDE the price pane (like the proven phase probes - clicks
     // in the volume/RSI panes are legitimately ignored by the controller).
     await page.locator('[data-testid="oryon-tool-caret-trend"]').click();
     await page.waitForSelector('[data-testid="oryon-tool-menu-trend"]', { timeout: 5000 });
@@ -123,7 +123,7 @@ function check(id, label, ok, detail = "") {
     const pBox = await panel.boundingBox();
     if (pBox) {
       const cx = pBox.x + pBox.width / 2;
-      // Height-adaptive anchors — stay inside the PRICE pane even on very
+      // Height-adaptive anchors - stay inside the PRICE pane even on very
       // short viewports (the volume/RSI panes legitimately ignore draws).
       const ay = pBox.y + Math.min(160, pBox.height * 0.4);
       const by = pBox.y + Math.min(230, pBox.height * 0.5);
@@ -205,7 +205,7 @@ function check(id, label, ok, detail = "") {
       check(`T2c-${tag}`, "1D preset narrows the visible range", spanAfter < spanBefore,
         `before=${Math.round(spanBefore / 60)}min after=${Math.round(spanAfter / 60)}min`);
     } else {
-      check(`T2c-${tag}`, "1D preset applied (aria state — dev-range check runs on :3001)", pressed === "true");
+      check(`T2c-${tag}`, "1D preset applied (aria state - dev-range check runs on :3001)", pressed === "true");
     }
 
     // ── (2d) Calendar popover opens ───────────────────────────────────────

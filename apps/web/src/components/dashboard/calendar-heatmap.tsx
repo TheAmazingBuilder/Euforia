@@ -13,7 +13,7 @@ import { withAlpha } from "@/lib/utils/color";
 import { cn } from "@/lib/utils";
 
 /**
- * Monthly P&L heatmap — a CUSTOM CSS grid (not ECharts): day cells tinted
+ * Monthly P&L heatmap - a CUSTOM CSS grid (not ECharts): day cells tinted
  * profit/loss by the day's net P&L with intensity by magnitude, mono P&L in
  * each cell, month navigation and per-day tooltips. Colors come from theme
  * tokens (getChartTheme) and rebuild on theme switch.
@@ -47,7 +47,7 @@ function shiftMonth(cursor: { year: number; month: number }, offset: number) {
 interface CalendarHeatmapProps {
   dailyPnl: DailyPnlPoint[];
   currency: Currency;
-  /** Phase 02 widget config — hide the per-day P&L text for compact spans. */
+  /** Phase 02 widget config - hide the per-day P&L text for compact spans. */
   showCellValues?: boolean;
 }
 
@@ -99,7 +99,7 @@ export function CalendarHeatmap({ dailyPnl, currency, showCellValues = true }: C
           Performance heatmap
         </CardTitle>
         <CardDescription>
-          Daily net P&L — intensity follows magnitude.{" "}
+          Daily net P&L - intensity follows magnitude.{" "}
           <span className="font-mono tabular-nums">
             {profitableDays} profit · {lossDays} loss
           </span>{" "}

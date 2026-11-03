@@ -1,5 +1,5 @@
 /**
- * Goal/review domain helpers (B8) — metric shapes, calendar period
+ * Goal/review domain helpers (B8) - metric shapes, calendar period
  * resolution and the freeze-aware streak walk. 1:1 port of the mock
  * engine (`mocks/store.ts` Trade Review module) so live numbers match
  * MSW numbers for the same data.
@@ -91,7 +91,7 @@ export interface StreakResult {
 /**
  * Review streak with an HONEST freeze: one grace day per calendar week
  * (Mon–Sun). The chain walks back from today (or yesterday); a single
- * missed day is forgiven — counted as FROZEN, never as reviewed — only
+ * missed day is forgiven - counted as FROZEN, never as reviewed - only
  * when the chain stays continuous around it and that calendar week has
  * not already consumed its grace day.
  */

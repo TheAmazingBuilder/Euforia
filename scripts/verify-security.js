@@ -1,7 +1,7 @@
 /**
- * Security center verification — MASTER PROMPT §20/§21.
+ * Security center verification - MASTER PROMPT §20/§21.
  *
- * NOTE (MSW): the mock engine reseeds on every FULL page load — this script
+ * NOTE (MSW): the mock engine reseeds on every FULL page load - this script
  * therefore navigates CLIENT-SIDE (tab clicks) after the initial goto, like
  * verify-integrations-hub.js. The password change in step 6 also updates the
  * engine password, so later re-auths use the tracked current password.
@@ -18,7 +18,7 @@ const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";
 const results = [];
-const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} — ${name}`);
+const ok = (name, cond) => results.push(`${cond ? "PASS" : "FAIL"} - ${name}`);
 let currentPassword = "cosmoz-demo-2026";
 
 (async () => {
@@ -164,7 +164,7 @@ let currentPassword = "cosmoz-demo-2026";
   await page.waitForSelector('[data-testid="api-key-revoke-confirm-confirm"]');
   await page.click('[data-testid="api-key-revoke-confirm-confirm"]');
   await reauth();
-  await page.waitForSelector("text=revoked — clients lose access now");
+  await page.waitForSelector("text=revoked - clients lose access now");
   ok("clé révoquée derrière re-auth", true);
 
   // ── 13. Sessions: révoquer une + les autres ───────────────────────────────

@@ -1,5 +1,5 @@
 /**
- * Dashboard filter-bar probe — Phase 03 (global filters & saved analytical
+ * Dashboard filter-bar probe - Phase 03 (global filters & saved analytical
  * views), run against the ZERO-ENV mock preview (MSW on, default `next dev`).
  *
  * Covers: filter bar mount, period + direction filters with chips, active
@@ -10,7 +10,7 @@
  * 390px, console integrity.
  *
  * NOTE ON PERSISTENCE: in mock mode the preferences store lives in browser
- * memory and reseeds on reload — the reload-survival of views/filters is
+ * memory and reseeds on reload - the reload-survival of views/filters is
  * proven SERVER-SIDE by the settings e2e suite (real PostgreSQL), not here.
  */
 const { chromium } = require("playwright");
@@ -24,7 +24,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {
@@ -62,7 +62,7 @@ async function login(page) {
     check("clear-all enabled", await page.locator('[data-testid="dashboard-filter-clear"]').isEnabled());
 
     // Unaffected widgets carry the honest badge (default layout hosts only
-    // UNAFFECTED widgets — the suite-fed ones are opt-in).
+    // UNAFFECTED widgets - the suite-fed ones are opt-in).
     const badges = await page.locator('[data-testid^="dashboard-widget-unfiltered-"]').count();
     check("unaffected widgets badged", badges >= 5, `${badges} badges`);
     const pnlBadge = page.locator('[data-testid="dashboard-widget-unfiltered-pnl_band"]');
@@ -80,7 +80,7 @@ async function login(page) {
     await page.waitForTimeout(600);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
-    // Exit edit mode — Save the layout so the widget persists.
+    // Exit edit mode - Save the layout so the widget persists.
     const saveBtn = page.locator('[data-testid="dashboard-toolbar-save"]');
     if (await saveBtn.isEnabled().catch(() => false)) {
       await saveBtn.click();
@@ -100,14 +100,14 @@ async function login(page) {
     await page.fill('[data-testid="dashboard-view-name-input"]', "Probe view");
     await page.press('[data-testid="dashboard-view-name-input"]', "Enter");
     await page.waitForTimeout(1200);
-    // Radix registers item text on first open — open once, then read.
+    // Radix registers item text on first open - open once, then read.
     await page.click('[data-testid="dashboard-view-select"]');
     await page.waitForTimeout(400);
     check("created view listed in the selector", await page.getByRole("option", { name: /Probe view/ }).isVisible().catch(() => false));
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
 
-    // Manual edit → diverged badge (§10.7 — never a silent overwrite).
+    // Manual edit → diverged badge (§10.7 - never a silent overwrite).
     await page.click('[data-testid="dashboard-filter-direction"]');
     await page.waitForTimeout(300);
     await page.getByRole("option", { name: "Long (BUY)" }).click();
@@ -115,8 +115,8 @@ async function login(page) {
     check("diverged badge after manual edit", await page.locator('[data-testid="dashboard-view-diverged"]').isVisible().catch(() => false));
     check("active count = 2", (await page.locator('[data-testid="dashboard-filter-count"]').innerText().catch(() => "")) === "2");
 
-    // Re-apply the view via the "modified — apply again" restore button
-    // (Radix never re-fires onValueChange for the already-selected item —
+    // Re-apply the view via the "modified - apply again" restore button
+    // (Radix never re-fires onValueChange for the already-selected item -
     // the restore affordance is the designed path, §10.7).
     await page.click('[data-testid="dashboard-view-diverged"]');
     await page.waitForTimeout(1000);
@@ -154,7 +154,7 @@ async function login(page) {
     const badgesAfter = await page.locator('[data-testid^="dashboard-widget-unfiltered-"]').count();
     check("badges hidden when unfiltered", badgesAfter === 0, `${badgesAfter} badges`);
 
-    console.log("\n[5] Mobile 390px — the bar wraps without horizontal overflow");
+    console.log("\n[5] Mobile 390px - the bar wraps without horizontal overflow");
     await page.setViewportSize({ width: 390, height: 844 });
     await page.waitForTimeout(800);
     const overflow = await page.evaluate(

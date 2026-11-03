@@ -1,5 +1,5 @@
 /**
- * Smoke test Phase 14 (Integrations) — boots the REAL API against the dev DB,
+ * Smoke test Phase 14 (Integrations) - boots the REAL API against the dev DB,
  * walks a user through the Hub lifecycle and asserts the contract shapes.
  * The verification token is read from the console mail transport log.
  * Secrets are injected via env (never committed).
@@ -121,7 +121,7 @@ async function main() {
   assert(typeof token === "string", "access token received");
   const auth = { token };
 
-  // 3. Overview boot — 12 providers, webhook provisioned, feeds populated
+  // 3. Overview boot - 12 providers, webhook provisioned, feeds populated
   const overview = await api("GET", "/api/v1/integrations/overview", auth);
   assert(overview.status === 200, `overview 200 (${overview.status})`);
   assert(overview.json.providers.length === 12, "12 providers");
@@ -197,7 +197,7 @@ async function main() {
   assert(events.includes("INTEGRATION_CONNECTED"), "audit: INTEGRATION_CONNECTED");
   assert(events.includes("INTEGRATION_DISCONNECTED"), "audit: INTEGRATION_DISCONNECTED");
 
-  console.log("\nSMOKE 14 — ALL GREEN");
+  console.log("\nSMOKE 14 - ALL GREEN");
 }
 
 main()

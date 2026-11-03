@@ -1,21 +1,21 @@
 /**
- * Multi-screenshot fusion (V2 spec §14/§18) — PURE functions, no I/O.
+ * Multi-screenshot fusion (V2 spec §14/§18) - PURE functions, no I/O.
  *
  * N member recognitions of ONE trading event → ONE fused TradeDraft.
  * Fusion is an EVIDENCE combiner, never an inventor (V2 §103):
  *
- *   - agreement  — members read the SAME value → the strongest confidence
+ *   - agreement  - members read the SAME value → the strongest confidence
  *                  wins with a small, capped, documented boost per extra
  *                  agreeing member (MULTI_SOURCE_AGREEMENT note);
- *   - conflict   — members disagree → the field carries the disagreement
+ *   - conflict   - members disagree → the field carries the disagreement
  *                  (AMBIGUOUS + CONFLICTING_VALUES warning) AND the conflict
  *                  is recorded with BOTH values and their provenance (V2
  *                  §18: "never silently discard conflicting evidence");
- *   - single     — only one member read the value → kept honestly with a
+ *   - single     - only one member read the value → kept honestly with a
  *                  SINGLE_SOURCE note and NO boost;
- *   - missing    — no member read the value → the field is absent (V2 §20).
+ *   - missing    - no member read the value → the field is absent (V2 §20).
  *
- * Correlation (V2 §14): the fused draft reports `coherent` — the members'
+ * Correlation (V2 §14): the fused draft reports `coherent` - the members'
  * symbol + direction agreement. An incoherent set is a POSSIBLE GROUP: the
  * confirmation stays available (the user grouped it deliberately) but the
  * review UI must say so.
@@ -43,7 +43,7 @@ import {
   deriveRecognitionIssues,
 } from "./ocr.logic";
 
-/** Confidence boost per extra agreeing member — capped at 0.99 (§17). */
+/** Confidence boost per extra agreeing member - capped at 0.99 (§17). */
 export const AGREEMENT_BOOST_PER_MEMBER = 0.03;
 
 const SIGNED_KEYS: ReadonlySet<OcrFieldKey> = new Set(["profit"]);
@@ -98,7 +98,7 @@ export function fuseMemberFields(members: readonly FusionMember[]): FusionResult
       .filter((entry): entry is { member: FusionMember; field: OcrExtractedField } => entry !== null);
 
     if (readings.length === 0) {
-      // Nothing readable anywhere — keep the best MISSING evidence for the
+      // Nothing readable anywhere - keep the best MISSING evidence for the
       // review UI (the field exists but no member could read it).
       const missing = members
         .map((member) => member.fields.find((f) => f.field === key))
@@ -126,7 +126,7 @@ export function fuseMemberFields(members: readonly FusionMember[]): FusionResult
     }
 
     if (groups.length === 1) {
-      // Full agreement — strongest confidence + documented boost per extra
+      // Full agreement - strongest confidence + documented boost per extra
       // member, never past 0.99 (V2 §17).
       const sorted = [...readings].sort((a, b) => b.field.confidence - a.field.confidence);
       const best = sorted[0]!;
@@ -144,7 +144,7 @@ export function fuseMemberFields(members: readonly FusionMember[]): FusionResult
       continue;
     }
 
-    // Conflict — keep the strongest reading as the draft value but mark the
+    // Conflict - keep the strongest reading as the draft value but mark the
     // disagreement, and RECORD every value with its member (V2 §18).
     const strongest = [...readings].sort((a, b) => b.field.confidence - a.field.confidence)[0]!;
     fused.push(
@@ -189,7 +189,7 @@ function round3(value: number): number {
 }
 
 /**
- * Derive the fused draft's issues (V2 §16) — the fused fields plus a
+ * Derive the fused draft's issues (V2 §16) - the fused fields plus a
  * CONFLICTING_FIELDS issue per recorded conflict. Fusion conflicts on
  * direction surface as AMBIGUOUS_DIRECTION (the trade's side is the one
  * thing a user must resolve before import).
@@ -220,9 +220,9 @@ export function deriveFusedIssues(input: {
   return issues;
 }
 
-/** Quality over the fused fields — agreement lifts the consistency component
+/** Quality over the fused fields - agreement lifts the consistency component
  * through the ABSENCE of duplicates/unknown classification penalties, and
- * conflicts count as AMBIGUOUS (never INVALID — a conflict is not an error). */
+ * conflicts count as AMBIGUOUS (never INVALID - a conflict is not an error). */
 export function fusedQualityScore(input: {
   fields: readonly OcrExtractedField[];
   classification: OcrClassification | null;
@@ -236,7 +236,7 @@ export function fusedQualityScore(input: {
   });
   if (score === null) return null;
   // An incoherent set (members disagree on symbol/direction) is penalized
-  // on consistency — the correlation evidence itself (V2 §14).
+  // on consistency - the correlation evidence itself (V2 §14).
   if (!input.coherent) {
     return {
       score: round3(score.score - 0.1 < 0 ? 0 : score.score - 0.1),
@@ -247,7 +247,7 @@ export function fusedQualityScore(input: {
 }
 
 /** Timeline across members: recognized stamps + the earliest member upload +
- * the confirmation instant (V2 §23 — every entry carries real evidence). */
+ * the confirmation instant (V2 §23 - every entry carries real evidence). */
 export function buildFusedTimeline(input: {
   fusedFields: readonly OcrExtractedField[];
   members: readonly FusionMember[];
@@ -262,7 +262,7 @@ export function buildFusedTimeline(input: {
   });
 }
 
-// ── V3 — wire-level member fusion over RecognizedTrade ──────────────────────
+// ── V3 - wire-level member fusion over RecognizedTrade ──────────────────────
 // The group pipeline fuses the WIRE trade fields of several jobs (not the
 // engine field arrays above). Same evidence discipline: agreement wins by
 // confidence, conflicts are recorded with provenance, nothing is invented.
@@ -279,7 +279,7 @@ export interface FusionMemberInput {
   uploadedAt: string;
 }
 
-/** Wire trade keys the fusion engine reads (never platform — provenance only). */
+/** Wire trade keys the fusion engine reads (never platform - provenance only). */
 const FUSED_WIRE_KEYS = [
   "symbol",
   "direction",
@@ -332,7 +332,7 @@ function typeKind(screenshotType: string | null): string | null {
 
 const COMPLEMENTARY_TYPE_KINDS: ReadonlySet<string> = new Set(["TRADE", "HISTORY", "POSITION"]);
 
-/** Correlate two members — evidence only, never invention (V3 §14). */
+/** Correlate two members - evidence only, never invention (V3 §14). */
 export function correlatePair(a: FusionMemberInput, b: FusionMemberInput): CorrelationEvidence[] {
   const evidence: CorrelationEvidence[] = [];
 
@@ -398,11 +398,11 @@ export function correlatePair(a: FusionMemberInput, b: FusionMemberInput): Corre
   return evidence;
 }
 
-/** Timestamp correlation window (minutes) — 4 hours, documented (V3 §14). */
+/** Timestamp correlation window (minutes) - 4 hours, documented (V3 §14). */
 export const FUSION_TIME_WINDOW_MINUTES = 240;
 
 /**
- * Auto-confirm gate — a documented free parameter inside (40, 83.3]: the
+ * Auto-confirm gate - a documented free parameter inside (40, 83.3]: the
  * fully-agreeing fixture (SYMBOL 1 + DIRECTION 1 + type 0.5) aggregates to
  * ≈83.3, a symbol mismatch is capped at 40, so 70 cleanly separates both.
  */
@@ -453,7 +453,7 @@ export interface FusedGroupOutcome {
 
 /**
  * Fuse 2..8 members into one wire draft (V3 §31). Deterministic (§77): the
- * same members always produce the same outcome — no clock, no I/O.
+ * same members always produce the same outcome - no clock, no I/O.
  */
 export function fuseMembers(members: readonly FusionMemberInput[]): FusedGroupOutcome {
   if (members.length < 2 || members.length > 8) {
@@ -509,13 +509,13 @@ export function fuseMembers(members: readonly FusionMemberInput[]): FusedGroupOu
     }
   }
 
-  // Draft direction must carry the wire enum (BUY|SELL) — never a guess.
+  // Draft direction must carry the wire enum (BUY|SELL) - never a guess.
   if (fusedDraft.direction !== null && fusedDraft.direction !== "BUY" && fusedDraft.direction !== "SELL") {
     fusedDraft.direction = null;
     delete fieldOrigins.direction;
   }
 
-  // All pairs' evidence (i<j, member order) — inputs to the aggregate gate.
+  // All pairs' evidence (i<j, member order) - inputs to the aggregate gate.
   const pairEvidence: CorrelationEvidence[][] = [];
   for (let i = 0; i < members.length; i += 1) {
     for (let j = i + 1; j < members.length; j += 1) {

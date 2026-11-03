@@ -1,8 +1,8 @@
 /**
- * Unit — shared compounding projection (utils/compounding.ts): the frontend
+ * Unit - shared compounding projection (utils/compounding.ts): the frontend
  * LIVE-ESTIMATE layer behind the TOOLS > Compounding Calculator. Pure math,
  * no I/O. Semantics must mirror the backend calculators domain (growth-only
- * server contract stays untouched — this layer additionally accepts negative
+ * server contract stays untouched - this layer additionally accepts negative
  * per-period rates for drawdown what-ifs).
  */
 import { describe, expect, it } from "vitest";
@@ -13,7 +13,7 @@ import {
 } from "../../../../packages/shared/src/utils/compounding";
 import { COMPOUNDING_MAX_PERIODS as CONTRACT_CAP } from "../../../../packages/shared/src/schemas/calculators";
 
-describe("shared compounding — calculateCompounding", () => {
+describe("shared compounding - calculateCompounding", () => {
   it("projects one period: $1,000 at 5% → $1,050 (+$50, +5%)", () => {
     const result = calculateCompounding({
       startingBalance: 1000,
@@ -50,7 +50,7 @@ describe("shared compounding — calculateCompounding", () => {
     expect(result!.rows[1]!.totalGainPercent).toBe("10.25");
   });
 
-  it("0% keeps every period flat — ending equals starting", () => {
+  it("0% keeps every period flat - ending equals starting", () => {
     const result = calculateCompounding({
       startingBalance: 2500,
       periods: 12,
@@ -131,14 +131,14 @@ describe("shared compounding — calculateCompounding", () => {
     expect(
       calculateCompounding({ startingBalance: Number.NaN, periods: 5, gainPerPeriodPercent: 5 }),
     ).toBeNull();
-    // Overflow guard: 1000 periods of +10000% would explode — null, not Infinity.
+    // Overflow guard: 1000 periods of +10000% would explode - null, not Infinity.
     expect(
       calculateCompounding({ startingBalance: 1e12, periods: 1000, gainPerPeriodPercent: 10000 }),
     ).toBeNull();
   });
 });
 
-describe("shared compounding — lot-size parity with the shared risk utils", () => {
+describe("shared compounding - lot-size parity with the shared risk utils", () => {
   it("spec vector: $10,000 / 1% / XAUUSD (entry 2650, stop 2640) → 0.10 lots, $100 risk", () => {
     // Reproduced here with the pure helpers the calculator page composes, so
     // the UI's building blocks are pinned against the product example.

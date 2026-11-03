@@ -6,22 +6,22 @@ import type { SavedViewError } from "./saved-views";
 import type { PersistenceStatus } from "./types";
 
 /**
- * Global-filter state machine (Phase 03 §7/§10) — a pure reducer that owns
+ * Global-filter state machine (Phase 03 §7/§10) - a pure reducer that owns
  * the AUTHORITATIVE dashboard filter context and the saved-view collection.
  *
  * Independence (spec §4/§11): this machine is deliberately SEPARATE from the
- * layout customization reducer — applying a view never touches widget
+ * layout customization reducer - applying a view never touches widget
  * arrangement and layout operations never touch filters. The two machines
  * share only the persistence channel (the `dashboard` preferences domain,
- * PATCHed wholesale; the hook layer merges both halves — see
+ * PATCHed wholesale; the hook layer merges both halves - see
  * `dashboardDomainWithFilters`).
  *
  * Semantics:
  *  - `filters` is always a VALIDATED document (normalizeDashboardFilters at
- *    every entry point — untrusted input can never enter the state);
+ *    every entry point - untrusted input can never enter the state);
  *  - a manual filter edit keeps the selected view as the anchor but the UI
  *    derives a "diverged" flag (never silently overwrites a view, §10.7);
- *  - `sync` (server truth) is ignored while a save is in flight — a stale
+ *  - `sync` (server truth) is ignored while a save is in flight - a stale
  *    response can never overwrite newer local state (§7/§13);
  *  - persistence status mirrors the customization machine: a failed save
  *    keeps the local state alive so the user can retry.
@@ -30,9 +30,9 @@ import type { PersistenceStatus } from "./types";
 export interface FiltersState {
   /** The authoritative active filter context (always validated). */
   filters: DashboardFilters;
-  /** Saved analytical views (normalized, capped — model layer owns rules). */
+  /** Saved analytical views (normalized, capped - model layer owns rules). */
   views: DashboardSavedView[];
-  /** The view the user last applied/created — divergence is DERIVED. */
+  /** The view the user last applied/created - divergence is DERIVED. */
   activeViewId: string | null;
   persistence: PersistenceStatus;
   /** Last saved-view operation error (rendered near the controls). */
@@ -49,21 +49,21 @@ export const initialFiltersState: FiltersState = {
 
 export type FiltersAction =
   /** Replace the whole state from stored truth (initial load, refetch).
-   * Payloads are normalized here — the persistence layer pre-normalizes,
+   * Payloads are normalized here - the persistence layer pre-normalizes,
    * this is the defensive second gate. */
   | { type: "sync"; filters: unknown; views: unknown }
   /** Merge a partial filter patch (one dimension at a time from the bar).
    * The merged document is re-validated: an invalid dimension (e.g. CUSTOM
    * without bounds) degrades instead of poisoning the state. */
   | { type: "filtersPatched"; patch: Partial<DashboardFilters> }
-  /** Clear-all — restores the documented default (§10.7). Never deletes
+  /** Clear-all - restores the documented default (§10.7). Never deletes
    * views; the selected view is unlinked (its filters may differ now). */
   | { type: "filtersCleared" }
-  /** Apply a saved view — filters = the view's definition, re-validated. */
+  /** Apply a saved view - filters = the view's definition, re-validated. */
   | { type: "viewApplied"; viewId: string }
   /** Saved-view collection mutations carry PRE-COMPUTED collections (the
    * saved-views model runs in the HOOK, never inside the reducer): the
-   * reducer must stay a pure, replay-safe function of (state, action) —
+   * reducer must stay a pure, replay-safe function of (state, action) -
    * id generation inside it would break under React's reducer re-runs
    * (apply-path id ≠ committed id → an orphaned anchor). Same contract as
    * the Phase 01 layout machine (layoutCreated carries a built layout). */
@@ -71,7 +71,7 @@ export type FiltersAction =
   | { type: "viewRenamed"; views: DashboardSavedView[] }
   | { type: "viewDuplicated"; views: DashboardSavedView[] }
   | { type: "viewDeleted"; views: DashboardSavedView[] }
-  /** A model op failed (NAME_TAKEN / LIMIT_REACHED / …) — surfaced near
+  /** A model op failed (NAME_TAKEN / LIMIT_REACHED / …) - surfaced near
    * the controls; the collection is untouched. */
   | { type: "viewOpFailed"; error: SavedViewError }
   | { type: "saveStarted" }
@@ -95,7 +95,7 @@ export function filtersReducer(state: FiltersState, action: FiltersAction): Filt
   switch (action.type) {
     case "sync": {
       // Stale-response guard (§7): server truth never overwrites a state
-      // whose save is still in flight — the save result wins on landing.
+      // whose save is still in flight - the save result wins on landing.
       if (state.persistence === "saving") return state;
       const filters = normalizeDashboardFilters(action.filters);
       // The views payload is normalized defensively (cap/dedupe/drop).
@@ -124,7 +124,7 @@ export function filtersReducer(state: FiltersState, action: FiltersAction): Filt
 
     case "viewCreated":
       // The hook computed the collection through the model; the anchor is
-      // the NEW view (created from the current filters — never diverged).
+      // the NEW view (created from the current filters - never diverged).
       return { ...state, views: action.views, activeViewId: action.activeViewId, error: null };
 
     case "viewRenamed":
@@ -158,7 +158,7 @@ export function filtersReducer(state: FiltersState, action: FiltersAction): Filt
       };
 
     case "saveFailed":
-      // Local state survives — the user can retry (same rule as layouts).
+      // Local state survives - the user can retry (same rule as layouts).
       return { ...state, persistence: "error", error: null };
 
     default:

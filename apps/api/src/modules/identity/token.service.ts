@@ -1,7 +1,7 @@
 /**
  * Token service (Phase 2 mandate §12–§14, §44).
  *
- * Access tokens : short-lived HS256 JWT, payload {sub, sid} only — never
+ * Access tokens : short-lived HS256 JWT, payload {sub, sid} only - never
  *                 roles, emails or personal data (mock §75 precedent).
  * Refresh tokens: opaque 256-bit random values, format `<generation>.<secret>`;
  *                 ONLY the SHA-256 hash is stored (never the raw token);
@@ -45,7 +45,7 @@ export class TokenService {
   async verifyAccessToken(token: string): Promise<{ sub: string; sid: string }> {
     const payload = await this.jwt.verifyAsync<{ sub?: string; sid?: string }>(token, {
       secret: this.config.auth.jwtSecret,
-      // Same pins as signing — signature alone is not the full contract.
+      // Same pins as signing - signature alone is not the full contract.
       issuer: this.config.auth.jwtIssuer,
       audience: this.config.auth.jwtAudience,
     });

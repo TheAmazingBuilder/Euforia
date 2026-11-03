@@ -2,7 +2,7 @@
  * MockTradingProviderAdapter (Phase 3 §55).
  *
  * Simulates a read-only MT5-style broker so the whole connectivity
- * architecture — connect, test, synchronize, normalize, persist — can be
+ * architecture - connect, test, synchronize, normalize, persist - can be
  * exercised WITHOUT a real broker account, including CONTROLLED FAILURES:
  *
  *   secret prefix "fail-invalid"     → INVALID_CREDENTIALS
@@ -11,11 +11,11 @@
  *   secret prefix "fail-malformed"   → deliberately type-broken payloads → INVALID_PROVIDER_RESPONSE
  *
  * Data determinism: every generated value is a PURE function of the
- * externalAccountId (FNV-1a hash) — stable external identifiers (§18), no
+ * externalAccountId (FNV-1a hash) - stable external identifiers (§18), no
  * clock reads, no randomness. Synchronizing twice yields byte-identical
  * external objects (idempotent upserts), which the tests rely on.
  *
- * §57: mock providers are dev/test infrastructure — the registry only
+ * §57: mock providers are dev/test infrastructure - the registry only
  * registers this adapter when config.accounts.mockProviderEnabled, so
  * production cannot silently serve mock data.
  */
@@ -34,7 +34,7 @@ import type {
 } from "../provider.types";
 import { ProviderError } from "../provider.types";
 
-/** All V1 read permissions (§24) — the mock supports the full read set. */
+/** All V1 read permissions (§24) - the mock supports the full read set. */
 const ALL_READ_PERMISSIONS = [
   "READ_ACCOUNT",
   "READ_BALANCE",
@@ -51,12 +51,12 @@ const ALL_READ_PERMISSIONS = [
 const SYMBOLS = ["EURUSD", "XAUUSD", "BTCUSDT", "BOOM500", "CRASH500"] as const;
 const CURRENCIES = ["USD", "EUR", "GBP"] as const;
 
-/** Fixed epoch anchors — UTC (§64), deterministic across calls and restarts. */
+/** Fixed epoch anchors - UTC (§64), deterministic across calls and restarts. */
 const BASE_DEAL_MS = Date.UTC(2026, 0, 5, 9, 30, 0); // 2026-01-05T09:30:00Z
 const BASE_POSITION_MS = Date.UTC(2026, 0, 8, 14, 0, 0); // 2026-01-08T14:00:00Z
 const BASE_ORDER_MS = Date.UTC(2026, 0, 9, 10, 15, 0); // 2026-01-09T10:15:00Z
 
-/** FNV-1a 32-bit — small, dependency-free, stable across processes. */
+/** FNV-1a 32-bit - small, dependency-free, stable across processes. */
 function hashSeed(input: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < input.length; i += 1) {
@@ -82,7 +82,7 @@ function fail(scenario: NonNullable<ReturnType<typeof scenarioOf>>): never {
       throw new ProviderError("CONNECTION_TIMEOUT", "The trading provider did not respond in time.");
     case "fail-malformed":
       // The malformed scenario fails at VALIDATION time (application layer),
-      // not here — the adapter "answers" with type-broken payloads.
+      // not here - the adapter "answers" with type-broken payloads.
       return undefined as never;
   }
 }
@@ -147,7 +147,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
     const balance = money(10_000 + (h % 9_000) + (h % 100) / 100);
     const equity = money(10_000 + (h % 9_000) + ((h >> 7) % 40) / 10 - 2);
     if (scenarioOf(context.credentials.secret) === "fail-malformed") {
-      // Type-broken on purpose — the application layer's schema validation
+      // Type-broken on purpose - the application layer's schema validation
       // must catch this and normalize it to INVALID_PROVIDER_RESPONSE.
       return {
         balance: Number(balance),
@@ -193,7 +193,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
       });
     }
     // The mock serves its generated set as the complete open set (fixture
-    // semantics — reconciliation closure exercises against this).
+    // semantics - reconciliation closure exercises against this).
     return { positions, complete: true };
   }
 
@@ -224,8 +224,8 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
 
     /**
      * Phase 4 §9/§17: deals carry the provider-side positionId and form
-     * COHERENT netting cycles — entry deals share the position side, exit
-     * deals the opposite one, exit volume sums back to entry volume — so
+     * COHERENT netting cycles - entry deals share the position side, exit
+     * deals the opposite one, exit volume sums back to entry volume - so
      * the Trading Core reconstruction can rebuild journal trades the way it
      * will with real MT5 data. Balance operations (deposits) have no symbol
      * and no positionId. All deterministic (pure function of the external
@@ -308,7 +308,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
       };
 
       // In-deals at the (weighted-same) entry price, then out-deals at a
-      // nearby price — the LAST out-deal carries the cycle's closed profit.
+      // nearby price - the LAST out-deal carries the cycle's closed profit.
       for (let i = 0; i < inCount; i += 1) {
         push(direction, inLeg.toFixed(2), entry, "0.00", 17 + i * 41);
       }
@@ -326,7 +326,7 @@ export class MockTradingProviderAdapter implements TradingProviderAdapter {
         ...draft.deal,
         executedAt: new Date(draft.executedAtMs).toISOString(),
       }));
-    // Fixture semantics: the generated window IS the full deal history —
+    // Fixture semantics: the generated window IS the full deal history -
     // complete, no checkpoint (observedThrough null = nothing to resume).
     return { deals, observedThrough: null, complete: true };
   }

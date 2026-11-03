@@ -86,6 +86,12 @@ model User {
   mfaEnabledAt        DateTime?
   mfaDisabledAt       DateTime?
   mfaLastVerifiedAt   DateTime?
+  /// Preferred second factor when MFA is enabled; legacy enabled TOTP accounts are backfilled by migration.
+  mfaMethod           String?
+  /// Hashed, short-lived email MFA enrollment challenge; never stores the plain code.
+  mfaPendingEmailCodeHash String?
+  mfaPendingEmailExpiresAt DateTime?
+  mfaPendingEmailAttempts Int @default(0)
 
   // Profile (shared profileSchema — one source of truth for timezone).
   timezone     String  @default("UTC")
@@ -131,7 +137,12 @@ model User {
   playbookRows      PlaybookRow[]
   nofyRows          NofyRow[]
   academyRows       AcademyRow[]
-  integrationRows   IntegrationRow[]
+  taskyBoard        TaskyBoard?
+  personalEventsBoard PersonalEventsBoard?
+  taskyAttachments  TaskyAttachment[]
+  taskySavedViews   TaskySavedView[]
+  taskyAutomations  TaskyAutomationRule[]
+  taskyAutomationRuns TaskyAutomationRun[]
   tagRows           TagRow[]
   // ── Reconciliation generation (Phase 4/5/6/7 normalized models) ──
   tradePlans        TradePlan[]
@@ -140,10 +151,6 @@ model User {
   calendarBlocks    CalendarBlock[]
   dailyStats        DailyStat[]
   userSettings      UserSettings?
-  integrationConnections  IntegrationConnection[]
-  integrationEvents       IntegrationEvent[]
-  integrationErrors       IntegrationError[]
-  integrationWebhookEndpoints IntegrationWebhookEndpoint[]
   strategies        Strategy[]
   oryonAnalyses     OryonAnalysis[]
   analysisPlans     AnalysisPlan[]
@@ -166,6 +173,8 @@ model Session {
   previousTokenHash String?
   /// Rotation generation — presenting a lower generation is REUSE.
   generation        Int       @default(1)
+  /// Whether the user explicitly selected "remember me" at sign-in.
+  remember          Boolean   @default(false)
   device            String    @default("Unknown device")
   browser           String    @default("Unknown")
   os                String    @default("Unknown")
@@ -221,9 +230,17 @@ model AuthChallenge {
   id        String    @id @default(uuid()) @db.Uuid
   userId    String    @db.Uuid
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// EMAIL_VERIFICATION | PASSWORD_RESET — cross-purpose use is impossible.
+  /// EMAIL_VERIFICATION | PASSWORD_RESET | MFA_LOGIN — purpose-scoped challenges.
   purpose   String
+  /// Address that a verification challenge is allowed to verify (prevents stale email-change links).
+  targetEmail String?
   tokenHash String    @unique
+  /// Used only for email MFA login; always a hash, never the six-digit code.
+  codeHash  String?
+  /// AUTHENTICATOR_APP or EMAIL for MFA_LOGIN challenges.
+  method    String?
+  remember  Boolean   @default(false)
+  attempts  Int       @default(0)
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())
@@ -307,6 +324,9 @@ model TradingAccount {
   externalAccountId String
   /// Provider registry key (e.g. "MOCK" — real adapters register their own).
   providerId        String
+  /// Canonical broker identity used to scope duplicates for shared connectors.
+  /// "unknown" preserves the generic MT5 bridge path until the terminal reports its broker.
+  brokerId          String  @default("unknown")
   /// Phase 07 — connect-time broker identification snapshot
   /// (shared brokerIdentificationSchema): which broker this is, the evidence
   /// signals, and the confidence level. Null for pre-Phase-07 rows. The
@@ -335,7 +355,7 @@ model TradingAccount {
   /// Phase-4 execution legs booked on this account.
   tradeExecutions TradeExecution[]
 
-  @@unique([userId, providerId, externalAccountId])
+  @@unique([userId, providerId, externalAccountId, brokerId])
   @@index([userId])
 }
 
@@ -348,6 +368,9 @@ model TradingConnection {
   account         TradingAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
   /// Provider registry key (denormalized from the account for direct lookups).
   providerId      String
+  /// User-selected expected broker for shared connectors (e.g. mt5-bridge).
+  /// Verified against terminal/provider-reported identity before accepting data.
+  expectedBrokerId String?
   /// API_KEY in V1 (shared tradingConnectionMethodSchema).
   method          String
   /// DISCONNECTED | CONNECTING | CONNECTED | ERROR (§15 — orthogonal to sync status).
@@ -1261,6 +1284,98 @@ model AcademyRow {
   @@index([userId, kind])
 }
 
+/// Tasky Kanban — one persisted personal board per Euforia user.
+model TaskyBoard {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Validated TaskyBoardState JSON; ownership comes from the authenticated user, never from payload data.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PersonalEventsBoard {
+  userId    String   @id @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Validated personal calendars and events; ownership is always the authenticated user.
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Tasky saved filter/sort presets, independent from board content.
+model TaskySavedView {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(40)
+  /// Validated TaskySavedViewFilters JSON; no client-supplied owner identity.
+  filters   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, name])
+  @@index([userId, updatedAt(sort: Desc)])
+}
+
+/// User-defined Tasky rules. Conditions live in a validated JSON contract so
+/// the rule catalog can grow without changing task board payloads.
+model TaskyAutomationRule {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name      String   @db.VarChar(80)
+  /// CARD_MOVED | DUE_SOON | OVERDUE
+  trigger   String   @db.VarChar(40)
+  enabled   Boolean  @default(true)
+  config    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  runs TaskyAutomationRun[]
+
+  @@index([userId, enabled, trigger])
+}
+
+/// Append-only execution history. A nullable unique dedupe key makes reminder
+/// checks idempotent while retaining failures for inspection and retry.
+model TaskyAutomationRun {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  automationId   String?  @db.Uuid
+  automation     TaskyAutomationRule? @relation(fields: [automationId], references: [id], onDelete: SetNull)
+  automationName String   @db.VarChar(80)
+  trigger        String   @db.VarChar(40)
+  cardId         String?
+  cardTitle      String?  @db.VarChar(140)
+  /// RUNNING | SUCCEEDED | FAILED
+  status         String   @db.VarChar(16)
+  message        String   @db.VarChar(240)
+  error          String?  @db.VarChar(500)
+  dedupeKey      String?  @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
+}
+
+/// Tasky attachment metadata; bytes live outside PostgreSQL behind a storage adapter.
+model TaskyAttachment {
+  id             String   @id @default(uuid()) @db.Uuid
+  userId         String   @db.Uuid
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cardId         String
+  originalName   String
+  mimeType       String
+  sizeBytes      Int
+  checksumSha256 String   @db.Char(64)
+  storageKey     String   @unique
+  createdAt      DateTime @default(now())
+
+  @@index([userId, cardId, createdAt(sort: Desc)])
+}
+
 /// Journal context — user-owned tag catalog (data-model.md "Domaine 4": free,
 /// hierarchical tags; the system starter set is lazily seeded on first read).
 model TagRow {
@@ -1276,30 +1391,10 @@ model TagRow {
   @@index([userId])
 }
 
-/// Integration Hub context — per-user provider connections, webhook endpoints,
-/// audit event log, error ledger, normalized eco events and sample news.
-/// The provider REGISTRY (12 catalog entries with capabilities/licensing) is
-/// static module content; these rows hold only per-user runtime state.
-model IntegrationRow {
-  id        String   @id @default(uuid()) @db.Uuid
-  userId    String   @db.Uuid
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  /// PROVIDER | WEBHOOK | EVENT | ERROR | ECO | NEWS | SEEN
-  kind      String
-  /// providerId ("deriv") / webhook id ("wh-macro") / providerKey for ECO+SEEN.
-  refId     String
-  data      Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId, kind])
-  @@unique([userId, kind, refId])
-}
-
 // ════════════════════════════════════════════════════════════════════════════
 // RECONCILIATION (Phase 11 pre-work) — the migration chain created these
 // tables/enums (trading_core, trade_planning, trade_review, playbook,
-// session_live, calendar_economic_events, integrations_platform,
+// session_live, calendar_economic_events,
 // settings_preferences, replay_module, full_coverage_domains) but the Prisma
 // model layer never caught up. Models below mirror the committed migration
 // DDL verbatim. The two generations of a domain coexist ON PURPOSE (row-store
@@ -1378,53 +1473,6 @@ enum EcoEventStatus {
 enum CalendarBlockKind {
   OFF
   NEWS
-}
-
-/// 20261003213149_integrations_platform
-enum IntegrationStatus {
-  CONNECTED
-  SYNCING
-  DEGRADED
-  DISCONNECTED
-  AUTH_REQUIRED
-  ERROR
-}
-
-enum IntegrationAuthState {
-  OK
-  MISSING
-  EXPIRED
-}
-
-enum IntegrationErrorCode {
-  AUTH_FAILED
-  RATE_LIMITED
-  PROVIDER_OUTAGE
-  MALFORMED_RESPONSE
-  TIMEOUT
-  PARTIAL_SYNC
-  CREDENTIALS_EXPIRED
-  DUPLICATE_EVENT
-}
-
-enum IntegrationEventType {
-  CONNECTED
-  DISCONNECTED
-  TEST_OK
-  TEST_FAILED
-  SYNCED
-  SYNC_FAILED
-  DEGRADED
-  RECOVERED
-  CREDENTIAL_ROTATED
-  WEBHOOK_RECEIVED
-  WEBHOOK_REJECTED
-  WEBHOOK_DUPLICATE
-}
-
-enum WebhookEndpointStatus {
-  ACTIVE
-  PAUSED
 }
 
 /// Phase-4 denormalized journal columns + execution legs — the trading module
@@ -1671,107 +1719,6 @@ model UserSettings {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-}
-
-/// 20261003213149_integrations_platform — normalized integration hub.
-model IntegrationConnection {
-  id                      String             @id @default(uuid()) @db.Uuid
-  userId                  String             @db.Uuid
-  user                    User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId              String
-  status                  IntegrationStatus  @default(DISCONNECTED)
-  authState               IntegrationAuthState @default(MISSING)
-  credentialsVaultRef     String?
-  credentialsHint         String?
-  credentialsLastRotatedAt DateTime?
-  connectedAt             DateTime?
-  lastCheckedAt           DateTime?
-  syncLastAttemptedAt     DateTime?
-  syncLastSuccessAt       DateTime?
-  syncLastDurationMs      Int?
-  syncRecordsProcessed    Int                @default(0)
-  syncRecordsFailed       Int                @default(0)
-  syncRetryCount          Int                @default(0)
-  syncRunCount            Int                @default(0)
-  syncCursor              String?
-  syncNextRetryAt         DateTime?
-  pairedOnce              Boolean            @default(false)
-  scenario                String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // NOTE: no Prisma relations between the Integration* tables — every
-  // repository query is (userId, providerId)-scoped directly, matching the
-  // platform migration's plain FK-by-column design.
-
-  @@unique([userId, providerId])
-  @@index([userId, status])
-}
-
-model IntegrationEvent {
-  id           String              @id @default(uuid()) @db.Uuid
-  userId       String              @db.Uuid
-  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId   String
-  providerName String
-  type         IntegrationEventType
-  message      String
-  occurredAt   DateTime            @default(now())
-
-  @@index([userId, occurredAt(sort: Desc)])
-}
-
-model IntegrationError {
-  id           String               @id @default(uuid()) @db.Uuid
-  userId       String               @db.Uuid
-  user         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId   String
-  code         IntegrationErrorCode
-  message      String
-  retryable    Boolean
-  actionHint   String
-  retryAfterMs Int?
-  occurredAt   DateTime             @default(now())
-  clearedAt    DateTime?
-
-  @@index([userId, occurredAt(sort: Desc)])
-  @@index([userId, providerId, clearedAt])
-}
-
-model IntegrationWebhookEndpoint {
-  id                 String                @id @default(uuid()) @db.Uuid
-  userId             String                @db.Uuid
-  user               User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  providerId         String
-  path               String
-  status             WebhookEndpointStatus @default(ACTIVE)
-  secretEnc          String
-  secretHint         String
-  lastAcceptedEventId String?
-  createdAt          DateTime              @default(now())
-  updatedAt          DateTime              @updatedAt
-
-  deliveries IntegrationWebhookDelivery[]
-
-  @@unique([path])
-  @@unique([userId, providerId])
-}
-
-model IntegrationWebhookDelivery {
-  id             String   @id @default(uuid()) @db.Uuid
-  endpointId     String   @db.Uuid
-  endpoint       IntegrationWebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
-  eventId        String
-  eventType      String
-  signatureValid Boolean
-  accepted       Boolean
-  duplicate      Boolean
-  message        String
-  receivedAt     DateTime @default(now())
-
-  @@unique([endpointId, eventId])
-  @@index([endpointId, receivedAt(sort: Desc)])
 }
 
 /// 20261003160138_playbook — the normalized playbook generation (Phase 7

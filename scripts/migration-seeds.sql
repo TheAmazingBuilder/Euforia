@@ -23,3 +23,11 @@ INSERT INTO "Instrument" ("id", "symbol", "name", "assetClass", "quoteCurrency",
     ('8e2f6b7d-2ab9-4c7f-8e6d-7b3a0f2c1006', 'CRASH500', 'Crash 500 Index', 'SYNTHETIC', 'USD', '0.01', 2, '1', true),
     ('9f3a7c8e-3bca-4d8a-9f7e-8c4b1a3d1007', 'VOL75(1s)', 'Volatility 75 (1s) Index', 'SYNTHETIC', 'USD', '0.01', 2, '1', true);
 
+
+-- Additional real instruments that are already present in the canonical
+-- InstrumentSpecification catalog. Oryon keeps unsupported feeds disabled.
+INSERT INTO "Instrument" ("id", "symbol", "name", "assetClass", "quoteCurrency", "pipSize", "digits", "contractSize", "isActive") VALUES
+  ('a04b8d9f-4cdb-4e9a-af80-9d5c2b7e1008', 'USDJPY', 'US Dollar / Japanese Yen', 'FOREX', 'JPY', '0.01', 3, '100000', true),
+  ('c26d0f1b-6eef-4a1c-8ba2-bf7e4d9a1010', 'US30', 'Dow Jones 30', 'INDEX', 'USD', '1', 1, '1', true),
+  ('d37e102c-7ff0-4b2d-9cb3-c08f5eab1011', 'NAS100', 'Nasdaq 100', 'INDEX', 'USD', '1', 1, '1', true)
+ON CONFLICT ("symbol") DO NOTHING;

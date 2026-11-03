@@ -1,8 +1,8 @@
-// Phase 11 — Trade Plan workflow verification (Trade Planning / Scenarios / Post-Trade Review).
-// PROD-SAFE (:3000): DOM/testids only. MSW store RESEEDS on full page load —
+// Phase 11 - Trade Plan workflow verification (Trade Planning / Scenarios / Post-Trade Review).
+// PROD-SAFE (:3000): DOM/testids only. MSW store RESEEDS on full page load -
 // the probe navigates CLIENT-SIDE after the initial goto (phase-10 rule).
 // Toast text is NOT asserted for action success (the demo periodically pushes
-// NOFY goal toasts) — assertions target the DOM state the action produces.
+// NOFY goal toasts) - assertions target the DOM state the action produces.
 //  (P0) Drawer section + empty state
 //  (P1) Create plan (thesis, criteria, hypothetical levels, scenario+probability)
 //  (P2) Link to this trade (unlinked group → linked list)
@@ -11,7 +11,7 @@
 //       criteria via edit → activate → Active
 //  (P5) Invalidate: empty reason disabled → quick reason → Invalidated
 //  (P6) Complete review: notes + neutral process tag → Completed; comparison
-//       renders planned vs actual with honest "—"
+//       renders planned vs actual with honest "-"
 //  (P7) Archive the completed plan → Archived (terminal, non-destructive)
 //  (P8) Unlink remaining plan → back to unlinked; delete → gone
 //  (P9) Zero page errors
@@ -21,7 +21,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3000";
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 const NOISE = [/401/, /auth\/me/, /auth\/refresh/, /WebSocket/, /422/];
 
@@ -35,7 +35,7 @@ async function ensureLogin(page) {
   await sidebar.waitFor({ state: "visible", timeout: 20000 });
 }
 
-/** JS click — bypasses hit-testing, so a bottom-right NOFY toast can never
+/** JS click - bypasses hit-testing, so a bottom-right NOFY toast can never
  *  block a dialog-footer action (Playwright hit-target check would 30s-timeout). */
 async function jsClick(locator) {
   await locator.evaluate((el) => el.click());
@@ -61,7 +61,7 @@ async function cardsByTitle(page, title) {
   return null;
 }
 
-/** Open a plan's detail dialog and wait for DATA at the expected status —
+/** Open a plan's detail dialog and wait for DATA at the expected status -
  *  the detail query serves the cached record first and refetches, so a bare
  *  visible-wait would read the stale frame. */
 async function openDetail(page, title, expectedStatus = null) {
@@ -118,7 +118,7 @@ async function openDetail(page, title, expectedStatus = null) {
     await page.waitForSelector('[data-testid="trade-plan-editor-dialog"]', { timeout: 5000 });
     const symbolPrefill = await page.inputValue('[data-testid="trade-plan-symbol"]');
     check("P1-pre", "editor prefills the trade's symbol", symbolPrefill.length > 0, symbolPrefill);
-    await page.fill('[data-testid="trade-plan-title"]', "Probe — supply retest short");
+    await page.fill('[data-testid="trade-plan-title"]', "Probe - supply retest short");
     await page.fill(
       '[data-testid="trade-plan-thesis"]',
       "Weekly supply held twice; expect rotation into 1.0800 on a lower-high print.",
@@ -179,7 +179,7 @@ async function openDetail(page, title, expectedStatus = null) {
     // ── (P4) activation gate on plan #2 (no criteria) ─────────────────────
     await page.click('[data-testid="trade-plan-create"]');
     await page.waitForSelector('[data-testid="trade-plan-editor-dialog"]', { timeout: 5000 });
-    await page.fill('[data-testid="trade-plan-title"]', "Probe — gate check");
+    await page.fill('[data-testid="trade-plan-title"]', "Probe - gate check");
     await page.fill('[data-testid="trade-plan-thesis"]', "Thesis without invalidation criteria.");
     await jsClick(page.locator('[data-testid="trade-plan-save"]'));
     await page.locator('[data-testid="trade-plan-editor-dialog"]')
@@ -216,7 +216,7 @@ async function openDetail(page, title, expectedStatus = null) {
     // ── (P5) invalidate plan #1 (reason REQUIRED) ─────────────────────────
     const p5opened = await openDetail(page, "supply retest", "DRAFT");
     check("P5-open", "plan #1 detail opens", p5opened);
-    // DRAFT → INVALIDATED is not in the transition table — the plan must be
+    // DRAFT → INVALIDATED is not in the transition table - the plan must be
     // ACTIVE before it can be invalidated (it carries criteria, so activate).
     await jsClick(page.locator('[data-testid="trade-plan-activate"]'));
     await page.waitForTimeout(900);
@@ -253,8 +253,8 @@ async function openDetail(page, title, expectedStatus = null) {
     check("P6-completed", "plan #2 shows Completed",
       card2 !== null &&
         (await card2.innerText()).toUpperCase().includes("COMPLETED"));
-    // Detail: review + comparison with honest "—". The detail query serves
-    // its cached frame while refetching — wait for the REVIEW CONTENT,
+    // Detail: review + comparison with honest "-". The detail query serves
+    // its cached frame while refetching - wait for the REVIEW CONTENT,
     // not just the badge, before reading.
     await openDetail(page, "gate check", "COMPLETED");
     await page
@@ -274,7 +274,7 @@ async function openDetail(page, title, expectedStatus = null) {
       completedDetail.includes("Process was sound") && completedDetail.includes("Followed plan"));
     check("P6-comparison", "planned vs actual section renders",
       (await page.locator('[data-testid="trade-plan-detail-comparison"]').count()) === 1);
-    check("P6-honest-null", "comparison uses honest “—”", completedDetail.includes("—"));
+    check("P6-honest-null", "comparison uses honest “-”", completedDetail.includes("-"));
     check("P6-direction", "actual direction read from the trade",
       completedDetail.includes("BUY") || completedDetail.includes("SELL"));
     await page.keyboard.press("Escape");

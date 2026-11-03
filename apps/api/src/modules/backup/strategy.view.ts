@@ -1,7 +1,7 @@
 /**
- * Strategy view mappers — Prisma Strategy rows ⇄ shared strategySchema.
+ * Strategy view mappers - Prisma Strategy rows ⇄ shared strategySchema.
  *
- * PAYLOAD LAYOUT (the definition document — shared with the future Playbook
+ * PAYLOAD LAYOUT (the definition document - shared with the future Playbook
  * module; lifecycle columns name/status/color/grade/version are real cols):
  *   { description, entryRules, exitRules, riskRules, tags,
  *     detailedDescription, marketProfile, marketConditions, entryConditions,

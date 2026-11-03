@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 /**
  * Overview summary band (Phase 9): the five ratios that define an edge,
  * rendered big in mono with their qualifying sub-lines. All values are
- * server-computed — the client only formats.
+ * server-computed - the client only formats.
  */
 
 interface SummaryCardsProps {
@@ -25,7 +25,7 @@ interface CardSpec {
   subs: { label: string; value: string; valueClassName?: string }[];
 }
 
-/** Card registry — machine composition stays, labels resolve through the dict. */
+/** Card registry - machine composition stays, labels resolve through the dict. */
 function buildCards(cards: AnalyticsCards, T: AnalyticsDict["summary"], S: string): CardSpec[] {
   return [
     {
@@ -37,7 +37,7 @@ function buildCards(cards: AnalyticsCards, T: AnalyticsDict["summary"], S: strin
     },
     {
       label: T.profitFactor,
-      value: cards.profitFactor === null ? "—" : formatNumber(cards.profitFactor, 2),
+      value: cards.profitFactor === null ? "-" : formatNumber(cards.profitFactor, 2),
       valueClassName:
         cards.profitFactor !== null && Number(cards.profitFactor) >= 1.5 ? "text-profit" : undefined,
       subs: [{ label: T.healthy, value: "≥ 1.50" }, { label: T.optimal, value: "≥ 2.00" }],
@@ -50,7 +50,7 @@ function buildCards(cards: AnalyticsCards, T: AnalyticsDict["summary"], S: strin
     },
     {
       label: T.payoffRatio,
-      value: cards.payoffRatio === null ? "—" : formatNumber(cards.payoffRatio, 2),
+      value: cards.payoffRatio === null ? "-" : formatNumber(cards.payoffRatio, 2),
       subs: [{ label: T.avgWinR, value: T.avgLossR }],
     },
     {

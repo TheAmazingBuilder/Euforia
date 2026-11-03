@@ -1,5 +1,5 @@
 /**
- * smoke-p7-prod.js — Phase 7 production-build smoke (preview :3000).
+ * smoke-p7-prod.js - Phase 7 production-build smoke (preview :3000).
  * Light checks on the FINAL build (no dev-only debug handles here):
  *  - /oryon renders the workspace with the single-chart default;
  *  - the grid menu exposes the four arrangements and switches to
@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase7-prod-smoke.log");
-fs.writeFileSync(LOG, `=== oryon phase7 prod smoke — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase7 prod smoke - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 
@@ -98,7 +98,7 @@ async function signIn(app) {
   await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 30_000 });
   await page.waitForTimeout(2_500);
 
-  console.log("— A. Workspace single + déclencheurs P7");
+  console.log("- A. Workspace single + déclencheurs P7");
   ok("A1 workspace + grille single", (await page.locator('[data-testid="oryon-chart-grid"][data-grid="single"]').count()) === 1);
   ok("A2 déclencheur grille présent", (await page.locator('[data-testid="oryon-grid-trigger"]').count()) === 1);
   ok("A3 déclencheur sync présent (aucun lien actif)", (await page.locator('[data-testid="oryon-sync-trigger"]:not([data-active])').count()) === 1);
@@ -108,7 +108,7 @@ async function signIn(app) {
     return header === 1 && menu === 1;
   })());
 
-  console.log("— B. Menu sync : 4 fonctionnalités indépendantes");
+  console.log("- B. Menu sync : 4 fonctionnalités indépendantes");
   ok("B1 les 4 flags exposés en aria-checked=false", await (async () => {
     await page.click('[data-testid="oryon-sync-trigger"]');
     await page.waitForTimeout(300);
@@ -121,7 +121,7 @@ async function signIn(app) {
     return states.every((s) => s === "false");
   })());
 
-  console.log("— C. Grille : side-by-side puis retour");
+  console.log("- C. Grille : side-by-side puis retour");
   ok("C1 twoHorizontal → 2 panneaux", await (async () => {
     await page.click('[data-testid="oryon-grid-trigger"]');
     await page.waitForTimeout(250);
@@ -144,7 +144,7 @@ async function signIn(app) {
       && (await page.locator('[data-testid="oryon-panel"]').count()) === 1;
   })());
 
-  console.log("— D. Persistance v2 : arrangement + sync à travers un reload");
+  console.log("- D. Persistance v2 : arrangement + sync à travers un reload");
   ok("D1 mutation de session seule → AUCUN layout persisté (écriture explicite)", await (async () => {
     await page.click('[data-testid="oryon-sync-trigger"]');
     await page.waitForTimeout(250);
@@ -167,7 +167,7 @@ async function signIn(app) {
   })());
   ok("D3 reload → la grille twoHorizontal N'A PAS survécu (aucun layout sauvé)", (await page.locator('[data-testid="oryon-chart-grid"][data-grid="single"]').count()) === 1);
 
-  console.log("— E. Console");
+  console.log("- E. Console");
   ok("E1 zéro erreur console (hors bruit filtré)", errors.length === 0);
   if (errors.length > 0) {
     fs.appendFileSync(LOG, `console errors:\n${errors.slice(0, 6).join("\n")}\n`);

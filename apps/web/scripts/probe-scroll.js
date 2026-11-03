@@ -1,4 +1,4 @@
-/* Probe — find the real scroll container + wheel behaviour in headless */
+/* Probe - find the real scroll container + wheel behaviour in headless */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 

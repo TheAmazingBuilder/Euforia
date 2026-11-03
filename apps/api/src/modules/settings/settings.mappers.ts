@@ -1,7 +1,7 @@
 /**
  * Settings persistence → contract mapping (Phase 15 §30).
  *
- * Response contracts are ALWAYS the shared userPreferencesSchema shape —
+ * Response contracts are ALWAYS the shared userPreferencesSchema shape -
  * the Prisma row (or any persistence detail) never leaks. The read-side
  * timezone mirror is enforced HERE: Profile.timezone (Identity-owned,
  * `User.timezone`) is the ONE source of truth, so the doc's
@@ -11,7 +11,7 @@
  */
 import { DEFAULT_USER_PREFERENCES, userPreferencesSchema, type UserPreferences } from "../../shared/contracts";
 
-/** The mapper only consumes the stored doc — metadata stays in the row. */
+/** The mapper only consumes the stored doc - metadata stays in the row. */
 export function toPreferences(
   row: { preferences: unknown },
   profileTimezone: string,

@@ -7,7 +7,7 @@ import {
 } from "@cosmoz/shared";
 
 /**
- * Pure presentation helpers for metric alert rules (Phase 07) — one
+ * Pure presentation helpers for metric alert rules (Phase 07) - one
  * formatter shared with the API's inbox copy (no client-side drift).
  */
 
@@ -41,7 +41,7 @@ export function alertEventObservation(payload: {
 }): string {
   const unit = (payload.unit ?? "COUNT") as Parameters<typeof formatMetricAlertValue>[0];
   const observed =
-    payload.observedValue === null ? "—" : formatMetricAlertValue(unit, payload.observedValue);
+    payload.observedValue === null ? "-" : formatMetricAlertValue(unit, payload.observedValue);
   const threshold =
     payload.threshold === null
       ? ""

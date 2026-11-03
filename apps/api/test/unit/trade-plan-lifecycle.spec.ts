@@ -1,5 +1,5 @@
 /**
- * Unit — TradePlan lifecycle state machine (Phase 5 §7/§38/§41).
+ * Unit - TradePlan lifecycle state machine (Phase 5 §7/§38/§41).
  * Pure table checks: every legal transition is allowed, every documented
  * illegal one is rejected, and the mutation/operation policies line up.
  */
@@ -25,7 +25,7 @@ const ALL: TradePlanStatus[] = [
   "EXECUTED",
 ];
 
-describe("trade plan lifecycle — legal transitions", () => {
+describe("trade plan lifecycle - legal transitions", () => {
   const legal: Array<[TradePlanStatus, TradePlanStatus]> = [
     ["DRAFT", "PLANNED"],
     ["DRAFT", "ABANDONED"],
@@ -39,7 +39,7 @@ describe("trade plan lifecycle — legal transitions", () => {
   });
 });
 
-describe("trade plan lifecycle — illegal transitions (§51)", () => {
+describe("trade plan lifecycle - illegal transitions (§51)", () => {
   const illegal: Array<[TradePlanStatus, TradePlanStatus]> = [
     // Terminal states never leave.
     ["CANCELLED", "VALIDATED"],
@@ -63,7 +63,7 @@ describe("trade plan lifecycle — illegal transitions (§51)", () => {
   });
 });
 
-describe("trade plan lifecycle — operation policies", () => {
+describe("trade plan lifecycle - operation policies", () => {
   it("edits and recalculations only in DRAFT/PLANNED (§38/§39)", () => {
     expect(isEditable("DRAFT")).toBe(true);
     expect(isEditable("PLANNED")).toBe(true);

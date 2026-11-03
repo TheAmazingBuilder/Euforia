@@ -6,10 +6,10 @@ import type { OcrConfidenceBand } from "@cosmoz/shared";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * ConfidenceBadge — the recognition-confidence marker (PROMPT 3 §18).
+ * ConfidenceBadge - the recognition-confidence marker (PROMPT 3 §18).
  *
  * Terminology is load-bearing: this is "recognition confidence", a heuristic
- * signal — never a guarantee of correctness (§18). Numeric confidence is
+ * signal - never a guarantee of correctness (§18). Numeric confidence is
  * mono/tabular; the band renders as a stamp (Le Registre #6).
  */
 export function ConfidenceBadge({
@@ -20,7 +20,7 @@ export function ConfidenceBadge({
   className,
 }: {
   band: OcrConfidenceBand;
-  /** 0..1 — displayed as an integer percentage. */
+  /** 0..1 - displayed as an integer percentage. */
   confidence: number;
   dict: RecognitionDict;
   compact?: boolean;

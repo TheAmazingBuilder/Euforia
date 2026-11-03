@@ -1,9 +1,9 @@
 /**
- * Verify — Trading Checklist in Session Live (checklist → Session Live
+ * Verify - Trading Checklist in Session Live (checklist → Session Live
  * extension, frontend-only over the MSW mock backend).
  *
  * IMPORTANT: navigation uses sidebar clicks ONLY (SPA). NO reload is
- * performed — the mock store lives in browser memory, so a reload would
+ * performed - the mock store lives in browser memory, so a reload would
  * re-seed it (the same convention the other suites document).
  *
  * Covers:
@@ -52,7 +52,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/session-checklist";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {
@@ -118,7 +118,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/session-checklist";
     (await checklistPanel.locator('span:has-text("Required")').count()) >= 1);
   shot("C-checklist-composed");
 
-  // ══ D. Toggle items — server-backed progress ═══════════════════════════
+  // ══ D. Toggle items - server-backed progress ═══════════════════════════
   const firstToggle = page.locator('[data-testid="session-check-item"]').first().locator("button[role='switch'], [role='switch']").first();
   await firstToggle.click();
   await page.waitForTimeout(900);
@@ -136,7 +136,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/session-checklist";
     .getAttribute("data-checked");
   check("D3 Item row reflects checked state", secondItemChecked === "true");
 
-  // OFF→ON round trip — unchecking must persist too.
+  // OFF→ON round trip - unchecking must persist too.
   await secondToggle.click();
   await page.waitForTimeout(900);
   progress = (await page.locator('[data-testid="session-checklist-progress"]').innerText()).replace(/\n/g, " ");

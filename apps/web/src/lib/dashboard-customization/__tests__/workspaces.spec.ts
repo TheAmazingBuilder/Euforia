@@ -1,11 +1,11 @@
 /**
- * Unit — Phase 06 workspace model (workspaces.ts): the pure layer between
+ * Unit - Phase 06 workspace model (workspaces.ts): the pure layer between
  * the stored dashboard domain and the workspace UI. Pinned rules:
  *  - user templates are validated PER ITEM (one malformed template never
  *    destroys the collection), deduplicated by id and capped at 10;
  *  - the active-workspace fallback chain is stored-active → explicit
  *    default → first layout;
- *  - a template is a FROZEN deep copy — mutating the source workspace or
+ *  - a template is a FROZEN deep copy - mutating the source workspace or
  *    the spawned clone never leaks in either direction (spec §5/§6);
  *  - template names are unique case-insensitively within the user's pool.
  */
@@ -36,7 +36,7 @@ function layout(id: string, name = id): DashboardLayoutDocument {
 }
 
 describe("normalizeUserTemplates", () => {
-  it("validates items individually — one malformed template never destroys the rest", () => {
+  it("validates items individually - one malformed template never destroys the rest", () => {
     const good = layoutToUserTemplate(layout("l1"), "utpl_1", "Good one");
     const templates = normalizeUserTemplates([
       { id: "bad", name: "no layout" }, // missing layout
@@ -79,7 +79,7 @@ describe("resolveActiveLayoutId", () => {
 });
 
 describe("template freezing and application", () => {
-  it("freezes a DEEP copy — later workspace edits never leak into the template", () => {
+  it("freezes a DEEP copy - later workspace edits never leak into the template", () => {
     const source = createDefaultLayouts(["PNL_BAND", "HEATMAP"])[0]!;
     const template = layoutToUserTemplate(source, "utpl_x", "Snapshot");
     source.widgets[0]!.w = 4;

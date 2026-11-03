@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the Euforia mark — v2: luminance-gated mask + clean sampling.
+"""Extract the Euforia mark - v2: luminance-gated mask + clean sampling.
 
 The reference background is near-black navy (value < ~0.2); the mark's
 darkest fold is still ~0.45 value. Mask on value with a soft ramp, then
@@ -72,6 +72,6 @@ for name, (fx, fy) in samples.items():
     if c:
         print(f"  {name:28s} #{c[0]:02X}{c[1]:02X}{c[2]:02X} n={c[3]}")
     else:
-        print(f"  {name:28s} (no confident pixels — adjust position)")
+        print(f"  {name:28s} (no confident pixels - adjust position)")
 
 print("saved mark-native.png + mark-3x.png")

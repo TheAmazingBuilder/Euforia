@@ -6,7 +6,7 @@ import type { Candle } from "@cosmoz/shared";
  * Rules (verified by unit tests):
  *  - output is ordered ASCENDING by bucket-open time regardless of input order;
  *  - duplicate timestamps keep the LAST occurrence (the freshest write wins);
- *  - candles with non-finite o/h/l/c are DROPPED — never interpolated, never
+ *  - candles with non-finite o/h/l/c are DROPPED - never interpolated, never
  *    fabricated ("do not silently invent prices", spec §6). Volume validity
  *    is checked per-consumer: only the volume indicator reads `v`.
  *  - the input array is never mutated.

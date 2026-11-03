@@ -1,17 +1,17 @@
 import type { BrokerPosition } from "@cosmoz/shared";
 
 /**
- * Position view-model helpers (Phase 4 spec §6–§7) — pure formatting and
+ * Position view-model helpers (Phase 4 spec §6–§7) - pure formatting and
  * aggregation over validated `BrokerPosition` records. No React, no chart
  * API, no broker calls. Money aggregation rule (spec §7.1): values from ONE
  * source are summed only when every value is available; the simulated book
  * is USD-denominated by its documented contract (quote USD, contract sizes
- * in USD terms), so summing WITHIN the book is safe — the UI says so.
+ * in USD terms), so summing WITHIN the book is safe - the UI says so.
  */
 
 /**
  * Decimal digits implied by a decimal-string price ("1.08650" → 5).
- * Returns null for empty/malformed strings — callers decide the fallback
+ * Returns null for empty/malformed strings - callers decide the fallback
  * (never a silent default precision for a value we could not read).
  */
 export function digitsFromDecimalString(value: string): number | null {
@@ -43,7 +43,7 @@ export function formatSignedAmount(value: string, digits = 2): string | null {
   return `${sign}${Math.abs(rounded).toFixed(digits)}`;
 }
 
-/** P&L tone for the semantic gain/loss colors (color never the only cue — the sign is text). */
+/** P&L tone for the semantic gain/loss colors (color never the only cue - the sign is text). */
 export function pnlTone(value: string): "profit" | "loss" | "neutral" {
   const parsed = Number(value);
   if (!Number.isFinite(parsed) || parsed === 0) return "neutral";
@@ -62,7 +62,7 @@ export interface PnlSummary {
 /**
  * Aggregate unrealized P&L across ONE book. Cents-integer accumulation
  * avoids float drift across repeated mark-to-market updates. When no value
- * is available the total is null — an aggregate is never fabricated from a
+ * is available the total is null - an aggregate is never fabricated from a
  * partial book (the UI shows "counted/total" honestly instead).
  */
 export function summarizePnl(positions: readonly BrokerPosition[]): PnlSummary {
@@ -82,7 +82,7 @@ export function summarizePnl(positions: readonly BrokerPosition[]): PnlSummary {
 
 /**
  * Stable table order: symbol ascending, then newest open first. Deterministic
- * across snapshots — a re-emitted book must not reshuffle rows.
+ * across snapshots - a re-emitted book must not reshuffle rows.
  */
 export function sortPositionsForTable(positions: readonly BrokerPosition[]): BrokerPosition[] {
   return [...positions].sort((a, b) => {
@@ -94,7 +94,7 @@ export function sortPositionsForTable(positions: readonly BrokerPosition[]): Bro
   });
 }
 
-/** Compact open-time label ("Oct 10, 14:32") — local time, no year (positions open < 1 book). */
+/** Compact open-time label ("Oct 10, 14:32") - local time, no year (positions open < 1 book). */
 export function formatOpenedAt(iso: string): string | null {
   const ts = Date.parse(iso);
   if (!Number.isFinite(ts)) return null;

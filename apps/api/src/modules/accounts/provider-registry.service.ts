@@ -2,7 +2,7 @@
  * Provider registry (Phase 3 §44).
  *
  * The single place that maps a providerId to its adapter. Adding a new
- * provider means: implement TradingProviderAdapter, register it here —
+ * provider means: implement TradingProviderAdapter, register it here -
  * nothing else in the domain changes (§60).
  *
  * The registry is constructed with the adapters enabled for the current
@@ -21,7 +21,7 @@ import type { TradingProviderAdapter } from "./provider.types";
 export class ProviderRegistryService {
   constructor(private readonly adapters: readonly TradingProviderAdapter[]) {}
 
-  /** All registered provider descriptors (metadata only — no secrets). */
+  /** All registered provider descriptors (metadata only - no secrets). */
   list(): TradingProviderDescriptor[] {
     return this.adapters.map((adapter) => adapter.descriptor);
   }

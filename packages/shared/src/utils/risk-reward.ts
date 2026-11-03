@@ -1,19 +1,19 @@
 import { toDecimalString } from "./money";
 
 /**
- * Risk/Reward expectancy engine — pure, deterministic financial math.
+ * Risk/Reward expectancy engine - pure, deterministic financial math.
  *
  * This is the client-side LIVE-ESTIMATE layer behind the TOOLS > Risk/Reward
  * Calculator & Win Rate Cheat Sheet (same contract family as utils/risk.ts and
- * utils/compounding.ts). No React, no I/O — every function is unit-testable
+ * utils/compounding.ts). No React, no I/O - every function is unit-testable
  * and safe to call on every keystroke.
  *
  * Model (spec §6): a FIXED monetary risk per trade derived from the starting
- * balance or given as a fixed amount — the balance is NEVER compounded after
+ * balance or given as a fixed amount - the balance is NEVER compounded after
  * each trade. For a reward multiple R and win rate p over N trades:
  *   L = monetary loss per losing trade
  *   G = L × R                    (monetary gain per winning trade)
- *   W = N × p                    (expected winning trades — expected VALUE,
+ *   W = N × p                    (expected winning trades - expected VALUE,
  *                                 never rounded to a whole number, spec §11.1)
  *   D = N − W                    (expected losing trades)
  *   Gross Profit = W × G
@@ -24,7 +24,7 @@ import { toDecimalString } from "./money";
  *   R=1 → 50 %, R=2 → 33.33 %, R=3 → 25 %, R=4 → 20 %, R=5 → 16.67 %.
  *
  * All results are theoretical and exclude transaction costs (commissions,
- * spread, slippage, swaps, financing) — the module never invents cost values.
+ * spread, slippage, swaps, financing) - the module never invents cost values.
  */
 
 /** Risk input mode: a percentage of the starting balance, or a fixed amount. */
@@ -33,7 +33,7 @@ export type RiskMode = "percent" | "fixed";
 /** Outcome classification of a theoretical net result (spec §7.3). */
 export type RROutcome = "loss" | "breakeven" | "profit";
 
-// ── Product caps (documented, enforced — never silent clamps) ────────────────
+// ── Product caps (documented, enforced - never silent clamps) ────────────────
 
 /** Maximum account balance accepted by the live-estimate layer. */
 export const RR_MAX_BALANCE = 1e12;
@@ -47,10 +47,10 @@ export const RR_MAX_TRADES = 1_000_000;
  * Numerical tolerance for the BREAK EVEN classification: a theoretical net
  * result whose magnitude is ≤ tolerance × max(1, grossProfit + grossLoss) is
  * classified as break even. Classification ALWAYS uses the unrounded result
- * (spec §6.1) — display formatting never feeds back into classification.
+ * (spec §6.1) - display formatting never feeds back into classification.
  */
 export const RR_BREAK_EVEN_TOLERANCE = 1e-9;
-/** Hard ceiling on the emitted |net| — beyond this the input set is rejected. */
+/** Hard ceiling on the emitted |net| - beyond this the input set is rejected. */
 const RR_MAX_NET = 1e15;
 
 // ── Matrix defaults (spec §7.1) ──────────────────────────────────────────────
@@ -69,13 +69,13 @@ export const RR_EXTRA_RATIOS: readonly number[] = [6, 8, 10];
 // ── Core derivations ─────────────────────────────────────────────────────────
 
 /**
- * Monetary risk per losing trade — L, the fixed per-trade risk (spec §6).
+ * Monetary risk per losing trade - L, the fixed per-trade risk (spec §6).
  * Percent mode: L = balance × riskPercent / 100.
  * Fixed mode:   L = fixedRiskAmount.
  * Named `computeRiskPerTrade` (not computeRiskAmount) because utils/risk.ts
  * already owns that name for the position-sizing sense.
  * Returns `null` on any invalid path (non-finite, balance ≤ 0, out-of-range
- * values, risk > balance cap) — never throws, never NaN.
+ * values, risk > balance cap) - never throws, never NaN.
  */
 export function computeRiskPerTrade(params: {
   mode: RiskMode;
@@ -132,7 +132,7 @@ export function computeRewardAmount(
 /**
  * Reward multiple from monetary stop-loss / take-profit amounts:
  * R = takeProfit / stopLoss (both stricty positive monetary amounts).
- * Returns `null` on zero/negative/invalid inputs — division by zero is
+ * Returns `null` on zero/negative/invalid inputs - division by zero is
  * reported, never silently absorbed.
  */
 export function computeRewardMultiple(
@@ -200,7 +200,7 @@ export interface RRExpectancyInput {
 }
 
 export interface RRExpectancyResult {
-  /** Expected winning trades W = N × p — expected VALUE, never pre-rounded. */
+  /** Expected winning trades W = N × p - expected VALUE, never pre-rounded. */
   wins: number;
   /** Expected losing trades D = N − W. */
   losses: number;
@@ -208,7 +208,7 @@ export interface RRExpectancyResult {
   grossProfit: number;
   /** Gross losing loss D × L. */
   grossLoss: number;
-  /** Theoretical net result P = W×G − D×L (unrounded — classification source). */
+  /** Theoretical net result P = W×G − D×L (unrounded - classification source). */
   net: number;
   /** Canonical decimal string of the net result (≤ 8 decimals). */
   netDecimal: string;
@@ -217,7 +217,7 @@ export interface RRExpectancyResult {
 }
 
 /**
- * Theoretical expectancy of a trade sample (spec §6) — the engine behind every
+ * Theoretical expectancy of a trade sample (spec §6) - the engine behind every
  * matrix cell. Fixed monetary risk, no compounding, no transaction costs.
  *
  * Returns `null` on any invalid input (never throws, never emits NaN or
@@ -244,7 +244,7 @@ export function computeExpectancy(
   if (!Number.isInteger(trades) || trades < 1 || trades > RR_MAX_TRADES) return null;
 
   const p = winRatePercent / 100;
-  const wins = trades * p; // expected value — deliberately NOT rounded (§11.1)
+  const wins = trades * p; // expected value - deliberately NOT rounded (§11.1)
   const losses = trades - wins;
   const grossProfit = wins * riskAmount * rewardMultiple;
   const grossLoss = losses * riskAmount;
@@ -253,7 +253,7 @@ export function computeExpectancy(
 
   // Classification on the UNROUNDED result with the documented tolerance (§6.1,
   // §7.3): a genuinely negative/positive result beyond the tolerance keeps its
-  // sign class — a near-zero float artifact reads as break even.
+  // sign class - a near-zero float artifact reads as break even.
   const tolerance = RR_BREAK_EVEN_TOLERANCE * Math.max(1, grossProfit + grossLoss);
   const outcome: RROutcome =
     Math.abs(net) <= tolerance ? "breakeven" : net < 0 ? "loss" : "profit";
@@ -276,7 +276,7 @@ export interface RRMatrixCell {
   winRatePercent: number;
   /** Reward multiple of the row, R. */
   rewardMultiple: number;
-  /** Computed expectancy — `null` for an invalid combination (never silently). */
+  /** Computed expectancy - `null` for an invalid combination (never silently). */
   expectancy: RRExpectancyResult | null;
 }
 
@@ -290,7 +290,7 @@ export interface RRMatrixRow {
 /**
  * Build the full Win Rate Cheat Sheet matrix: rows = reward multiples,
  * columns = win rates, every cell computed INDEPENDENTLY from its own
- * (R, p) pair over the shared risk amount and trade count (spec §7.2 — no
+ * (R, p) pair over the shared risk amount and trade count (spec §7.2 - no
  * hardcoded cell contents, no shared results between cells).
  */
 export function buildRiskRewardMatrix(params: {

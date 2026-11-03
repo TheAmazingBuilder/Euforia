@@ -1,5 +1,5 @@
 /**
- * diag-candles.js — inspect the RAW market-service candle response for one
+ * diag-candles.js - inspect the RAW market-service candle response for one
  * symbol/interval (same Bearer contract as the app: czat1 payload+checksum).
  * Usage: node scripts/diag-candles.js EURUSD 1H
  */

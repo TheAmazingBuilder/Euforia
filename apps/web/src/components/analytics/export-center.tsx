@@ -19,17 +19,17 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Export center (Dashboard Customization Phase 08 §5) — the dashboard/
+ * Export center (Dashboard Customization Phase 08 §5) - the dashboard/
  * reporting export workflow: choose a dataset, download it, get truthful
  * feedback. Every payload is built from the ONE filtered server dataset
- * (or the accounts catalog) by lib/export/builders — no recomputation, no
+ * (or the accounts catalog) by lib/export/builders - no recomputation, no
  * mock data, no fake success (a failed download surfaces an error toast).
  * Scope echo: the suite's descriptor rides in every summary row, and the
  * multi-currency honesty rule drops money columns entirely.
  */
 
 function safeFileStem(descriptor: string): string {
-  // Keep filenames safe + human-readable (spec §11) — strip path/quote chars.
+  // Keep filenames safe + human-readable (spec §11) - strip path/quote chars.
   return (
     descriptor
       .toLowerCase()

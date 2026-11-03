@@ -1,5 +1,5 @@
 /**
- * Verify — real authentication system.
+ * Verify - real authentication system.
  * Context A: guard redirect, login page anatomy, zod field errors, wrong
  *   password, demo login, session persisted across reload, /login redirect
  *   when signed in, logout, guard ?next= round-trip.
@@ -19,7 +19,7 @@ const DEMO_PASSWORD = "cosmoz123";
   const browser = await chromium.launch();
   const results = [];
   const check = (name, ok, extra = "") => {
-    const line = `${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`;
+    const line = `${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`;
     results.push(line);
     console.log(line);
   };
@@ -37,7 +37,7 @@ const DEMO_PASSWORD = "cosmoz123";
       if (msg.type() !== "error") return;
       const text = msg.text();
       // Negative-path probes (wrong password, duplicate email) make the
-      // browser log the 4xx as a resource error — that noise is expected.
+      // browser log the 4xx as a resource error - that noise is expected.
       if (/Failed to load resource.*\b(400|401|409)\b/.test(text)) return;
       errors.push(text);
     });
@@ -45,7 +45,7 @@ const DEMO_PASSWORD = "cosmoz123";
     return errors;
   };
 
-  // ── Context A — main flow ────────────────────────────────────────────────
+  // ── Context A - main flow ────────────────────────────────────────────────
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const errors = collectErrors(page);
@@ -121,7 +121,7 @@ const DEMO_PASSWORD = "cosmoz123";
     await page.close();
   }
 
-  // ── Context B — registration + profile ──────────────────────────────────
+  // ── Context B - registration + profile ──────────────────────────────────
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const errors = collectErrors(page);
@@ -200,7 +200,7 @@ const DEMO_PASSWORD = "cosmoz123";
     await page2.close();
   }
 
-  // ── Context C — password reset flow ─────────────────────────────────────
+  // ── Context C - password reset flow ─────────────────────────────────────
   {
     const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
     const errors = collectErrors(page);
@@ -262,7 +262,7 @@ const DEMO_PASSWORD = "cosmoz123";
     const overflow = await page.evaluate(
       () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
     );
-    check("Mobile 390px — no horizontal overflow", overflow <= 0, `overflow=${overflow}px`);
+    check("Mobile 390px - no horizontal overflow", overflow <= 0, `overflow=${overflow}px`);
     await page.screenshot({ path: "scripts/shots/auth/login-mobile-390.png" });
     await page.close();
   }

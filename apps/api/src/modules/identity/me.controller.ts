@@ -1,10 +1,10 @@
 /**
- * /me controller — profile, deactivation and scheduled deletion
+ * /me controller - profile, deactivation and scheduled deletion
  * (shared api.ts profile section + account actions).
  *
  * Phase 15: the preferences doc routes (GET/PATCH /me/preferences*,
  * POST /me/preferences/reset) moved to the dedicated Settings bounded
- * context (modules/settings) — wire-compatible, same paths.
+ * context (modules/settings) - wire-compatible, same paths.
  */
 import { Body, Controller, Get, HttpCode, HttpStatus, Patch, Post } from "@nestjs/common";
 import { ZodValidationPipe } from "../../shared/http/zod-validation.pipe";

@@ -1,4 +1,4 @@
-"""Post-cleanup route sweep — every rail + hidden route renders, console clean, no 390 overflow."""
+"""Post-cleanup route sweep - every rail + hidden route renders, console clean, no 390 overflow."""
 
 from __future__ import annotations
 

@@ -1,5 +1,5 @@
 /**
- * Playbook contract mappers (Phase 7) — rows → shared-schema-shaped payloads.
+ * Playbook contract mappers (Phase 7) - rows → shared-schema-shaped payloads.
  * The ONLY place that translates persistence shapes into wire shapes.
  * Prisma models never reach the API surface (§50/§51 of the phase prompt).
  */
@@ -31,7 +31,7 @@ function json<T>(value: Prisma.JsonValue | null): T | null {
 }
 
 /**
- * JSON column that is ALWAYS an array on the wire when defined — the product
+ * JSON column that is ALWAYS an array on the wire when defined - the product
  * normalizes absent structured lists to [] (createStrategy defaults), never
  * to null.
  */
@@ -40,7 +40,7 @@ function jsonArray<T>(value: Prisma.JsonValue | null): T[] {
 }
 
 /**
- * The full wire shape of a strategy — ALSO the freeze payload captured into
+ * The full wire shape of a strategy - ALSO the freeze payload captured into
  * StrategyVersionSnapshot (the snapshot stores the contract-verbatim shape,
  * structuredClone semantics, §17).
  */

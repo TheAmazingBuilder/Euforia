@@ -1,5 +1,5 @@
 /**
- * Trade Review contract mappers — rows → shared-schema-shaped payloads
+ * Trade Review contract mappers - rows → shared-schema-shaped payloads
  * (Phase 6 §37/§70). The ONLY place that translates persistence shapes into
  * wire shapes: Prisma rows and internal domain objects never reach the API
  * surface.
@@ -45,7 +45,7 @@ function dateKey(date: Date): string {
 
 function checklistWire(value: Prisma.JsonValue | null): ReviewRow["checklistResults"] {
   if (value === null || value === undefined) return null;
-  // Stored shape is exactly [{label, passed}] — the write path validated it;
+  // Stored shape is exactly [{label, passed}] - the write path validated it;
   // a corrupted row fails loudly here instead of leaking garbage.
   return JSON.parse(JSON.stringify(value)) as ReviewRow["checklistResults"];
 }
@@ -98,7 +98,7 @@ export function toReviewRowFromPending(trade: PendingTradeRow): ReviewRow {
     setupName: null,
     // The trade's own written note stands in for the workspace "lesson" on
     // pending rows (the review lesson does not exist yet). Trade.notes is
-    // journal metadata — reading it does not modify the trade (§11).
+    // journal metadata - reading it does not modify the trade (§11).
     lesson: trade.notes,
     improvementNote: null,
     checklistResults: null,
@@ -126,7 +126,7 @@ export function toReviewPayload(review: TradeReviewRow): TradeReview {
   };
 }
 
-/** Authoritative trade facts for the detail response (§70 — Trading Core owns these). */
+/** Authoritative trade facts for the detail response (§70 - Trading Core owns these). */
 export function toReviewTradeSummary(
   trade: ReviewTradeFactRow & {
     quantity: Prisma.Decimal;

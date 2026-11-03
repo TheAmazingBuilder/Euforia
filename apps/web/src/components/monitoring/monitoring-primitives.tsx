@@ -70,7 +70,7 @@ export function FreshnessBadge({
   );
 }
 
-/** A label/value metric line — value always mono. */
+/** A label/value metric line - value always mono. */
 export function MetricLine({
   label,
   value,
@@ -95,7 +95,7 @@ export function MetricLine({
   );
 }
 
-/** The observation that justifies a status (§4) — rendered as a quiet note. */
+/** The observation that justifies a status (§4) - rendered as a quiet note. */
 export function EvidenceNote({ children }: { children: React.ReactNode }) {
   return (
     <p className="text-xs leading-relaxed text-muted-foreground">
@@ -105,9 +105,9 @@ export function EvidenceNote({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Age in human form from epoch ms — "320 ms ago", "4 s ago", "2 min ago". */
+/** Age in human form from epoch ms - "320 ms ago", "4 s ago", "2 min ago". */
 export function ageLabel(ageMs: number | null): string {
-  if (ageMs === null) return "—";
+  if (ageMs === null) return "-";
   if (ageMs < 1_000) return `${Math.max(0, Math.round(ageMs))} ms ago`;
   if (ageMs < 60_000) return `${Math.floor(ageMs / 1_000)} s ago`;
   if (ageMs < 3_600_000) return `${Math.floor(ageMs / 60_000)} min ago`;
@@ -116,7 +116,7 @@ export function ageLabel(ageMs: number | null): string {
 
 /**
  * Age of an ISO timestamp against the useNowMs clock (null-safe). Date.now()
- * is impure and forbidden during render — panels always derive ages from the
+ * is impure and forbidden during render - panels always derive ages from the
  * clock tick through this helper.
  */
 export function ageFromIso(iso: string | null, nowMs: number | null): number | null {
@@ -125,7 +125,7 @@ export function ageFromIso(iso: string | null, nowMs: number | null): number | n
 }
 
 /**
- * Clock context — the view provides its useNowMs tick once; every panel
+ * Clock context - the view provides its useNowMs tick once; every panel
  * derives ages from it instead of calling Date.now() during render.
  */
 export const NowClockContext = React.createContext<number | null>(null);
@@ -136,7 +136,7 @@ export function useNowClock(): number | null {
 
 /** Duration in human form. */
 export function durationLabel(msValue: number | null): string {
-  if (msValue === null) return "—";
+  if (msValue === null) return "-";
   if (msValue < 1_000) return `${Math.round(msValue)} ms`;
   if (msValue < 60_000) return `${(msValue / 1_000).toFixed(1)} s`;
   return `${Math.floor(msValue / 60_000)} min ${Math.round((msValue % 60_000) / 1_000)} s`;

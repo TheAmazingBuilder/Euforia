@@ -1,11 +1,11 @@
 /**
- * Analytics trading-day clock (Phase 8 §7 — TIME RANGE MODEL).
+ * Analytics trading-day clock (Phase 8 §7 - TIME RANGE MODEL).
  *
  * Pure date-key helpers. All aggregation windows are resolved SERVER-SIDE
  * against the USER's trading-day clock (the client never derives "today").
  * Date keys are `YYYY-MM-DD` in the user timezone; arithmetic on keys is
  * plain UTC calendar math on the key itself (keys are day labels, not
- * instants — no timezone ambiguity after resolution).
+ * instants - no timezone ambiguity after resolution).
  *
  * The period presets and their fallbacks mirror the shared contract
  * (`analyticsPeriodSchema`) and the frontend reference semantics verbatim:

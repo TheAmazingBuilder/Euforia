@@ -1,26 +1,26 @@
 """Advanced image preprocessing (OCR quality phase).
 
-The V1 pipeline only grayscaled + upscaled. Dark-theme MT5 screenshots —
-the product's worst case — need more (§ engine quality review):
+The V1 pipeline only grayscaled + upscaled. Dark-theme MT5 screenshots -
+the product's worst case - need more (§ engine quality review):
 
-  1. DENOISE   — a light median filter that removes JPEG/dark-theme speckle
+  1. DENOISE   - a light median filter that removes JPEG/dark-theme speckle
                  before resizing (applied only on small panels, where the
                  blur cost is re-sharpened by the upscale anyway);
-  2. DESKEW    — projection-profile skew estimation (−6°..+6°) with an
+  2. DESKEW    - projection-profile skew estimation (−6°..+6°) with an
                  application threshold (0.35°) so straight screenshots are
                  never rotated gratuitously;
-  3. UPSCALE   — LANCZOS ×2 minimum (tesseract performs best around 2x
+  3. UPSCALE   - LANCZOS ×2 minimum (tesseract performs best around 2x
                  text) capped so the working copy never exceeds the pixel
                  budget, followed by a light unsharp mask;
-  4. CLAHE     — contrast-limited adaptive histogram equalization (numpy,
+  4. CLAHE     - contrast-limited adaptive histogram equalization (numpy,
                  bilinear tile blending): lifts text off dark backgrounds
                  without blowing out highlights the way global autocontrast
                  does;
-  5. BINARIZE  — Otsu threshold variant for the sparse second pass
-                 (arbitration.py) — a genuinely different view of the same
+  5. BINARIZE  - Otsu threshold variant for the sparse second pass
+                 (arbitration.py) - a genuinely different view of the same
                  pixels, which is what makes the arbitrage informative;
-  6. DHASH     — 64-bit difference hash for perceptual duplicate detection
-                 (upload-time "already imported" — the Nest side owns the
+  6. DHASH     - 64-bit difference hash for perceptual duplicate detection
+                 (upload-time "already imported" - the Nest side owns the
                  storage and the user-facing decision; the sidecar only
                  computes the fingerprint).
 
@@ -35,16 +35,16 @@ from dataclasses import dataclass
 import numpy as np
 from PIL import Image, ImageFilter
 
-# Skew search window — MT5 screenshots are at worst slightly rotated by the
+# Skew search window - MT5 screenshots are at worst slightly rotated by the
 # user's capture tool; beyond ±6° it is a different photo, not a screenshot.
 _SKEW_MIN_DEG = -6.0
 _SKEW_MAX_DEG = 6.0
 _SKEW_STEP_DEG = 0.5
-# Below this the rotation is measurement noise — never rotate (stability).
+# Below this the rotation is measurement noise - never rotate (stability).
 _SKEW_APPLY_DEG = 0.35
 
 # Working-copy ceiling: the preprocessed variant must stay well under the
-# pixel budget (the sidecar already rejects oversized ORIGINALS — this caps
+# pixel budget (the sidecar already rejects oversized ORIGINALS - this caps
 # the enlarged working copies so upscale can never invent a bomb).
 _MAX_WORKING_PIXELS = 24_000_000
 
@@ -76,7 +76,7 @@ def otsu_threshold(arr: np.ndarray) -> int:
 # ── Deskew ───────────────────────────────────────────────────────────────────
 
 def _row_profile_score(arr: np.ndarray) -> float:
-    """Variance of the row-sum profile — sharp text rows ⇒ peaked profile."""
+    """Variance of the row-sum profile - sharp text rows ⇒ peaked profile."""
     profile = arr.astype(np.float64).sum(axis=1)
     return float(profile.var())
 
@@ -86,7 +86,7 @@ def estimate_skew(gray: Image.Image) -> float:
 
     Runs on a width-700 downsample for speed; the angle transfers 1:1 to the
     full-size image. Returns 0.0 when the measurement is inside the noise
-    floor — straight screenshots are never rotated.
+    floor - straight screenshots are never rotated.
     """
     width = 700
     scale = min(1.0, width / max(gray.width, 1))
@@ -95,7 +95,7 @@ def estimate_skew(gray: Image.Image) -> float:
     probe = gray.resize((probe_w, probe_h), Image.Resampling.BILINEAR)
     arr = np.asarray(probe, dtype=np.uint8)
     threshold = otsu_threshold(arr)
-    # Ink = 1 (dark pixels), background = 0 — matches dark AND light themes.
+    # Ink = 1 (dark pixels), background = 0 - matches dark AND light themes.
     ink = (arr < threshold).astype(np.uint8) * 255
     if ink.sum() == 0:
         return 0.0
@@ -129,7 +129,7 @@ def clahe_equalize(gray: Image.Image, tiles: int = 8, clip_limit: float = 2.5) -
     arr = np.asarray(gray, dtype=np.uint8)
     height, width = arr.shape
     if width < tiles * 8 or height < tiles * 8:
-        return gray  # too small for a meaningful grid — leave as-is
+        return gray  # too small for a meaningful grid - leave as-is
 
     # Crop the remainder so tiles divide evenly (working copy only).
     used_h, used_w = (height // tiles) * tiles, (width // tiles) * tiles
@@ -182,13 +182,13 @@ def clahe_equalize(gray: Image.Image, tiles: int = 8, clip_limit: float = 2.5) -
 # ── Pipeline stages ──────────────────────────────────────────────────────────
 
 def denoise(gray: Image.Image) -> Image.Image:
-    """Light 3x3 median filter — kills speckle, keeps glyph edges usable
+    """Light 3x3 median filter - kills speckle, keeps glyph edges usable
     once the upscale re-sharpens. Only for small panels (see module doc)."""
     return gray.filter(ImageFilter.MedianFilter(size=3))
 
 
 def upscale(gray: Image.Image, pixel_budget: int) -> tuple[Image.Image, int]:
-    """LANCZOS upscale with a ×2 floor — tesseract's accuracy sweet spot.
+    """LANCZOS upscale with a ×2 floor - tesseract's accuracy sweet spot.
 
     Returns (image, applied_scale). The scale grows beyond 2 only when the
     image would otherwise stay under ~1400px wide; it never exceeds the
@@ -205,7 +205,7 @@ def upscale(gray: Image.Image, pixel_budget: int) -> tuple[Image.Image, int]:
 
 
 def binarize(gray: Image.Image) -> Image.Image:
-    """Otsu binarization — the alternate view used by the second OCR pass."""
+    """Otsu binarization - the alternate view used by the second OCR pass."""
     arr = np.asarray(gray, dtype=np.uint8)
     threshold = otsu_threshold(arr)
     out = np.where(arr <= threshold, 0, 255).astype(np.uint8)
@@ -213,7 +213,7 @@ def binarize(gray: Image.Image) -> Image.Image:
 
 
 def dhash(gray: Image.Image) -> str:
-    """64-bit difference hash, hex-encoded (16 chars) — perceptual
+    """64-bit difference hash, hex-encoded (16 chars) - perceptual
     fingerprint for duplicate detection. Robust to recompression and minor
     crops; the Nest side compares Hamming distance."""
     small = gray.resize((_DHASH_WIDTH, _DHASH_HEIGHT), Image.Resampling.LANCZOS)
@@ -225,7 +225,7 @@ def dhash(gray: Image.Image) -> str:
 
 # ── Quality wrapper (V2 meta-reporting path) ─────────────────────────────────
 
-# Denoise applies only to small panels — above this the median-filter cost
+# Denoise applies only to small panels - above this the median-filter cost
 # outweighs the speckle win and the upscale re-sharpens anyway (module doc).
 _DENOISE_MAX_PIXELS = 1_000_000
 # Small-panel target magnification (300px panel → 900px, "capped" in tests).
@@ -234,7 +234,7 @@ _ENHANCE_TARGET_SCALE = 3
 
 @dataclass(frozen=True)
 class EnhanceMeta:
-    """What enhance() actually did to the image — reported so callers/tests
+    """What enhance() actually did to the image - reported so callers/tests
     can assert on the quality path without pixel-peeping. Field names follow
     the recognition-contract camelCase style."""
 
@@ -246,7 +246,7 @@ class EnhanceMeta:
 
 
 def _clahe_preserving_size(gray: Image.Image, tiles: int = 8) -> Image.Image:
-    """clahe_equalize WITHOUT the remainder crop — the input is padded to a
+    """clahe_equalize WITHOUT the remainder crop - the input is padded to a
     tile-grid multiple (edge-replicated), equalized, then cut back to the
     original geometry, so enhance() output keeps the upscaled size exactly
     (width × scale). The live pipeline keeps using clahe_equalize directly."""
@@ -279,7 +279,7 @@ def enhance(
     request pipeline in main.py deliberately drives upscale() /
     clahe_equalize() / binarize() itself (its dual-pass arbitration needs the
     UN-equalized binarized alternate view). Deterministic; engine label is
-    truthful — this module is numpy + Pillow only (no OpenCV dependency).
+    truthful - this module is numpy + Pillow only (no OpenCV dependency).
     """
     small_panel = gray.width * gray.height <= _DENOISE_MAX_PIXELS
     working = denoise(gray) if small_panel else gray

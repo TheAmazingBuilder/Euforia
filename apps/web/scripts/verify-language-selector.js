@@ -1,12 +1,12 @@
 /**
- * Verify — Header LanguageSelector (the missing i18n entry point).
+ * Verify - Header LanguageSelector (the missing i18n entry point).
  *
  * Covers:
  *   A. Selector visible in the topbar (EN default, trigger shows active code).
- *   B. Instant switch via the header: EN → FR — sidebar/breadcrumb flip in
+ *   B. Instant switch via the header: EN → FR - sidebar/breadcrumb flip in
  *      place, <html lang> follows, trigger code flips to FR, NO reload.
  *   C. FR persists across SPA navigation AND a full reload (boot mirror).
- *   D. Switch back to EN from the header — instant restore.
+ *   D. Switch back to EN from the header - instant restore.
  *   E. Console/network cleanliness.
  *
  * SPA-only navigation after the initial entry (MSW state lives in the tab).
@@ -37,7 +37,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-selector";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -49,7 +49,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-selector";
   await page.locator("#login-password").fill(DEMO_PASSWORD);
   await page.locator('[data-testid="login-submit"]').click();
   await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 20_000 });
-  // SPA proof marker — must survive the header switch untouched.
+  // SPA proof marker - must survive the header switch untouched.
   await page.evaluate(() => { window.__i18nProbe = 42; });
 
   // ══ A. Selector in the topbar ═════════════════════════════════════════════

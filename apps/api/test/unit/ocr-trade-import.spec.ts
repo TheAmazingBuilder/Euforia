@@ -1,7 +1,7 @@
 /**
- * Unit — OCR → Trade import mapping (Phase 21): pure eligibility + input
+ * Unit - OCR → Trade import mapping (Phase 21): pure eligibility + input
  * building for the confirmation bridge (§72/§76/§77). No Nest, no DB, no
- * clock — the same confirmed fields always produce the same trade input
+ * clock - the same confirmed fields always produce the same trade input
  * (§94 determinism).
  */
 import { describe, expect, it } from "vitest";
@@ -28,7 +28,7 @@ function field(overrides: Partial<OcrExtractedField> = {}): OcrExtractedField {
 
 /** A complete, coherent confirmed MT5-style field set (closed trade).
  *  Trade-only base: since V1.1 OcrFieldKey also carries the account/chart
- *  profile keys — they are optional extras here (Partial), the import
+ *  profile keys - they are optional extras here (Partial), the import
  *  eligibility only consumes the trade fields. */
 function completeFields(overrides: Partial<Record<OcrFieldKey, OcrExtractedField>> = {}): OcrExtractedField[] {
   const base: Partial<Record<OcrFieldKey, OcrExtractedField>> = {
@@ -48,7 +48,7 @@ function completeFields(overrides: Partial<Record<OcrFieldKey, OcrExtractedField
 
 // ── Eligibility (§76 "validate fields") ─────────────────────────────────────
 
-describe("resolveTradeImportValues — eligibility", () => {
+describe("resolveTradeImportValues - eligibility", () => {
   it("accepts a complete confirmed field set", () => {
     const resolved = resolveTradeImportValues(completeFields());
     expect(resolved.eligible).toBe(true);
@@ -98,7 +98,7 @@ describe("resolveTradeImportValues — eligibility", () => {
   });
 });
 
-// ── Input building (§77 — canonical capture path) ──────────────────────────
+// ── Input building (§77 - canonical capture path) ──────────────────────────
 
 describe("buildOcrTradeInput", () => {
   const deps = {
@@ -127,7 +127,7 @@ describe("buildOcrTradeInput", () => {
       source: "IMPORT",
       outOfPlaybook: true,
     });
-    // Provenance rides in the notes (§82) — never a P&L override.
+    // Provenance rides in the notes (§82) - never a P&L override.
     expect(input.reason).toContain(deps.externalRef.replace("ocr:", "recognition "));
     expect(Object.keys(input)).not.toContain("profit");
   });
@@ -145,7 +145,7 @@ describe("buildOcrTradeInput", () => {
     }
   });
 
-  it("builds an OPEN capture when only the close time is missing (§54 — nothing invented)", () => {
+  it("builds an OPEN capture when only the close time is missing (§54 - nothing invented)", () => {
     const resolved = resolveTradeImportValues(
       completeFields({ closeTime: field({ field: "closeTime", normalizedValue: null, validationStatus: "MISSING" }) }),
     );
@@ -153,7 +153,7 @@ describe("buildOcrTradeInput", () => {
     expect(buildOcrTradeInput({ values: resolved.values, ...deps }).variant).toBe("open");
   });
 
-  it("omits entryAt when no open time exists — the capture path stamps it", () => {
+  it("omits entryAt when no open time exists - the capture path stamps it", () => {
     const resolved = resolveTradeImportValues(
       completeFields({ openTime: field({ field: "openTime", normalizedValue: null, validationStatus: "MISSING" }) }),
     );

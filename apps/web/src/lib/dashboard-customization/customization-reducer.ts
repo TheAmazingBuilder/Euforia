@@ -20,18 +20,18 @@ import type { CustomizationSnapshot, PersistenceStatus } from "./types";
 import type { DashboardUserTemplate } from "./types";
 
 /**
- * Customization state machine (Phase 01 §5/§10/§17) — a pure reducer that
+ * Customization state machine (Phase 01 §5/§10/§17) - a pure reducer that
  * owns: the saved layout collection, the active layout id, the editable
  * draft, edit-mode status and persistence status.
  *
  * Invariants:
- *  - the draft is an ISOLATED copy — nothing mutates a saved layout until
+ *  - the draft is an ISOLATED copy - nothing mutates a saved layout until
  *    `saveCommitted` lands it;
  *  - the collection is never empty and `activeLayoutId` always resolves;
  *  - all mutations are immutable (the model layer returns new documents).
  *
  * The hook layer wires `saveRequest` to the preferences PATCH and feeds
- * `saveCommitted` / `saveFailed` back — a failed save keeps the draft and
+ * `saveCommitted` / `saveFailed` back - a failed save keeps the draft and
  * the edit session alive (§ "persistence errors do not discard the draft").
  */
 
@@ -56,54 +56,54 @@ export const initialCustomizationState: CustomizationState = {
 export type CustomizationAction =
   /** Replace the whole saved snapshot (initial load, refetch, post-save). */
   | { type: "sync"; snapshot: CustomizationSnapshot }
-  /** Unconditional snapshot application — view-mode collection ops that
+  /** Unconditional snapshot application - view-mode collection ops that
    * already computed their target state (hook persists right after). */
   | { type: "snapshotApplied"; snapshot: CustomizationSnapshot }
-  /** Enter edit mode — draft = isolated copy of the active layout. */
+  /** Enter edit mode - draft = isolated copy of the active layout. */
   | { type: "editStarted" }
   | { type: "editCancelled" }
   /** Replace the draft CONTENT with a template-built layout (keeps the
-   * layout id and the edit session — §11 draft-replacement interaction). */
+   * layout id and the edit session - §11 draft-replacement interaction). */
   | { type: "draftReplaced"; layout: DashboardLayoutDocument }
   | { type: "saveStarted" }
   /** The PATCH succeeded; `snapshot` is the freshly persisted state. */
   | { type: "saveCommitted"; snapshot: CustomizationSnapshot }
   | { type: "saveFailed"; message: string }
-  // ── Draft mutations (edit mode only — no-ops otherwise) ──────────────────
+  // ── Draft mutations (edit mode only - no-ops otherwise) ──────────────────
   | { type: "draftAddWidget"; widgetType: DashboardWidgetKey }
   | { type: "draftRemoveWidget"; instanceId: string }
   | { type: "draftSetVisible"; instanceId: string; visible: boolean }
   | { type: "draftMoveTo"; instanceId: string; toIndex: number }
   | { type: "draftMoveBy"; instanceId: string; direction: -1 | 1 }
   | { type: "draftResize"; instanceId: string; patch: { w?: number; h?: number } }
-  /** Replace one draft widget's per-instance config (Phase 02 §6) — the
+  /** Replace one draft widget's per-instance config (Phase 02 §6) - the
    * payload is validated by the model layer; invalid configs are no-ops. */
   | { type: "draftSetConfig"; instanceId: string; config: DashboardWidgetItem["config"] }
   /** Reset the DRAFT to the shipped default configuration (§12). */
   | { type: "draftResetToDefault" }
-  // ── Layout collection operations (view mode — persisted immediately) ─────
+  // ── Layout collection operations (view mode - persisted immediately) ─────
   | { type: "layoutCreated"; layout: DashboardLayoutDocument }
   /** Switch active layout; drops any view-mode stale draft (none exists). */
   | { type: "layoutSwitched"; layoutId: string }
   | { type: "layoutRenamed"; layoutId: string; name: string }
   | { type: "layoutDuplicated"; layoutId: string }
   | { type: "layoutDeleted"; layoutId: string }
-  /** Phase 06 — mark one workspace as the user's default (no-op when the
+  /** Phase 06 - mark one workspace as the user's default (no-op when the
    * id does not resolve). */
   | { type: "defaultLayoutSet"; layoutId: string }
-  /** Phase 06 — save a frozen deep copy of the active workspace as a
+  /** Phase 06 - save a frozen deep copy of the active workspace as a
    * user-owned template (cap enforced by the model layer). */
   | { type: "userTemplateSaved"; template: DashboardUserTemplate }
   | { type: "userTemplateDeleted"; templateId: string }
   /** View-mode per-widget config change (persisted immediately by the
-   * hook's collection-op path — same channel as switch/rename). */
+   * hook's collection-op path - same channel as switch/rename). */
   | { type: "widgetConfigSet"; layoutId: string; instanceId: string; config: DashboardWidgetItem["config"] };
 
 /** Does the draft differ from the saved active layout? */
 export function isDirty(state: CustomizationState): boolean {
   if (!state.draft) return false;
   const saved = state.layouts.find((layout) => layout.id === state.draft!.id);
-  if (!saved) return true; // editing a layout that vanished — treat as dirty
+  if (!saved) return true; // editing a layout that vanished - treat as dirty
   return !layoutsEqual(state.draft, saved);
 }
 
@@ -135,7 +135,7 @@ export function customizationReducer(
 ): CustomizationState {
   switch (action.type) {
     case "sync": {
-      // Never stomp a live edit session — the draft wins until committed.
+      // Never stomp a live edit session - the draft wins until committed.
       if (state.draft) return state;
       return {
         ...state,
@@ -189,7 +189,7 @@ export function customizationReducer(
       };
 
     case "saveFailed":
-      // Draft + edit session survive — the user can retry or cancel.
+      // Draft + edit session survive - the user can retry or cancel.
       return { ...state, persistence: "error", saveError: action.message };
 
     case "draftAddWidget": {
@@ -233,7 +233,7 @@ export function customizationReducer(
       const [defaultLayout] = createDefaultLayouts();
       return {
         ...state,
-        // Keep the CURRENT layout identity — reset replaces its content.
+        // Keep the CURRENT layout identity - reset replaces its content.
         draft: { ...structuredClone(defaultLayout!), id: state.draft.id, updatedAt: new Date().toISOString() },
       };
     }
@@ -286,7 +286,7 @@ export function customizationReducer(
       if (remaining.length === state.layouts.length) return state;
       const activeLayoutId =
         state.activeLayoutId === action.layoutId ? remaining[0]!.id : state.activeLayoutId;
-      // The deleted workspace cannot stay the default (spec §4) — the flag
+      // The deleted workspace cannot stay the default (spec §4) - the flag
       // clears rather than silently re-pointing at an arbitrary layout.
       const defaultLayoutId =
         state.defaultLayoutId === action.layoutId ? null : state.defaultLayoutId;
@@ -312,7 +312,7 @@ export function customizationReducer(
     }
 
     case "widgetConfigSet": {
-      // View-mode op: never touch a live draft — the edit session owns the
+      // View-mode op: never touch a live draft - the edit session owns the
       // displayed layout until Save/Cancel (§10.2 same rule as collection ops).
       if (state.draft) return state;
       return {
@@ -351,7 +351,7 @@ export function displayedWidgetOrder(state: CustomizationState): DashboardWidget
   return widgetOrderOf(displayedLayoutOf(state));
 }
 
-/** Template application produces a layout document — shared by hook paths. */
+/** Template application produces a layout document - shared by hook paths. */
 export function buildLayoutFromTemplate(templateId: string): DashboardLayoutDocument | null {
   const template = getTemplate(templateId);
   return template ? layoutFromTemplate(template) : null;

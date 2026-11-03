@@ -1,5 +1,5 @@
 /**
- * OCR BACKEND V1 — browser E2E over the LIVE stack (master prompt §138).
+ * OCR BACKEND V1 - browser E2E over the LIVE stack (master prompt §138).
  *
  * Boots a FastAPI sidecar (:3004) + NestJS API (:4000) + a Next.js
  * live-bridge build on :3001 (MSW steps aside for auth+recognition; every
@@ -26,7 +26,7 @@ const PASSWORD = "Str0ng-Passphrase!";
 const EMAIL = `ocr-live-${Date.now()}@test.cosmoz.dev`;
 
 fs.mkdirSync(ART, { recursive: true });
-// Fresh logs every run — stale mail tokens from previous runs would verify
+// Fresh logs every run - stale mail tokens from previous runs would verify
 // nothing (login then 403s on the unverified account).
 for (const f of ["api.log", "web.log"]) {
   try { fs.rmSync(path.join(ART, f)); } catch {}
@@ -59,7 +59,7 @@ function waitFor(url, { name, timeoutMs = 60_000, match = () => true } = {}) {
 
 async function main() {
   // ── pre-flight: clear stale processes from earlier runs on our ports ────
-  // NOTE: `fuser` is NOT installed in this sandbox — every fuser-based kill
+  // NOTE: `fuser` is NOT installed in this sandbox - every fuser-based kill
   // silently no-ops (exit 127). Parse `ss -tlnp` instead, which works here,
   // then fall back to pattern kills for the named processes.
   for (const port of [API_PORT, OCR_PORT, WEB_PORT]) {
@@ -194,7 +194,7 @@ async function main() {
   const body = await page.locator('[data-testid="ocr-result"]').innerText();
   for (const expected of ["XAUUSD", "BUY", "2,345.6", "2,335.6", "2,365.6"]) {
     if (!body.toUpperCase().includes(expected.replace(/,/g, ",").toUpperCase()) && !body.includes(expected)) {
-      // Numbers render via shared formatters — accept the raw form too.
+      // Numbers render via shared formatters - accept the raw form too.
       const raw = expected.replace(/,/g, "");
       if (!body.includes(raw) && !body.toUpperCase().includes(expected.toUpperCase())) {
         throw new Error(`result missing "${expected}"`);
@@ -215,7 +215,7 @@ async function main() {
   const tradeRef = successText.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0] ?? "";
   if (!tradeRef) throw new Error(`success screen has no trade reference:\n${successText}`);
   await page.screenshot({ path: shot("06-success"), fullPage: false });
-  console.log("✓ CONFIRMED through the UI — canonical trade:", tradeRef);
+  console.log("✓ CONFIRMED through the UI - canonical trade:", tradeRef);
 
   // ── 6. The canonical trade EXISTS server-side (§141) ────────────────────
   const list = await fetch(`http://127.0.0.1:${API_PORT}/api/v1/trades`, {
@@ -225,7 +225,7 @@ async function main() {
   const imported = trades.find((t) => t.id === tradeRef);
   if (!imported) throw new Error(`trade ${tradeRef} NOT in the journal`);
   if (imported.source !== "IMPORT" || imported.externalRef !== `OCR:${""}`) {
-    // externalRef contains the recognition id — check the prefix honestly.
+    // externalRef contains the recognition id - check the prefix honestly.
     if (imported.source !== "IMPORT") throw new Error("trade source is not IMPORT");
   }
   console.log("✓ journal verified:", imported.direction, imported.entryPrice, "→", imported.exitPrice,

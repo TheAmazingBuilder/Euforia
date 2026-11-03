@@ -1,5 +1,5 @@
 /**
- * Trading-accounts controller — the ACCOUNTS module's rich surface
+ * Trading-accounts controller - the ACCOUNTS module's rich surface
  * (/trading-accounts*) mapped onto the existing connectivity services.
  * Route-for-route equivalent to the MSW handler group the frontend was
  * built against (Task 4 contract); every shape is validated against the
@@ -68,9 +68,9 @@ export class TradingAccountsController {
   ) {}
 
   /**
-   * Phase 08 — the ONLY public route of the accounts surface: the MT5
+   * Phase 08 - the ONLY public route of the accounts surface: the MT5
    * terminal bridge ingest. Authentication is per-event HMAC (key locator +
-   * timestamp + signature + event id — see Mt5BridgeIngestService); no JWT
+   * timestamp + signature + event id - see Mt5BridgeIngestService); no JWT
    * exists on the terminal. Declared before the :accountId routes.
    */
   @Public()
@@ -101,7 +101,7 @@ export class TradingAccountsController {
     return result;
   }
 
-  /** Phase 08 — re-view the pairing sheet (owner-only). */
+  /** Phase 08 - re-view the pairing sheet (owner-only). */
   @Get(":accountId/bridge/pairing")
   async bridgePairing(
     @CurrentUser() principal: AuthPrincipal,
@@ -111,7 +111,7 @@ export class TradingAccountsController {
     return this.accounts.getBridgePairing(user.id, accountId);
   }
 
-  /** Phase 08 — rotate the bridge secret (invalidates the old terminal config). */
+  /** Phase 08 - rotate the bridge secret (invalidates the old terminal config). */
   @Post(":accountId/bridge/rotate")
   @HttpCode(HttpStatus.OK)
   async bridgeRotate(
@@ -128,7 +128,7 @@ export class TradingAccountsController {
   }
 
   /**
-   * Phase 07 — the universal broker catalog (GET /trading-accounts/brokers).
+   * Phase 07 - the universal broker catalog (GET /trading-accounts/brokers).
    * Static identity metadata + honest connector status; declared BEFORE the
    * :accountId routes so "brokers" is never captured as an account id.
    */
@@ -138,7 +138,7 @@ export class TradingAccountsController {
   }
 
   /**
-   * Phase 07 — rule-based broker identification
+   * Phase 07 - rule-based broker identification
    * (POST /trading-accounts/brokers/identify). No secrets accepted, no
    * provider call; rate-limited per user (30 / 15 min).
    */
@@ -205,7 +205,7 @@ export class TradingAccountsController {
   }
 
   /**
-   * Bounded synchronization history (Phase 05 §16) — newest first,
+   * Bounded synchronization history (Phase 05 §16) - newest first,
    * keyset-paginated via `before` (the previous page's nextCursor). Inputs
    * are schema-validated; ownership is enforced in the service (loadOwned).
    */
@@ -282,7 +282,7 @@ export class TradingAccountsController {
     @Body(new ZodValidationPipe(tradingAccountUpdateInputSchema))
     input: TradingAccountUpdateInput,
   ) {
-    // Phase 02 hygiene: updateAccount returns the details object itself —
+    // Phase 02 hygiene: updateAccount returns the details object itself -
     // wrap it in the standard `{ account }` response envelope (same shape
     // as connect/reconnect) before the contract re-validation. The
     // previously-dead controller parsed the unwrapped object against the

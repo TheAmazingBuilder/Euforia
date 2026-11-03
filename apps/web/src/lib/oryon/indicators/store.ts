@@ -6,26 +6,26 @@ import {
 import { indicatorRuleError, type IndicatorRuleError } from "./validation";
 
 /**
- * Oryon indicator store — single source of truth for the active indicator
+ * Oryon indicator store - single source of truth for the active indicator
  * instances (Phase 3 spec §4D, §9).
  *
  * Mirrors the drawing store discipline:
- *  - NO external state library — one class per workspace, shared through a
+ *  - NO external state library - one class per workspace, shared through a
  *    React context, leaves subscribe with useSyncExternalStore;
  *  - immutable updates (new array reference per mutation);
  *  - invariants enforced HERE: every mutation re-parses through the shared
- *    Zod schema AND re-checks the business rules — an invalid configuration
+ *    Zod schema AND re-checks the business rules - an invalid configuration
  *    is REJECTED and the previous state is retained (spec §9);
  *  - instances are independent: updating one never touches another
  *    (verified by unit tests).
  *
- * No undo/redo at this layer — Phase 3 scope keeps history for drawings
+ * No undo/redo at this layer - Phase 3 scope keeps history for drawings
  * only; indicator mutations are discrete config actions (add/remove/edit).
  */
 
 export interface IndicatorStoreSnapshot {
   indicators: readonly OryonIndicatorInstance[];
-  /** Bumped on every commit — cheap reactivity signal for subscribers. */
+  /** Bumped on every commit - cheap reactivity signal for subscribers. */
   version: number;
 }
 
@@ -90,7 +90,7 @@ export class OryonIndicatorStore {
 
   /**
    * Whole-instance replacement (config + style + visibility). The replacement
-   * MUST keep the same id. On validation failure NOTHING changes — the last
+   * MUST keep the same id. On validation failure NOTHING changes - the last
    * valid configuration is retained (Phase 3 spec §9).
    */
   replace(next: OryonIndicatorInstance): IndicatorMutationResult {
@@ -113,7 +113,7 @@ export class OryonIndicatorStore {
 
   /**
    * Replaces the whole collection (validated persistence load / template
-   * seeding). Already-validated input is trusted here — the persistence
+   * seeding). Already-validated input is trusted here - the persistence
    * loader and the seeding path are the only callers.
    */
   loadAll(instances: readonly OryonIndicatorInstance[]): void {

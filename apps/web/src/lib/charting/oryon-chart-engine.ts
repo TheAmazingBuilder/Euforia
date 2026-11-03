@@ -55,76 +55,76 @@ import {
 } from "@/lib/oryon/sync/alignment";
 import { getChartTheme } from "@/lib/utils/chart-theme";
 
-/** One economic-event marker input (Phase 8) — BAR-SNAPPED UTC seconds.
+/** One economic-event marker input (Phase 8) - BAR-SNAPPED UTC seconds.
  *  The color arrives RESOLVED (bridge reads theme tokens); the id is the
  *  event's stable record id (§8). */
 export interface OryonEventMarkerSpec {
-  /** Stable identity — the verified event record's id. */
+  /** Stable identity - the verified event record's id. */
   readonly id: string;
   /** Open time of the bar CONTAINING the event instant (unix seconds). */
   readonly timeSec: number;
-  /** Resolved marker color (importance encoding — size also varies). */
+  /** Resolved marker color (importance encoding - size also varies). */
   readonly color: string;
-  /** Marker size (importance encoding — never color alone, §15). */
+  /** Marker size (importance encoding - never color alone, §15). */
   readonly size: number;
 }
 
 /**
- * One market-structure marker input (Phase 9) — BAR-SNAPPED UTC seconds.
+ * One market-structure marker input (Phase 9) - BAR-SNAPPED UTC seconds.
  * Unlike event markers, the color travels as a THEME TOKEN KEY: the engine
  * resolves it at paint time, so a theme switch restyles structure markers
- * without any bridge involvement (the events bridge predates this — its
+ * without any bridge involvement (the events bridge predates this - its
  * resolved-color contract is unchanged).
  */
 export interface OryonStructureMarkerSpec {
-  /** Stable identity — pivot/break id derived from source candles (§4.4). */
+  /** Stable identity - pivot/break id derived from source candles (§4.4). */
   readonly id: string;
   /** Open time of the anchor bar (pivot or break candle, unix seconds). */
   readonly timeSec: number;
   readonly position: "aboveBar" | "belowBar";
   readonly shape: "arrowDown" | "arrowUp" | "circle";
-  /** Theme token KEY ("cat-ta", "warning", …) — resolved at paint. */
+  /** Theme token KEY ("cat-ta", "warning", …) - resolved at paint. */
   readonly colorToken: string;
   readonly size: number;
-  /** Compact label (HH/LH/HL/LL/BOS/CHoCH) — never long text (§6.3). */
+  /** Compact label (HH/LH/HL/LL/BOS/CHoCH) - never long text (§6.3). */
   readonly text?: string;
 }
 
 /**
- * Oryon chart-engine boundary — TradingView Lightweight Charts v5.
+ * Oryon chart-engine boundary - TradingView Lightweight Charts v5.
  *
  * Rendering foundation per the Oryon Phase 1 decision (cahier des charges §8):
  * Lightweight Charts is the SANCTIONED price-chart library of this repo
- * (AGENTS.md stack — "TradingView Lightweight Charts free version (price
+ * (AGENTS.md stack - "TradingView Lightweight Charts free version (price
  * charts)"), installed as the smallest justified dependency change and used
  * through this single adapter so the workspace components never touch the
  * library directly.
  *
  * Scope discipline (Phase 1 + Phase 3):
  *   - chart creation / disposal, theming via getChartTheme() (NEVER hardcoded
- *     hex — AGENTS.md golden rule), candlestick + line series, tick→candle
+ *     hex - AGENTS.md golden rule), candlestick + line series, tick→candle
  *     merge into the last bucket, crosshair inspection, magnet toggle,
  *     go-to-latest.
  *   - Phase 3: indicator series management (overlays in pane 0, RSI/MACD/
  *     ATR/Volume in NATIVE v5 panes) delegated to
- *     OryonIndicatorSeriesManager — the engine forwards data/theme/tick
+ *     OryonIndicatorSeriesManager - the engine forwards data/theme/tick
  *     events but owns no indicator math.
- *   - Phase 4: open-position overlays (entry/SL/TP price lines, read-only —
+ *   - Phase 4: open-position overlays (entry/SL/TP price lines, read-only -
  *     library price lines are non-interactive by construction) delegated to
  *     OryonPositionOverlayManager; the engine owns the series-lifecycle
  *     re-homing (chart-type switch) and theme restyling.
- *   - Phase 7: synchronization surface — visible-range get/apply/subscribe
+ *   - Phase 7: synchronization surface - visible-range get/apply/subscribe
  *     and timestamp-based crosshair positioning with echo guards, so the
  *     sync coordinator can align charts without re-entry loops. NO drawing
- *     tools (owned by the drawing primitive) — the adapter stays narrow;
+ *     tools (owned by the drawing primitive) - the adapter stays narrow;
  *     phases extend it without a rewrite.
  *
  * Library facts honored:
  *   - v5 API: series are added with chart.addSeries(CandlestickSeries, …)
  *     (the v4 addCandlestickSeries API is gone).
- *   - The TradingView attribution logo stays ON (library default) — license
+ *   - The TradingView attribution logo stays ON (library default) - license
  *     compliance; we do not hide or restyle it.
- *   - autoSize: true — the library owns container resizing via its own
+ *   - autoSize: true - the library owns container resizing via its own
  *     ResizeObserver; no second observer is created here.
  *   - SSR: mount() is only ever called from a client effect; nothing here
  *     touches the DOM at module scope.
@@ -136,7 +136,7 @@ export type OryonChartType = "candles" | "line";
  * Chart appearance overrides (chart context-menu Settings). `null` colors
  * follow the active theme tokens; booleans mirror the engine options they
  * map to one-to-one. The engine retains the last applied snapshot and
- * re-merges it on every theme re-resolve — user overrides survive palette
+ * re-merges it on every theme re-resolve - user overrides survive palette
  * switches, and a null color follows the theme it switched to.
  */
 export interface OryonChartAppearance {
@@ -151,7 +151,7 @@ export interface OryonChartAppearance {
   crosshairMagnet: boolean;
 }
 
-/** Documented defaults — everything follows the theme, everything visible. */
+/** Documented defaults - everything follows the theme, everything visible. */
 export const ORYON_CHART_APPEARANCE_DEFAULT: OryonChartAppearance = {
   upColor: null,
   downColor: null,
@@ -166,17 +166,17 @@ export const ORYON_CHART_APPEARANCE_DEFAULT: OryonChartAppearance = {
 
 /**
  * Bar handed to the legend on crosshair inspection (raw candle shape).
- * Phase 5: `v` (volume) joins the payload — the legend decides honestly
+ * Phase 5: `v` (volume) joins the payload - the legend decides honestly
  * whether to display it (valid positive values only; the locally-merged
  * forming candle reports 0 until the server refetch).
  */
 export type OryonCrosshairBar = Pick<Candle, "t" | "o" | "h" | "l" | "c" | "v">;
 
 /**
- * Drawing-domain conversion facade (Phase 2 spec §4B — coordinate layer).
+ * Drawing-domain conversion facade (Phase 2 spec §4B - coordinate layer).
  *
  * Screen space: CSS pixels relative to the chart PANE (plot area) top-left.
- * Domain space: unix seconds + raw price. Every method is null-safe — the
+ * Domain space: unix seconds + raw price. Every method is null-safe - the
  * callers MUST handle null explicitly (no arbitrary substitutes, spec §6).
  *
  * Why the LOGICAL pipeline instead of timeToCoordinate(): Lightweight
@@ -222,48 +222,48 @@ export class OryonChartEngine {
   private digits = 2;
   private intervalMs = 300_000;
   private crosshairHandler: ((bar: OryonCrosshairBar | null) => void) | null = null;
-  /** Drawing overlay primitive — re-attached whenever the series is rebuilt. */
+  /** Drawing overlay primitive - re-attached whenever the series is rebuilt. */
   private drawingsPrimitive: ISeriesPrimitive<UTCTimestamp> | null = null;
-  /** Indicator series manager (Phase 3) — created with the chart. */
+  /** Indicator series manager (Phase 3) - created with the chart. */
   private indicators: OryonIndicatorSeriesManager | null = null;
-  /** Position overlay manager (Phase 4) — created with the chart. */
+  /** Position overlay manager (Phase 4) - created with the chart. */
   private positions: OryonPositionOverlayManager | null = null;
-  /** Alert overlay manager (Phase 5) — created with the chart. */
+  /** Alert overlay manager (Phase 5) - created with the chart. */
   private alerts: OryonAlertOverlayManager | null = null;
-  /** Sync surface (Phase 7) — raw listeners + programmatic-apply guards. */
+  /** Sync surface (Phase 7) - raw listeners + programmatic-apply guards. */
   private rangeListeners = new Set<(range: SyncRange | null) => void>();
   private crosshairListeners = new Set<(timeSec: number | null) => void>();
-  /** Session shading (Phase 8) — "bottom" zOrder primitive, diffed bands. */
+  /** Session shading (Phase 8) - "bottom" zOrder primitive, diffed bands. */
   private sessions: OryonSessionOverlayManager | null = null;
   private sessionColors = createSessionColorResolver();
-  /** Economic-event markers (Phase 8) — native markers plugin, stable ids. */
+  /** Economic-event markers (Phase 8) - native markers plugin, stable ids. */
   private markersPlugin: ISeriesMarkersPluginApi<UTCTimestamp> | null = null;
   private eventMarkerSpecs: readonly OryonEventMarkerSpec[] = [];
   private markerClickListeners = new Set<(timeSec: number, point: { x: number; y: number } | null) => void>();
   private clickSubscribed = false;
-  /** Last bridge INPUTS for the marker sets — re-validated against every
+  /** Last bridge INPUTS for the marker sets - re-validated against every
    *  new candle window in setCandles. Child-bridge effects run BEFORE the
    *  parent's setCandles effect, so a window change (symbol/timeframe)
    *  otherwise leaves the stored sets filtered against the PREVIOUS
    *  window; the engine re-validates the full inputs here (Phase 9
    *  hardening, extends the Phase 8 containment guard). */
   private lastEventMarkerInput: readonly OryonEventMarkerSpec[] = [];
-  /** Key levels (Phase 9) — native price lines, diffed by stable key. */
+  /** Key levels (Phase 9) - native price lines, diffed by stable key. */
   private keyLevels: OryonKeyLevelsOverlayManager | null = null;
-  /** Opening-range boxes (Phase 9) — "bottom" zOrder primitive. */
+  /** Opening-range boxes (Phase 9) - "bottom" zOrder primitive. */
   private rangeBoxes: OryonRangeBoxManager | null = null;
   private rangeBoxColors = createSessionColorResolver();
-  /** Structure break lines (Phase 9 refinement) — "top" zOrder primitive:
+  /** Structure break lines (Phase 9 refinement) - "top" zOrder primitive:
    *  pivot→break segments with boxed BOS/CHoCH labels. */
   private structureLines: OryonStructureLineManager | null = null;
   private structureLineColors = createSessionColorResolver();
-  /** Structure markers (Phase 9) — SECOND markers plugin instance: the
+  /** Structure markers (Phase 9) - SECOND markers plugin instance: the
    *  Phase 8 event-marker set stays identity-stable and untouched. */
   private structurePlugin: ISeriesMarkersPluginApi<UTCTimestamp> | null = null;
   private structureSpecs: readonly OryonStructureMarkerSpec[] = [];
   private structureColors = createSessionColorResolver();
   private lastStructureInput: readonly OryonStructureMarkerSpec[] = [];
-  /** Appearance overrides (context-menu Settings) — re-merged on theme
+  /** Appearance overrides (context-menu Settings) - re-merged on theme
    *  changes so user colors survive palette switches. */
   private appearance: OryonChartAppearance = { ...ORYON_CHART_APPEARANCE_DEFAULT };
   /** Last dispatched crosshair time (dev-probe observability). */
@@ -342,7 +342,7 @@ export class OryonChartEngine {
   }
 
   /** Registers the drawing overlay. Re-attached automatically when the
-   *  active series is rebuilt (chart type switch) — the primitive never
+   *  active series is rebuilt (chart type switch) - the primitive never
    *  dies silently with its host series. */
   attachDrawings(primitive: ISeriesPrimitive<UTCTimestamp>): void {
     this.drawingsPrimitive = primitive;
@@ -359,7 +359,7 @@ export class OryonChartEngine {
           primitive as unknown as Parameters<ISeriesApi<"Candlestick">["detachPrimitive"]>[0],
         );
       } catch {
-        // Already detached with a removed series — nothing to clean up.
+        // Already detached with a removed series - nothing to clean up.
       }
     }
     this.drawingsPrimitive = null;
@@ -404,7 +404,7 @@ export class OryonChartEngine {
 
   /**
    * Applies appearance overrides (chart context-menu Settings → engine).
-   * Options are diffed onto the live chart/series imperatively — no
+   * Options are diffed onto the live chart/series imperatively - no
    * re-mount, no data loss. The snapshot is retained: applyTheme() re-merges
    * it, so overrides survive theme switches (null colors follow the theme).
    */
@@ -425,14 +425,14 @@ export class OryonChartEngine {
         fontFamily: theme.monoFont,
       },
     });
-    // Grid + crosshair + scales + series colors — theme tokens MERGED with
+    // Grid + crosshair + scales + series colors - theme tokens MERGED with
     // the user's appearance overrides (one diff, no duplicated apply).
     this.applyAppearanceOptions();
     this.indicators?.restyle({ digits: this.digits, theme });
     this.positions?.restyle(theme);
     this.alerts?.restyle(theme);
     this.keyLevels?.restyle(theme);
-    // Session band + range-box colors resolve from theme tokens — refresh
+    // Session band + range-box colors resolve from theme tokens - refresh
     // the caches so overlays follow the palette switch on the NEXT paint
     // (§15 theming). Structure markers re-resolve and re-apply directly.
     this.sessionColors.invalidate();
@@ -468,7 +468,7 @@ export class OryonChartEngine {
   }
 
   /**
-   * Structural indicator sync (Phase 3) — create/update/remove indicator
+   * Structural indicator sync (Phase 3) - create/update/remove indicator
    * series + panes to mirror the instance list. Full data rebuild included.
    */
   setIndicators(instances: readonly OryonIndicatorInstance[]): void {
@@ -479,17 +479,17 @@ export class OryonChartEngine {
     });
   }
 
-  /** Legend subscription — latest valid value per indicator output. */
+  /** Legend subscription - latest valid value per indicator output. */
   onIndicatorValues(handler: (values: readonly ManagedIndicatorValue[]) => void): void {
     if (this.indicators === null) return;
     this.indicators.onValues(handler);
   }
 
   /**
-   * Structural position-overlay sync (Phase 4) — mirrors the validated
+   * Structural position-overlay sync (Phase 4) - mirrors the validated
    * position set of the ACTIVE instrument onto price lines. Specs are
    * remembered even while the series is being rebuilt (chart-type switch),
-   * then replayed — overlays survive type switches without caller action.
+   * then replayed - overlays survive type switches without caller action.
    */
   setPositions(specs: readonly PositionLineSpec[]): void {
     if (this.chart === null || this.positions === null) return;
@@ -497,9 +497,9 @@ export class OryonChartEngine {
   }
 
   /**
-   * Structural alert-overlay sync (Phase 5) — mirrors the ACTIVE alerts of
+   * Structural alert-overlay sync (Phase 5) - mirrors the ACTIVE alerts of
    * the displayed instrument onto price lines. Specs are remembered across
-   * series rebuilds (chart-type switch) and replayed — the overlay survives
+   * series rebuilds (chart-type switch) and replayed - the overlay survives
    * type switches without caller action.
    */
   setAlerts(specs: readonly AlertLineSpec[]): void {
@@ -508,7 +508,7 @@ export class OryonChartEngine {
   }
 
   /**
-   * Indicator readings AT one bar-open time (Phase 5 crosshair §5) — exact
+   * Indicator readings AT one bar-open time (Phase 5 crosshair §5) - exact
    * lookup on the manager's calculations; empty when nothing is computed
    * there (honest omission, never an interpolation).
    */
@@ -523,7 +523,7 @@ export class OryonChartEngine {
     this.chartType = type;
     // Pane-0 survival: the main series is pane 0's ONLY data source, and
     // LWC v5 auto-removes an empty pane on removeSeries
-    // (cleanupIfPaneIsEmpty) — the indicator panes would lose their anchor
+    // (cleanupIfPaneIsEmpty) - the indicator panes would lose their anchor
     // and the rebuilt main series would land in the wrong pane. Preserve
     // pane 0 across the rebuild, then restore the default semantics.
     const paneZero = this.chart.panes()[0];
@@ -547,16 +547,16 @@ export class OryonChartEngine {
     this.alerts?.setSeries(this.activeSeries());
     // ORDERING (Phase 8 regression guard): the new series must receive its
     // DATA before any time-anchored overlay re-attaches. The time scale is
-    // CHART-level — it still holds the previous series' bars during the
+    // CHART-level - it still holds the previous series' bars during the
     // rebuild window; createSeriesMarkers (and any time-anchored attach)
     // landing on a data-less series while the scale has rows lets LWC's
     // candle paint loop hit a null style lookup ("Value is null" uncaught
     // in drawSourceViews). rebuildSeriesData FIRST, overlays after.
     this.rebuildSeriesData();
-    // Session bands live on the series — re-attach after the rebuild.
+    // Session bands live on the series - re-attach after the rebuild.
     const currentSeries = this.activeSeries();
     if (this.sessions !== null && currentSeries !== null) this.sessions.attach(currentSeries);
-    // Key levels + range boxes are series-bound — re-home and re-attach.
+    // Key levels + range boxes are series-bound - re-home and re-attach.
     this.keyLevels?.setSeries(currentSeries);
     if (this.rangeBoxes !== null && currentSeries !== null) this.rangeBoxes.attach(currentSeries);
     if (this.structureLines !== null && currentSeries !== null) this.structureLines.attach(currentSeries);
@@ -570,7 +570,7 @@ export class OryonChartEngine {
    * Live tick → candle merge (the reimplemented RF-03): the tick lands in the
    * current bucket (updates close, widens high/low) or opens the next bucket.
    * Ticks older than the last bucket are ignored. Cheap enough at feed rate
-   * (≤2 Hz): at most one small array copy + one series.update — no React
+   * (≤2 Hz): at most one small array copy + one series.update - no React
    * state involved, so the workspace does NOT re-render per tick.
    */
   applyTick(price: number, tsMs: number): boolean {
@@ -615,7 +615,7 @@ export class OryonChartEngine {
   /**
    * Replaces the session shading bands (UTC seconds). Diff-free by design:
    * the primitive reads the array at paint time and one applyOptions({})
-   * requests a redraw — visibility toggles NEVER recreate the chart (§5/§14).
+   * requests a redraw - visibility toggles NEVER recreate the chart (§5/§14).
    * A no-op before mount (the panel's honest empty/error states own the
    * canvas until real data arrives) and on unmounted destroy.
    */
@@ -626,7 +626,7 @@ export class OryonChartEngine {
 
   /**
    * Replaces the economic-event markers. Specs arrive BAR-SNAPPED from the
-   * bridge (the marker lands on the bar containing the event instant — the
+   * bridge (the marker lands on the bar containing the event instant - the
    * containment rule the crosshair sync already documents); stable ids
    * (event ids) keep re-sets identity-stable (§8/§14). The engine
    * re-validates against its OWN loaded candles (see below).
@@ -637,7 +637,7 @@ export class OryonChartEngine {
     // RENDERS: child bridges run their effects BEFORE the parent's
     // setCandles effect (React ordering), so a marker set computed from
     // the incoming window can otherwise land on a series one commit
-    // behind — LWC logs "Value is null" for markers outside the loaded
+    // behind - LWC logs "Value is null" for markers outside the loaded
     // data. A marker outside [first − bucket, last + bucket] is dropped
     // here: the chart never renders a marker without a loaded bar under
     // it (§8), and the next candles commit re-applies the full set.
@@ -661,7 +661,7 @@ export class OryonChartEngine {
 
   /** Subscribes a marker-click listener. The payload is the clicked BAR
    *  time (unix seconds) plus the click point in CSS px (chart-local, null
-   *  outside the plot) — the bridge anchors its event popover there.
+   *  outside the plot) - the bridge anchors its event popover there.
    *  Returns the unsubscribe function (cleanup on panel unmount). */
   onEventMarkerClick(handler: (timeSec: number, point: { x: number; y: number } | null) => void): () => void {
     this.markerClickListeners.add(handler);
@@ -686,7 +686,7 @@ export class OryonChartEngine {
     if (this.markerClickListeners.size === 0) return;
     const time = param.time;
     if (typeof time !== "number") return;
-    // Emit only when a marker actually sits on this bar — clicks on empty
+    // Emit only when a marker actually sits on this bar - clicks on empty
     // bars never open a phantom popover (§8: markers are linked to verified
     // records, nothing else).
     const hit = this.eventMarkerSpecs.some((spec) => spec.timeSec === time);
@@ -724,7 +724,7 @@ export class OryonChartEngine {
       this.markersPlugin.setMarkers([]);
       this.markersPlugin.detach();
     } catch {
-      // Host series already removed — nothing left to clean.
+      // Host series already removed - nothing left to clean.
     }
     this.markersPlugin = null;
   }
@@ -736,7 +736,7 @@ export class OryonChartEngine {
    * BOS/CHoCH events). Same containment discipline as the event markers:
    * every spec is re-validated against the candles the engine ACTUALLY
    * RENDERS (child bridges run their effects before the parent's
-   * setCandles effect) — a marker without a loaded bar under it is dropped
+   * setCandles effect) - a marker without a loaded bar under it is dropped
    * here, never painted (§6.2), and the next candles commit re-applies the
    * full set. Stable ids keep re-sets identity-stable (§14).
    */
@@ -762,7 +762,7 @@ export class OryonChartEngine {
 
   /**
    * Replaces the key-level price lines (previous-day/week, opening range).
-   * Specs are remembered across series rebuilds and replayed — the overlay
+   * Specs are remembered across series rebuilds and replayed - the overlay
    * survives chart-type switches without caller action (positions/alerts
    * contract). Prices arrive pre-validated from the calculation engines.
    */
@@ -774,7 +774,7 @@ export class OryonChartEngine {
   /**
    * Replaces the opening-range boxes. Diff-free by design: the primitive
    * reads the array at paint time and one applyOptions({}) requests a
-   * redraw — visibility toggles NEVER recreate the chart (§14).
+   * redraw - visibility toggles NEVER recreate the chart (§14).
    */
   setOpeningRangeBoxes(boxes: readonly OryonRangeBoxSpec[]): void {
     if (this.rangeBoxes === null) return;
@@ -784,7 +784,7 @@ export class OryonChartEngine {
   /**
    * Replaces the structure break lines (BOS/CHoCH pivot→break segments).
    * Diff-free like the range boxes: the primitive reads the array at paint
-   * time — a visibility toggle never recreates the chart (§14). Specs are
+   * time - a visibility toggle never recreates the chart (§14). Specs are
    * remembered across series rebuilds (chart-type switch) and replayed by
    * the manager's re-attach.
    */
@@ -820,12 +820,12 @@ export class OryonChartEngine {
       this.structurePlugin.setMarkers([]);
       this.structurePlugin.detach();
     } catch {
-      // Host series already removed — nothing left to clean.
+      // Host series already removed - nothing left to clean.
     }
     this.structurePlugin = null;
   }
 
-  /** Crosshair magnet on/off (real engine option — the rail's honest toggle). */
+  /** Crosshair magnet on/off (real engine option - the rail's honest toggle). */
   setMagnet(on: boolean): void {
     if (this.chart === null) return;
     this.chart.applyOptions({ crosshair: { mode: on ? CrosshairMode.Magnet : CrosshairMode.Normal } });
@@ -840,14 +840,14 @@ export class OryonChartEngine {
   /**
    * Captures the chart's CURRENT visual state as a PNG data URL (Phase 10
    * snapshot workflow) through the library's DOCUMENTED takeScreenshot()
-   * API — candles, overlays, primitives and panes as rendered. The result
+   * API - candles, overlays, primitives and panes as rendered. The result
    * is bounded: a capture wider than `maxWidth` is downscaled proportionally
    * on an offscreen canvas so a snapshot can never be a multi-megabyte
-   * payload. Null when the chart is not mounted or the export throws —
+   * payload. Null when the chart is not mounted or the export throws -
    * never a blank or misleading image.
    *
    * Capture time (Date.now() at the call site) and chart reference time
-   * (lastCandleTime) are DISTINCT concepts — callers store both explicitly.
+   * (lastCandleTime) are DISTINCT concepts - callers store both explicitly.
    */
   captureSnapshot(maxWidth = 1600): string | null {
     if (this.chart === null) return null;
@@ -864,12 +864,12 @@ export class OryonChartEngine {
       context.drawImage(source, 0, 0, target.width, target.height);
       return target.toDataURL("image/png");
     } catch {
-      // Export unsupported (e.g. tainted canvas) — reported, never faked.
+      // Export unsupported (e.g. tainted canvas) - reported, never faked.
       return null;
     }
   }
 
-  // ── synchronization surface (Phase 7 — coordinator adapter) ────────────
+  // ── synchronization surface (Phase 7 - coordinator adapter) ────────────
 
   /** Current visible time range (unix seconds), or null when no data. */
   getVisibleRange(): SyncRange | null {
@@ -882,9 +882,9 @@ export class OryonChartEngine {
     return { from, to };
   }
 
-  /** Programmatic visible-range apply (echo-guarded — see the coordinator).
+  /** Programmatic visible-range apply (echo-guarded - see the coordinator).
    *  An EMPTY time scale (data reloading after a symbol switch, unknown
-   *  instrument state) cannot accept a range — the library throws on it.
+   *  instrument state) cannot accept a range - the library throws on it.
    *  The apply is skipped honestly; the chart re-aligns on the next
    *  user-initated event once its data is back. */
   applyVisibleRange(range: SyncRange): void {
@@ -913,11 +913,11 @@ export class OryonChartEngine {
 
   /**
    * Moves the crosshair onto the bar CONTAINING `timeSec` (timestamp-based
-   * alignment — never pixel positions). The vertical line lands on that
+   * alignment - never pixel positions). The vertical line lands on that
    * bar; the horizontal line sits at the bar's CLOSE (a real value of this
-   * chart's data — never a fabricated level). False = the timestamp falls
+   * chart's data - never a fabricated level). False = the timestamp falls
    * in a session gap or outside the loaded span: nothing moved (the caller
-   * decides whether to clear — the coordinator does).
+   * decides whether to clear - the coordinator does).
    */
   applyCrosshairAtTime(timeSec: number): boolean {
     if (this.chart === null) return false;
@@ -929,7 +929,7 @@ export class OryonChartEngine {
     try {
       this.chart.setCrosshairPosition(bar.c, (bar.t / 1000) as UTCTimestamp, series);
       // The library SKIPS its crosshair-moved event for synthetic positions,
-      // so the applied time is recorded HERE — the authoritative state —
+      // so the applied time is recorded HERE - the authoritative state -
       // not via the (suppressed) event echo.
       this.lastCrosshairTime = bar.t / 1000;
       this.crosshairEcho.mark(bar.t / 1000);
@@ -939,7 +939,7 @@ export class OryonChartEngine {
     return true;
   }
 
-  /** Removes the crosshair (programmatic — echo-guarded). */
+  /** Removes the crosshair (programmatic - echo-guarded). */
   clearCrosshairPosition(): void {
     if (this.chart === null) return;
     this.applyingCrosshair = true;
@@ -1027,7 +1027,7 @@ export class OryonChartEngine {
 
   /**
    * Dev-probe handle (window.__ORYON_CHART_DEBUG__, dev builds only): the
-   * number of live series + native panes — structural assertions without
+   * number of live series + native panes - structural assertions without
    * scraping the canvas.
    */
   get debugStats(): {
@@ -1060,7 +1060,7 @@ export class OryonChartEngine {
   }
 
   /** Dev-probe observability: the last crosshair time this engine
-   *  dispatched (unix seconds) — sync propagation assertions read this
+   *  dispatched (unix seconds) - sync propagation assertions read this
    *  instead of scraping canvases. Mirrors the crosshair state, whether
    *  the move came from a real hover or a synchronized apply. */
   get observedCrosshairTime(): number | null {
@@ -1068,14 +1068,14 @@ export class OryonChartEngine {
   }
 
   /** Dev-probe observability: open time of the LAST loaded candle
-   *  (unix seconds) — honest-span assertions for crosshair containment. */
+   *  (unix seconds) - honest-span assertions for crosshair containment. */
   get lastCandleTime(): number | null {
     if (this.candles.length === 0) return null;
     return this.candles[this.candles.length - 1]!.t / 1000;
   }
 
   /**
-   * The loaded data span (unix seconds, open of the FIRST and LAST bars) —
+   * The loaded data span (unix seconds, open of the FIRST and LAST bars) -
    * the historical-range presets compute their windows against the span the
    * chart ACTUALLY holds (never a fabricated wider history).
    */
@@ -1086,7 +1086,7 @@ export class OryonChartEngine {
 
   /**
    * Dev-probe helper (Phase 8, dev builds only): the screen x of the FIRST
-   * event marker plus its bar time — lets E2E probes CLICK a marker
+   * event marker plus its bar time - lets E2E probes CLICK a marker
    * without scraping the canvas. Null when nothing is projected.
    */
   firstEventMarkerScreen(): { timeSec: number; x: number } | null {
@@ -1123,7 +1123,7 @@ export class OryonChartEngine {
     if (series === null) return;
     try {
       // The engine stores UTC-timestamp primitives; the library's generic
-      // default is Time — this cast is the documented boundary (our series
+      // default is Time - this cast is the documented boundary (our series
       // data is ALWAYS UTCTimestamp, see toCandlestickBar/toLineBar).
       series.attachPrimitive(primitive as unknown as Parameters<ISeriesApi<"Candlestick">["attachPrimitive"]>[0]);
     } catch {
@@ -1204,7 +1204,7 @@ export class OryonChartEngine {
       borderVisible: a.bordersVisible,
       borderUpColor: up,
       borderDownColor: down,
-      // Wicks have no boolean in the engine options — the transparent-color
+      // Wicks have no boolean in the engine options - the transparent-color
       // convention is the documented way to hide them per direction.
       wickUpColor: a.wicksVisible ? up : "rgba(0,0,0,0)",
       wickDownColor: a.wicksVisible ? down : "rgba(0,0,0,0)",
@@ -1246,7 +1246,7 @@ export class OryonChartEngine {
   private handleCrosshairMove = (param: { time?: unknown; point?: { x: number; y: number } | null }): void => {
     const timeSec = typeof param.time === "number" ? param.time : null;
     this.lastCrosshairTime = timeSec;
-    // Sync dispatch — programmatic applies are suppressed (they marked the
+    // Sync dispatch - programmatic applies are suppressed (they marked the
     // echo guard synchronously inside applyCrosshairAtTime/clear).
     if (!this.applyingCrosshair && !this.crosshairEcho.matches(timeSec)) {
       for (const listener of this.crosshairListeners) listener(timeSec);

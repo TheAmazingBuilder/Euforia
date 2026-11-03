@@ -1,5 +1,5 @@
 /**
- * Oryon TradingView-style color palette — unit tests (bun).
+ * Oryon TradingView-style color palette - unit tests (bun).
  *
  * Covers the picker's pure layer (no DOM, no React):
  *   - grid shape: 7 rows × 10 columns, deterministic across calls;
@@ -56,7 +56,7 @@ const HEX_RE = /^#[0-9a-f]{6}$/;
   ok("every cell a lowercase 6-digit hex", grid.flat().every((c) => HEX_RE.test(c)));
   eq("70 cells", new Set(grid.flat()).size, 70);
 
-  // Row 0: grayscale — r == g == b, monotonic white → black.
+  // Row 0: grayscale - r == g == b, monotonic white → black.
   const grays = grid[0]!;
   ok("row 0 matches the documented gray ramp", JSON.stringify(grays) === JSON.stringify(TV_GRAY_ROW));
   ok("row 0 achromatic", grays.every((c) => {
@@ -69,7 +69,7 @@ const HEX_RE = /^#[0-9a-f]{6}$/;
   ok("row 1 matches the documented bases", JSON.stringify(grid[1]) === JSON.stringify(TV_BASE_ROW));
 
   // Ramp: pastel→dark rows keep the base hue (±3°) and descend in lightness.
-  // Row 1 is the vivid BASE (not the lightest) — the ramp starts AT row 2.
+  // Row 1 is the vivid BASE (not the lightest) - the ramp starts AT row 2.
   let hueOk = true;
   let lightOk = true;
   for (let col = 0; col < 10; col += 1) {

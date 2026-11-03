@@ -1,6 +1,6 @@
 /**
  * Token-derived color helpers. The ONLY transformation allowed on theme
- * token values — components still never hardcode a hex (AGENTS.md golden
+ * token values - components still never hardcode a hex (AGENTS.md golden
  * rule). Used to build translucent fills (chart areas, tints) from the
  * current theme's opaque tokens.
  */

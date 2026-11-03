@@ -24,7 +24,7 @@ import { useI18n } from "@/i18n/i18n-provider";
  * action. Opening a card still opens the rich detail dialog.
  */
 
-/** Status filter machine ids — labels resolve through dict.playbook.labels.status. */
+/** Status filter machine ids - labels resolve through dict.playbook.labels.status. */
 const STATUS_FILTER_IDS = ["ALL", "ACTIVE", "DRAFT", "PAUSED", "RETIRED"] as const;
 
 interface StrategiesPanelProps {

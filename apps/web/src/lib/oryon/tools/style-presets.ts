@@ -1,13 +1,13 @@
 import type { OryonDrawingStyle } from "@cosmoz/shared";
 
 /**
- * Shared style presets for BOTH drawing style surfaces — the object-list
+ * Shared style presets for BOTH drawing style surfaces - the object-list
  * inline editor AND the right-click property editor. One source: the two
  * surfaces can never offer different palettes/widths again (the same drift
  * class the tool catalog eliminated for tool ids).
  */
 
-/** Theme-token swatches — NO raw hex inputs (AGENTS.md golden rule). */
+/** Theme-token swatches - NO raw hex inputs (AGENTS.md golden rule). */
 export const ORYON_COLOR_CHOICES: readonly { key: string; cssVar: string }[] = [
   { key: "accent", cssVar: "--accent" },
   { key: "profit", cssVar: "--profit" },

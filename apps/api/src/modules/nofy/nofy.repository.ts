@@ -1,5 +1,5 @@
 /**
- * Nofy data access (B11) — the ONLY place the nofy context touches Prisma.
+ * Nofy data access (B11) - the ONLY place the nofy context touches Prisma.
  * Rows land in nofyRow with a `kind` (NOTE | FOLDER | TAG | TEMPLATE |
  * VERSION); the row id IS the entity id (version snapshots get their own
  * uuid). Aggregate state (blocks, tagIds, …) lives in the shared-contract
@@ -20,11 +20,11 @@ export interface NofyRow {
 /**
  * JSONB `data` payload shapes of the row store, per kind
  * (FOLDER | NOTE | TAG | TEMPLATE). Type-only exports derived from the
- * mapper field accesses (nofy.mappers.ts) — the stored JSON is revivable,
+ * mapper field accesses (nofy.mappers.ts) - the stored JSON is revivable,
  * so timestamps surface as Date at this boundary.
  */
 
-/** kind=FOLDER payload (mapper: toFolder — noteCount is the projection). */
+/** kind=FOLDER payload (mapper: toFolder - noteCount is the projection). */
 export interface NofyFolderData {
   id: string;
   name: string;
@@ -32,14 +32,14 @@ export interface NofyFolderData {
   noteCount: number;
 }
 
-/** kind=TAG payload (mapper: toTag — noteCount is the projection). */
+/** kind=TAG payload (mapper: toTag - noteCount is the projection). */
 export interface NofyTagData {
   id: string;
   name: string;
   noteCount: number;
 }
 
-/** kind=NOTE payload (mappers: toNote / toNoteRow — folderName/tagNames are
+/** kind=NOTE payload (mappers: toNote / toNoteRow - folderName/tagNames are
  *  the per-read projections; lessonRef/blocks stay opaque JSON for the
  *  defensive parsers in nofy-content). */
 export interface NofyNoteData {

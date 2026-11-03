@@ -87,6 +87,7 @@ export {
   useDeleteSessionNote,
 } from "./session";
 export { useAnalyticsSuite, useStatsOverview } from "./stats";
+export { usePersonalEventsBoard, useSavePersonalEventsBoard } from "./personal-events";
 export {
   useCalendarBlocks,
   useCalendarView,
@@ -118,24 +119,22 @@ export {
 } from "./preferences";
 export { useBrokerSession } from "./broker";
 export {
-  useConnectIntegration,
-  useDisconnectIntegration,
-  useIntegrationsOverview,
-  useSimulateWebhook,
-  useSyncIntegration,
-  useTestIntegration,
-} from "./integrations";
-export {
   useChangePassword,
   useConfirmTwoFactor,
+  useConfirmEmailTwoFactor,
   useCreateApiKey,
   useDisableTwoFactor,
   useEnableTwoFactor,
+  useEnableEmailTwoFactor,
   useReauth,
   useRegenerateRecoveryCodes,
   useRevokeApiKey,
   useRevokeSessions,
   useSecurityOverview,
+  useSecurityEventPages,
+  useSecurityLoginPages,
+  type SecurityEventHistoryFilters,
+  type SecurityLoginHistoryFilters,
 } from "./security";
 export {
   useMonitoringOverview,
@@ -239,7 +238,7 @@ export {
   type NofyNotesParams,
 } from "./nofy";
 
-// Application authentication — consumed by the centralized AuthProvider and
+// Application authentication - consumed by the centralized AuthProvider and
 // the (auth) pages; see lib/auth and components/auth.
 export {
   useAuthMeQuery,
@@ -254,7 +253,7 @@ export {
   useVerifyEmailMutation,
 } from "./auth";
 
-// Accounts & Trading Connectivity (Phase 02) — read-only surfaces over the
+// Accounts & Trading Connectivity (Phase 02) - read-only surfaces over the
 // trading-accounts Nest module; presentation mapping helpers travel with it.
 export {
   useTradingAccounts,
@@ -279,3 +278,23 @@ export {
   environmentStamp,
   syncStatusMeta,
 } from "./trading-accounts";
+
+// Tasky Kanban — PostgreSQL-backed personal board.
+export {
+  useCreateTaskySavedView,
+  useDeleteTaskySavedView,
+  useTaskySavedViews,
+  useTaskyAutomations,
+  useCreateTaskyAutomation,
+  useUpdateTaskyAutomation,
+  useDeleteTaskyAutomation,
+  useTaskyAutomationRuns,
+  useCheckTaskyDueDates,
+  useRemindTaskyCard,
+  useDeleteTaskyAttachment,
+  useDownloadTaskyAttachment,
+  useSaveTaskyBoard,
+  useTaskyBoard,
+  useTaskyCardAttachments,
+  useUploadTaskyAttachment,
+} from "./tasky";

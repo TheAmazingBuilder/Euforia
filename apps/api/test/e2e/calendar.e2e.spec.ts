@@ -1,5 +1,5 @@
 /**
- * e2e — Calendar (B7) over the REAL AppModule + real database: the eco
+ * e2e - Calendar (B7) over the REAL AppModule + real database: the eco
  * events source (deterministic synthetic macro schedule), block CRUD
  * (day offs / news pauses), the import-eco flow and the trading-calendar
  * view (OFF days excluded server-side from every aggregate).

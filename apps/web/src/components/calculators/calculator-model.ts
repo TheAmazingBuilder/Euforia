@@ -9,16 +9,16 @@ import {
 } from "@cosmoz/shared";
 
 /**
- * Calculators model — the pure layer between the UI and the shared math.
+ * Calculators model - the pure layer between the UI and the shared math.
  *
  * Zod schemas validate the RAW FORM STRINGS with stable error codes (the
- * dict supplies the human copy — no {var} templates, codes map 1:1 to
+ * dict supplies the human copy - no {var} templates, codes map 1:1 to
  * dict.tools.*.validation keys). Derivations compose the shared LIVE-ESTIMATE
  * helpers (utils/risk.ts, utils/compounding.ts) with the broker-step sizing
  * semantics the calculators contract defines (§16 floor-to-step, realized
- * risk, explicit status — nothing clamps silently).
+ * risk, explicit status - nothing clamps silently).
  *
- * No React, no API calls — pure, deterministic, unit-testable.
+ * No React, no API calls - pure, deterministic, unit-testable.
  */
 
 // ── Field-level schemas (stable codes, dict renders them) ───────────────────
@@ -82,7 +82,7 @@ export interface LotSizeNumbers {
   riskPercent: number;
   entryPrice: number;
   stopLoss: number;
-  /** Null when the field is left empty — sizing never depends on it. */
+  /** Null when the field is left empty - sizing never depends on it. */
   takeProfit: number | null;
   pipSize: number;
   contractSize: number;
@@ -93,7 +93,7 @@ export interface LotSizeNumbers {
  * Validate the lot-size form: Zod shape first, then the domain rules the
  * shape cannot express (positivity, risk range, stop/entry relationship per
  * direction). Returns either the parsed numbers or one stable code per
- * offending field — never both, never throws.
+ * offending field - never both, never throws.
  */
 export function validateLotSizeForm(
   values: LotSizeFormValues,
@@ -174,16 +174,16 @@ export interface LotSizeResult {
   /** Whether flooring actually changed the exact size. */
   volumeAdjusted: boolean;
   status: LotSizeStatus;
-  /** Directional R:R from the shared helper — null without TP (semantics parity). */
+  /** Directional R:R from the shared helper - null without TP (semantics parity). */
   riskReward: number | null;
 }
 
 /**
- * Broker-step position sizing — mirrors the calculators contract (§11–§17):
+ * Broker-step position sizing - mirrors the calculators contract (§11–§17):
  *   riskAmount = balance × risk% / 100
  *   perUnit    = |entry − stop| × contractSize
  *   raw        = riskAmount / perUnit
- *   size       = floor(raw / step) × step        (flooring only — never up)
+ *   size       = floor(raw / step) × step        (flooring only - never up)
  *   realized   = size × perUnit                  (≤ budget by construction)
  * Direction never changes the size (symmetric stop distance); it only drives
  * the R:R sign convention via the shared computeRR. The fixed-0.01 trade-form
@@ -281,7 +281,7 @@ const compoundingShape = z.object({
 /**
  * Validate the compounding form and build the schedule through the shared
  * projection. The shared layer re-checks every bound (1..1 000 periods, gain
- * in [−100, 10 000], 1e15 ceiling) — a null schedule maps to the field-level
+ * in [−100, 10 000], 1e15 ceiling) - a null schedule maps to the field-level
  * codes the UI renders inline.
  */
 export function validateCompoundingForm(

@@ -32,7 +32,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 /**
  * Operating-rule create/edit dialog (§24): scope (global vs strategy),
  * category, and the honest "evaluatable by the Rules Engine" flag with its
- * hint — never pretend a rule is executable when it is not.
+ * hint - never pretend a rule is executable when it is not.
  */
 
 interface RuleFormValues {

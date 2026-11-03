@@ -1,5 +1,5 @@
 /**
- * Verify — Dashboard Band 1 re-flow + chart vivacity pass.
+ * Verify - Dashboard Band 1 re-flow + chart vivacity pass.
  * Probes: band 1 = 6 cells in a 2-ledger strip (hero money row full halves,
  * ratio row 4-across at 1440), single-line labels (no wrap), sparkline in
  * EVERY cell with ≥ 4 distinct palette colors, delta riding the value row;
@@ -34,7 +34,7 @@ function localDayKey(offsetDays = 0) {
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // Seed 14 days of usage so the usage MiniBars have a real story.
   const usageRecord = {};
@@ -64,7 +64,7 @@ function localDayKey(offsetDays = 0) {
   await page.locator('[data-testid="performance-strip"]').waitFor({ timeout: 20000 });
   await page.waitForTimeout(1000);
 
-  // ── 1. Band 1 — 2-ledger layout ───────────────────────────────────────────
+  // ── 1. Band 1 - 2-ledger layout ───────────────────────────────────────────
   const kpiStrip = page.locator('section[aria-label="Key performance indicators"]');
   const kpiCells = kpiStrip.locator(".stat-cell");
   const kpiCount = await kpiCells.count();
@@ -87,7 +87,7 @@ function localDayKey(offsetDays = 0) {
     stdWidths.map((w) => Math.round(w)).join(" / "),
   );
 
-  // Single-line labels — the "trop serré" fix.
+  // Single-line labels - the "trop serré" fix.
   let wrappedLabels = 0;
   for (let i = 0; i < kpiCount; i += 1) {
     const h = await kpiCells
@@ -100,7 +100,7 @@ function localDayKey(offsetDays = 0) {
   check("All band-1 labels stay on one line", wrappedLabels === 0, `${wrappedLabels} wrapped`);
 
   // Every cell carries a sparkline; palette variety ≥ 4 distinct colors.
-  // NOTE: the delta arrow is also an svg — target the sparkline polyline.
+  // NOTE: the delta arrow is also an svg - target the sparkline polyline.
   const strokeColors = [];
   for (let i = 0; i < kpiCount; i += 1) {
     const polyline = kpiCells.nth(i).locator("svg polyline").first();
@@ -167,7 +167,7 @@ function localDayKey(offsetDays = 0) {
 
   await productBand.screenshot({ path: `${SHOTS}/dark-blue-product.png` });
 
-  // ── 4. Discipline saved — ghost trend chart ───────────────────────────────
+  // ── 4. Discipline saved - ghost trend chart ───────────────────────────────
   const ghostCanvas = await page.locator("canvas").count();
   check("Ghost trend chart canvas renders", ghostCanvas >= 1, `${ghostCanvas} canvas`);
   const legendText = (await page.locator('[data-testid="ghost-legend"]').textContent()) ?? "";
@@ -202,7 +202,7 @@ function localDayKey(offsetDays = 0) {
       { timeout: 6000 },
     );
   } catch {
-    // fall through — the check below reports the mismatch
+    // fall through - the check below reports the mismatch
   }
   lightStroke = await kpiCells.nth(2).locator("svg polyline").first().getAttribute("stroke");
   check(
@@ -212,7 +212,7 @@ function localDayKey(offsetDays = 0) {
   );
   await page.screenshot({ path: `${SHOTS}/light-full.png`, fullPage: true });
 
-  // ── 7. Mobile 390 — no overflow, band re-flows ────────────────────────────
+  // ── 7. Mobile 390 - no overflow, band re-flows ────────────────────────────
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   mobile.on("console", (msg) => {
     if (msg.type() === "error") errors.push(`[mobile] ${msg.text()}`);

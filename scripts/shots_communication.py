@@ -1,4 +1,4 @@
-"""E2E ritual — Integration Hub: Communication platforms (Telegram / Discord / Slack).
+"""E2E ritual - Integration Hub: Communication platforms (Telegram / Discord / Slack).
 
 Covers:
 - Desktop 1440x900 light: overview matrix grows to 15 providers, Communication tab
@@ -137,14 +137,14 @@ def goto_tab(page, tab_label: str, settle: int = 700) -> None:
 with sync_playwright() as p:
     browser = p.chromium.launch()
 
-    # ---------- Desktop 1440 — light ----------
+    # ---------- Desktop 1440 - light ----------
     ctx = browser.new_context(viewport={"width": 1440, "height": 900})
     page = ctx.new_page()
     page.on("console", track_console)
 
     ensure_login(page)
 
-    # ===== Overview — matrix now includes the 3 communication providers =====
+    # ===== Overview - matrix now includes the 3 communication providers =====
     nav(page, "/integrations", settle=1800)
     set_theme(page, "light")
     page.wait_for_timeout(500)
@@ -210,7 +210,7 @@ with sync_playwright() as p:
     except Exception as exc:  # noqa: BLE001
         step_fail("test-discord", str(exc)[:160])
 
-    # ===== Notifications tab — relay-owned channels only =====
+    # ===== Notifications tab - relay-owned channels only =====
     goto_tab(page, "Notifications", settle=900)
     page.wait_for_selector('[data-testid="notifications-panel"]', timeout=8000)
     channel_count = page.locator('[data-testid^="notify-channel-"]').count()
@@ -228,7 +228,7 @@ with sync_playwright() as p:
     shot(page, "08-desktop-dark-communication")
     step_ok("dark-mode", "overview + communication captured")
 
-    # ---------- Mobile 390 — light ----------
+    # ---------- Mobile 390 - light ----------
     set_theme(page, "light")
     page.set_viewport_size({"width": 390, "height": 844})
     page.wait_for_timeout(500)
@@ -242,7 +242,7 @@ with sync_playwright() as p:
 
     ctx.close()
 
-    # ---------- Mobile 390 — fresh context (tabs strip usability) ----------
+    # ---------- Mobile 390 - fresh context (tabs strip usability) ----------
     ctx_m = browser.new_context(viewport={"width": 390, "height": 844})
     page_m = ctx_m.new_page()
     page_m.on("console", track_console)

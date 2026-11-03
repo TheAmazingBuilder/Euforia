@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Warm up the COSMOZ dev server page by page, restarting on OOM death.
 # Turbopack persists compiled chunks in .next/dev, so each successful page
-# compile survives restarts — the loop converges.
+# compile survives restarts - the loop converges.
 set -u
 export PATH="/home/z/.local/bin:$PATH"
 cd /home/z/my-project
@@ -33,7 +33,7 @@ for round in 1 2 3 4 5 6; do
       echo "✓ $p (round $round)"
       DONE[$p]=1
     else
-      echo "✗ $p (round $round, code $code) — restarting"
+      echo "✗ $p (round $round, code $code) - restarting"
       ALLOK=0
       free -m | sed -n 2p
       start_server || { echo "server failed to start"; exit 1; }

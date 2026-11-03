@@ -52,7 +52,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Academy hooks — the learning platform's data layer. Reading aggregates
+ * Academy hooks - the learning platform's data layer. Reading aggregates
  * (catalog/overview/progress) stays cheap; every mutation refreshes the
  * aggregates so Overview, Courses and Progress stay in lockstep.
  */
@@ -135,7 +135,7 @@ export function useAcademyPatternDrill() {
   return useQuery({
     queryKey: queryKeys.academyPatternDrill,
     queryFn: () => apiRequest<AcademyPatternDrill>(apiPaths.academyPatternDrill),
-    // Drills are deliberately stateful per fetch — no caching, no refetch storms.
+    // Drills are deliberately stateful per fetch - no caching, no refetch storms.
     gcTime: 0,
     staleTime: 0,
     refetchOnWindowFocus: false,
@@ -245,7 +245,7 @@ export function useAcademySuggestions() {
 function useInvalidateAcademy() {
   const queryClient = useQueryClient();
   return React.useCallback(() => {
-    // Each entry is itself a key array — invalidate them one by one
+    // Each entry is itself a key array - invalidate them one by one
     // (a single array of arrays would be treated as one hierarchical key).
     for (const key of queryKeys.academyAggregates) {
       void queryClient.invalidateQueries({ queryKey: key });
@@ -261,7 +261,7 @@ export function useCompleteLesson() {
       apiRequest<AcademyLessonCompleteResponse>(apiPaths.academyLessonComplete(lessonId), { method: "POST", body: {} }),
     onSuccess: (result) => {
       invalidate();
-      // The lesson detail itself also carries `completed` — refresh it too.
+      // The lesson detail itself also carries `completed` - refresh it too.
       void queryClient.invalidateQueries({ queryKey: ["academy-lesson", result.lessonId] });
     },
     onError: (error) => toast.error(apiErrorMessage(error, "Could not save lesson progress")),
@@ -301,7 +301,7 @@ export function useLogPractice() {
     mutationFn: (input: AcademyPracticeLogInput) =>
       apiRequest<AcademyPracticeLogResponse>(apiPaths.academyPracticeLog, { method: "POST", body: input }),
     onSuccess: () => invalidate(),
-    // Practice logging is fire-and-forget by design — no toasts on failure.
+    // Practice logging is fire-and-forget by design - no toasts on failure.
   });
 }
 
@@ -325,7 +325,7 @@ export function useSaveLessonNote(lessonId: string) {
     mutationFn: (input: AcademyNoteInput) =>
       apiRequest<AcademyNoteResponse>(apiPaths.academyLessonNote(lessonId), { method: "PUT", body: input }),
     onSuccess: () => {
-      // The lesson payload carries the note — refresh it so revisits show the
+      // The lesson payload carries the note - refresh it so revisits show the
       // saved text even from cache-first mounts.
       void queryClient.invalidateQueries({ queryKey: queryKeys.academyLesson(lessonId) });
       void queryClient.invalidateQueries({ queryKey: queryKeys.academyOverview });

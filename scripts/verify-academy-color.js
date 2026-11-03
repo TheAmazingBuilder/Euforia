@@ -1,5 +1,5 @@
 /**
- * Verify — Academy colorful redesign (prism header, hue system, course
+ * Verify - Academy colorful redesign (prism header, hue system, course
  * illustrations, ring gauges, bookmarks tab):
  *   Shell    : 12-hue prism keyline, 6 tabs incl. Bookmarks
  *   Overview : ring gauge, hue chips, illustrated category map (12)
@@ -10,7 +10,7 @@
  *   A11y/CSS : hue vars resolve (prism segment non-transparent), mobile 390
  *              overflow check, console health.
  *
- * IMPORTANT: the MSW store lives in the browser tab — the script navigates
+ * IMPORTANT: the MSW store lives in the browser tab - the script navigates
  * with SPA clicks ONLY (one initial goto), so state persists across pages.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script (CommonJS, never bundled) */
@@ -32,7 +32,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── 0. Load + SPA to Academy ───────────────────────────────────────────────
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });

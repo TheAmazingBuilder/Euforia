@@ -1,7 +1,7 @@
 /**
- * Strategy controller (Phase 7) — thin HTTP boundary over the playbook
+ * Strategy controller (Phase 7) - thin HTTP boundary over the playbook
  * application service. All routes require authentication (global
- * JwtAuthGuard — no @Public); ownership is enforced inside the service from
+ * JwtAuthGuard - no @Public); ownership is enforced inside the service from
  * the auth principal, never from the client (§68). Responses follow the
  * product contract: entities are returned DIRECTLY (no envelope), POSTs
  * answer 201, deletes answer { ok: true }.
@@ -36,7 +36,7 @@ import { PlaybookService } from "../playbook.service";
 export class StrategyController {
   constructor(private readonly playbook: PlaybookService) {}
 
-  /** Per-strategy aggregates — computed server-side (product contract). */
+  /** Per-strategy aggregates - computed server-side (product contract). */
   @Get("stats")
   stats(@CurrentUser() principal: AuthPrincipal): Promise<StrategiesStatsResponse> {
     return this.playbook.strategyStats(principal.userId);
@@ -72,7 +72,7 @@ export class StrategyController {
     return this.playbook.deleteStrategy(principal.userId, uuidSchema.parse(strategyId));
   }
 
-  /** Fresh DRAFT copy — definition follows, history does not (§35/§58). */
+  /** Fresh DRAFT copy - definition follows, history does not (§35/§58). */
   @Post(":strategyId/duplicate")
   duplicate(
     @CurrentUser() principal: AuthPrincipal,

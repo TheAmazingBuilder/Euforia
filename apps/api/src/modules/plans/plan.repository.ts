@@ -1,5 +1,5 @@
 /**
- * AnalysisPlan persistence (Phase 11) — ownership in every WHERE (IDOR →
+ * AnalysisPlan persistence (Phase 11) - ownership in every WHERE (IDOR →
  * 404), guarded lifecycle transitions (single-statement UPDATE … WHERE
  * status IN (…)), clientRequestId unique for idempotent creates.
  */
@@ -113,7 +113,7 @@ export class PlanRepository {
     });
   }
 
-  /** Guarded transition — WHERE carries the expected FROM status (§11.3). */
+  /** Guarded transition - WHERE carries the expected FROM status (§11.3). */
   async transition(id: string, userId: string, from: string[], to: string, extra?: Prisma.AnalysisPlanUpdateManyMutationInput): Promise<PlanRow | null> {
     const result = await this.prisma.analysisPlan.updateMany({
       where: { id, userId, status: { in: from as never[] } },
@@ -148,7 +148,7 @@ export class PlanRepository {
   }
 
   /**
-   * Trade/analysis linkage — FK scalar fields are not part of the updateMany
+   * Trade/analysis linkage - FK scalar fields are not part of the updateMany
    * mutation input, so the write goes through the unique-id update AFTER an
    * ownership probe in the same call (probe + write, no cross-user leak).
    */
@@ -172,7 +172,7 @@ export class PlanRepository {
     return row;
   }
 
-  /** Phase-10 integration — the referenced analysis must be the caller's. */
+  /** Phase-10 integration - the referenced analysis must be the caller's. */
   async analysisExistsForUser(analysisId: string, userId: string): Promise<boolean> {
     const row = await this.prisma.oryonAnalysis.findFirst({
       where: { id: analysisId, userId },

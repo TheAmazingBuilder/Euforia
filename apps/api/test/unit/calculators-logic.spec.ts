@@ -1,7 +1,7 @@
 /**
- * Unit — Calculators domain logic (Phase 18 §47/§48/§49/§50/§59): known-value
+ * Unit - Calculators domain logic (Phase 18 §47/§48/§49/§50/§59): known-value
  * financial vectors, mathematical invariants, edge cases, volume
- * normalization, percentage normalization, frontend parity. Pure functions —
+ * normalization, percentage normalization, frontend parity. Pure functions -
  * no Nest, no DB.
  */
 import { describe, expect, it } from "vitest";
@@ -46,9 +46,9 @@ function compounding(overrides: Partial<CompoundingCalculatorInput> = {}) {
   return { input, result: computeCompounding(input) };
 }
 
-// ── Lot size — known-value vectors (§50) ─────────────────────────────────────
+// ── Lot size - known-value vectors (§50) ─────────────────────────────────────
 
-describe("lot size — known-value vectors (§50)", () => {
+describe("lot size - known-value vectors (§50)", () => {
   it("sizes the EURUSD reference vector exactly (1 % of 10 000, 10-pip stop)", () => {
     const { result } = lotSize({
       takeProfitPrice: "1.15000",
@@ -94,7 +94,7 @@ describe("lot size — known-value vectors (§50)", () => {
   it("sells use the same symmetric sizing distance (frontend parity, §58)", () => {
     const buy = lotSize({ direction: "BUY" }).result;
     const sell = lotSize({ direction: "SELL" }).result;
-    // Direction has NO effect on sizing — only on the RR sign convention.
+    // Direction has NO effect on sizing - only on the RR sign convention.
     expect(sell.normalizedPositionSize).toBe(buy.normalizedPositionSize);
     expect(sell.realizedRiskAmount).toBe(buy.realizedRiskAmount);
     expect(sell.stopDistance).toBe(buy.stopDistance);
@@ -121,7 +121,7 @@ describe("lot size — known-value vectors (§50)", () => {
     expect(inverted.normalizedPositionSize).toBe("0.1");
   });
 
-  it("omits RR entirely when no TP is provided (§14 — sizing ≠ risk/reward)", () => {
+  it("omits RR entirely when no TP is provided (§14 - sizing ≠ risk/reward)", () => {
     const { result } = lotSize({});
     expect(result.riskReward).toBeNull();
   });
@@ -142,13 +142,13 @@ describe("lot size — known-value vectors (§50)", () => {
   });
 });
 
-// ── Lot size — percentage & precision semantics (§12/§18/§19) ───────────────
+// ── Lot size - percentage & precision semantics (§12/§18/§19) ───────────────
 
-describe("lot size — percentage normalization (§12)", () => {
+describe("lot size - percentage normalization (§12)", () => {
   it("treats riskPercent '1' as 1 %, never 100 % or 0.01 %", () => {
     expect(lotSize({ riskPercent: "1" }).result.riskAmount).toBe("100");
     expect(lotSize({ riskPercent: "0.5" }).result.riskAmount).toBe("50");
-    // 0.01 % of 10 000 = 1 $ budget — sized against a small perUnit so the
+    // 0.01 % of 10 000 = 1 $ budget - sized against a small perUnit so the
     // position stays above one step (budget < one step is a 422, tested later).
     expect(
       lotSize({ riskPercent: "0.01", instrument: { pipSize: "0.0001", contractSize: "1000" } }).result.riskAmount,
@@ -157,7 +157,7 @@ describe("lot size — percentage normalization (§12)", () => {
 
   it("accepts the 100 % boundary and keeps exact decimal arithmetic on large balances", () => {
     const { result } = lotSize({
-      balance: "1000000000000", // 1e12 — beyond float cents precision
+      balance: "1000000000000", // 1e12 - beyond float cents precision
       riskPercent: "100",
       entryPrice: "2",
       stopLossPrice: "1",
@@ -184,9 +184,9 @@ describe("lot size — percentage normalization (§12)", () => {
   });
 });
 
-// ── Lot size — mathematical invariants (§47) ────────────────────────────────
+// ── Lot size - mathematical invariants (§47) ────────────────────────────────
 
-describe("lot size — invariants (§47)", () => {
+describe("lot size - invariants (§47)", () => {
   const specs = { pipSize: "0.0001", contractSize: "100000" };
 
   it("risk amount grows with the risk percentage, all else equal", () => {
@@ -223,9 +223,9 @@ describe("lot size — invariants (§47)", () => {
   });
 });
 
-// ── Lot size — frontend parity (§58/§64) ────────────────────────────────────
+// ── Lot size - frontend parity (§58/§64) ────────────────────────────────────
 
-describe("lot size — frontend parity with shared risk helpers (§37/§58)", () => {
+describe("lot size - frontend parity with shared risk helpers (§37/§58)", () => {
   it("matches suggestPositionSize field-for-field on float-safe vectors", () => {
     const vectors = [
       { entry: "1.10000", stop: "1.09000", riskPct: "1", balance: "10000", specs: { pipSize: "0.0001", contractSize: "100000" } },
@@ -264,9 +264,9 @@ describe("lot size — frontend parity with shared risk helpers (§37/§58)", ()
   });
 });
 
-// ── Compounding — known-value vectors (§49) ─────────────────────────────────
+// ── Compounding - known-value vectors (§49) ─────────────────────────────────
 
-describe("compounding — known-value vectors (§49)", () => {
+describe("compounding - known-value vectors (§49)", () => {
   it("produces the canonical 1000 @ 10 % × 3 progression: 1100 → 1210 → 1331", () => {
     const { result } = compounding({});
     expect(result.rows).toHaveLength(3);
@@ -316,9 +316,9 @@ describe("compounding — known-value vectors (§49)", () => {
   });
 });
 
-// ── Compounding — mathematical invariants (§47) ─────────────────────────────
+// ── Compounding - mathematical invariants (§47) ─────────────────────────────
 
-describe("compounding — invariants (§47)", () => {
+describe("compounding - invariants (§47)", () => {
   it("positive rates never decrease any balance; zero rate keeps it flat", () => {
     const growth = compounding({ startingBalance: "1234.56", periods: 50, gainPerPeriodPercent: "1.7" }).result;
     for (const row of growth.rows) {
@@ -362,7 +362,7 @@ describe("compounding — invariants (§47)", () => {
 
 // ── Edge cases & explicit errors (§48/§44) ──────────────────────────────────
 
-describe("lot size — edge cases and errors (§48/§44)", () => {
+describe("lot size - edge cases and errors (§48/§44)", () => {
   it("rejects zero stop distance at the contract and at the domain (§13)", () => {
     expect(() =>
       lotSizeCalculatorInputSchema.parse({ balance: "1000", riskPercent: "1", entryPrice: "1.1", stopLossPrice: "1.100", instrument: { pipSize: "0.0001", contractSize: "100000" } }),
@@ -409,7 +409,7 @@ describe("lot size — edge cases and errors (§48/§44)", () => {
   });
 });
 
-describe("compounding — edge cases and errors (§48/§44)", () => {
+describe("compounding - edge cases and errors (§48/§44)", () => {
   it("rejects zero/negative periods, fractional periods and out-of-range gains at the contract", () => {
     expect(() => compounding({ periods: 0 })).toThrowError();
     expect(() => compounding({ periods: -5 })).toThrowError();
@@ -435,6 +435,6 @@ describe("compounding — edge cases and errors (§48/§44)", () => {
 
   it("survives the pathological-looking boundary: 10 000 % gain stays bounded at the guard", () => {
     const { result } = compounding({ startingBalance: "100", periods: 3, gainPerPeriodPercent: "10000" });
-    expect(result.finalBalance).toBe("103030100"); // 100 × 101³ — exact, no Infinity
+    expect(result.finalBalance).toBe("103030100"); // 100 × 101³ - exact, no Infinity
   });
 });

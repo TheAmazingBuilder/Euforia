@@ -1,5 +1,5 @@
 /**
- * Performance snapshots data access (Dashboard Customization Phase 08) —
+ * Performance snapshots data access (Dashboard Customization Phase 08) -
  * the ONLY place the snapshots context touches Prisma (§46 house pattern).
  * Rows live in the dedicated performanceSnapshotRow table; the
  * shared-contract snapshot document (performanceSnapshotSchema, frozen
@@ -24,7 +24,7 @@ export interface PerformanceSnapshotRow {
 export class SnapshotsRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Newest first — snapshots are a history view (§9). */
+  /** Newest first - snapshots are a history view (§9). */
   async listByUser(userId: string, limit = 200): Promise<PerformanceSnapshotRow[]> {
     const rows = await this.prisma.performanceSnapshotRow.findMany({
       where: { userId },
@@ -56,7 +56,7 @@ export class SnapshotsRepository {
   }
 
   /**
-   * Metadata-only merge inside `data` — the repository never receives a
+   * Metadata-only merge inside `data` - the repository never receives a
    * metrics/scope/period patch (the service builds the merged document from
    * the parsed stored one; the update input schema has no metric field).
    * Returns null when the row vanished / is not owned by the user.

@@ -23,7 +23,7 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 import { NOFY_REF_META, nofyRelativeTime } from "./nofy-shared";
 
 /**
- * Nofy editor dialogs — the trading-entity picker (real relational refs,
+ * Nofy editor dialogs - the trading-entity picker (real relational refs,
  * spec §24/§31), the version-history dialog (spec §18) and the emoji picker
  * (spec §20). All entities are resolved server-side; only in-app hrefs are
  * ever offered.
@@ -66,7 +66,7 @@ export function RefPickerDialog({
 
   const refsQuery = useNofyRefs(open ? query : "", kind === "ALL" ? "" : kind);
   const refs = refsQuery.data?.refs ?? [];
-  // Clamp instead of syncing state — the highlight never exceeds the list.
+  // Clamp instead of syncing state - the highlight never exceeds the list.
   const activeIndex = Math.min(selected, Math.max(0, refs.length - 1));
 
   const pickAt = (index: number) => {

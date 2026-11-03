@@ -1,5 +1,5 @@
 /**
- * Verify — Nofy ↔ Playbook approfondi (increment ③).
+ * Verify - Nofy ↔ Playbook approfondi (increment ③).
  *
  * Covers:
  *   A. SETUP notes: setup row detail carries the Nofy section; "Take notes"
@@ -33,7 +33,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/nofy-playbook-deep";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
@@ -52,7 +52,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/nofy-playbook-deep";
   await setupRow.locator('button[aria-label="Expand"]').click();
   await page.waitForTimeout(700);
   check("Setup detail shows the Nofy section", await setupRow.locator('[data-testid="setup-nofy-section"]').isVisible());
-  // The Nofy seed may already carry setup-linked notes — read the baseline.
+  // The Nofy seed may already carry setup-linked notes - read the baseline.
   const setupCountBefore = Number(((await setupRow.locator('[data-testid="setup-nofy-count"]').textContent()) ?? "0").trim());
   check("Setup linked count readable", Number.isFinite(setupCountBefore) === true, `before=${setupCountBefore}`);
 
@@ -61,11 +61,11 @@ const SHOTS = "/home/z/my-project/scripts/shots/nofy-playbook-deep";
   const setupTitle = await page.locator('[data-testid="nofy-title-input"]').inputValue();
   const editorText = (await page.locator("body").textContent()) ?? "";
   check("Take notes SPA-lands in the Nofy editor", page.url().includes("/nofy") === true, page.url());
-  check("Setup note title carries the setup name", setupTitle.includes("— setup notes") === true, setupTitle);
+  check("Setup note title carries the setup name", setupTitle.includes("- setup notes") === true, setupTitle);
   check("SETUP ref card resolved (meta visible)", editorText.includes("Playbook setup") === true);
   await page.screenshot({ path: `${SHOTS}/setup-note-editor.png` });
 
-  // Back to Playbook — the same setup now lists the linked note.
+  // Back to Playbook - the same setup now lists the linked note.
   await page.locator('nav[aria-label="Main navigation"] a[href="/playbook"]').click();
   await page.waitForTimeout(1200);
   await page.locator('[data-testid="tab-setups"]').click();
@@ -88,11 +88,11 @@ const SHOTS = "/home/z/my-project/scripts/shots/nofy-playbook-deep";
   await page.waitForTimeout(2000);
   const ruleTitle = await page.locator('[data-testid="nofy-title-input"]').inputValue();
   const ruleEditorText = (await page.locator("body").textContent()) ?? "";
-  check("Rule note created in Nofy", page.url().includes("/nofy") && ruleTitle.includes("— rule notes") === true, ruleTitle);
+  check("Rule note created in Nofy", page.url().includes("/nofy") && ruleTitle.includes("- rule notes") === true, ruleTitle);
   check("RULE ref card resolved (meta visible)", ruleEditorText.includes("Playbook rule") === true);
   await page.screenshot({ path: `${SHOTS}/rule-note-editor.png` });
 
-  // Back — the rule's expanded area now lists the note.
+  // Back - the rule's expanded area now lists the note.
   await page.locator('nav[aria-label="Main navigation"] a[href="/playbook"]').click();
   await page.waitForTimeout(1200);
   await page.locator('[data-testid="tab-rules"]').click();
@@ -131,7 +131,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/nofy-playbook-deep";
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
-  // ══ D. Regression — strategy detail keeps its Nofy section ═══════════════
+  // ══ D. Regression - strategy detail keeps its Nofy section ═══════════════
   await page.locator('nav[aria-label="Main navigation"] a[href="/playbook"]').click();
   await page.waitForTimeout(1200);
   await page.locator('[data-testid="tab-setups"]').click();

@@ -189,9 +189,9 @@ function updateAccount(accountId: string, input: UpdateAccountInput): Account {
 function deleteAccount(accountId: string): DeleteAccountResponse {
   const account = data.accounts.find((a) => a.id === accountId);
   if (!account) throw new MockError(404, "Account not found");
-  if (account.isDefault) throw new MockError(409, "The default account cannot be deleted — promote another account first.");
+  if (account.isDefault) throw new MockError(409, "The default account cannot be deleted - promote another account first.");
   const remaining = data.trades.filter((t) => t.accountId === accountId && !t.deletedAt);
-  if (remaining.length > 0) throw new MockError(409, `This account still holds ${remaining.length} trades — reassign or delete them first.`);
+  if (remaining.length > 0) throw new MockError(409, `This account still holds ${remaining.length} trades - reassign or delete them first.`);
   data.accounts = data.accounts.filter((a) => a.id !== accountId);
   return { id: accountId, deleted: true };
 }
@@ -218,7 +218,7 @@ function previewCsv(input: CsvImportPreviewRequest): CsvImportPreviewResponse {
 
 function commitCsvImport(input: CsvImportCommitRequest): CsvImportCommitResponse {
   const stored = csvBatches.get(input.batchId);
-  if (!stored) throw new MockError(404, "Preview batch expired — import the file again");
+  if (!stored) throw new MockError(404, "Preview batch expired - import the file again");
   const okRows = stored.parsed.rows.filter((row) => row.status === "OK" && !row.duplicate);
   let instrumentsCreated = 0;
   for (const row of okRows) {

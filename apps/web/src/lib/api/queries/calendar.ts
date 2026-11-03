@@ -14,11 +14,11 @@ import type {
 } from "@cosmoz/shared";
 
 /**
- * Calendar module queries — the trading overlay (server-computed day rows +
+ * Calendar module queries - the trading overlay (server-computed day rows +
  * aggregates), the day-off / news-block store and the eco-blocker import.
  */
 
-/** GET /calendar-view?from&to — day rows + range aggregates (server truth). */
+/** GET /calendar-view?from&to - day rows + range aggregates (server truth). */
 export function useCalendarView(from: string, to: string, enabled = true) {
   return useQuery({
     queryKey: queryKeys.calendarView(from, to),
@@ -30,7 +30,7 @@ export function useCalendarView(from: string, to: string, enabled = true) {
   });
 }
 
-/** GET /calendar-blocks — marked days off / news blockers. */
+/** GET /calendar-blocks - marked days off / news blockers. */
 export function useCalendarBlocks() {
   return useQuery({
     queryKey: queryKeys.calendarBlocks,
@@ -46,7 +46,7 @@ function useInvalidateCalendar() {
   };
 }
 
-/** PUT /calendar-blocks — mark (or re-mark) a day. */
+/** PUT /calendar-blocks - mark (or re-mark) a day. */
 export function useUpsertCalendarBlock() {
   const invalidate = useInvalidateCalendar();
   return useMutation({
@@ -59,7 +59,7 @@ export function useUpsertCalendarBlock() {
   });
 }
 
-/** DELETE /calendar-blocks/:date — unmark a day. */
+/** DELETE /calendar-blocks/:date - unmark a day. */
 export function useDeleteCalendarBlock() {
   const invalidate = useInvalidateCalendar();
   return useMutation({
@@ -69,7 +69,7 @@ export function useDeleteCalendarBlock() {
   });
 }
 
-/** POST /calendar-blocks/import-eco — HIGH-impact days ahead → NEWS blocks. */
+/** POST /calendar-blocks/import-eco - HIGH-impact days ahead → NEWS blocks. */
 export function useImportEcoBlockers() {
   const invalidate = useInvalidateCalendar();
   return useMutation({

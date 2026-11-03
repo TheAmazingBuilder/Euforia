@@ -1,5 +1,5 @@
 /**
- * Recognition controller (OCR backend V1) — the frontend-derived API surface
+ * Recognition controller (OCR backend V1) - the frontend-derived API surface
  * (master prompt §7/§10/§75: the shipped frontend is the source of truth for
  * the contract; the exact endpoints mirror `apps/web/src/lib/api/endpoints.ts`
  * under the global /api/v1 prefix).
@@ -7,17 +7,17 @@
  * Conventions (house standard, mirrors accounts/security/trades):
  *   - global JwtAuthGuard + ThrottlerGuard apply; the OCR-specific per-user
  *     vectors fire inside the service;
- *   - ZodValidationPipe on body — unknown fields stripped, malformed input
+ *   - ZodValidationPipe on body - unknown fields stripped, malformed input
  *     → 400 with issues; path ids are parsed with the shared uuidSchema
  *     (forged ids → 400, unknown-but-valid ids → 404);
- *   - ownership comes ONLY from the authenticated principal — ids in URLs
+ *   - ownership comes ONLY from the authenticated principal - ids in URLs
  *     are never trusted for authorization (§34/§35/§73: IDOR-safe by
  *     construction);
  *   - NO recognition logic and NO trade logic live here (§112): the
  *     controller is a thin adapter.
  *
  * Trade boundary (§75/§101): the ONLY route that touches Trading Core is
- * POST jobs/:id/confirm — explicit user confirmation. There is no route that
+ * POST jobs/:id/confirm - explicit user confirmation. There is no route that
  * places/modifies/cancels orders or touches broker state anywhere.
  */
 import {
@@ -114,7 +114,7 @@ export class RecognitionController {
     @CurrentUser() principal: AuthPrincipal,
     @Query() query: Record<string, string | string[] | undefined>,
   ) {
-    // V3 history filters (spec §62) — Zod-validated facets; unknown query
+    // V3 history filters (spec §62) - Zod-validated facets; unknown query
     // keys are stripped, malformed values → 400 (house standard).
     const parsed = recognitionJobListQuerySchema.safeParse(query);
     return this.recognition.listJobs(principal.userId, parsed.success ? parsed.data : undefined);
@@ -153,7 +153,7 @@ export class RecognitionController {
 
   /** THE human-in-the-loop gate (§6/§75): explicit confirmation only. */
   @Post("jobs/:id/confirm")
-  @HttpCode(HttpStatus.OK) // idempotent replay returns the SAME trade id — not a 201
+  @HttpCode(HttpStatus.OK) // idempotent replay returns the SAME trade id - not a 201
   async confirm(
     @CurrentUser() principal: AuthPrincipal,
     @Param("id") id: string,
@@ -178,7 +178,7 @@ export class RecognitionController {
     return this.recognition.retryJob(principal.userId, parseId(id), requestIdOf(request));
   }
 
-  // ── V2 — multi-trade drafts, crop re-OCR, progress, quality & storage ─────
+  // ── V2 - multi-trade drafts, crop re-OCR, progress, quality & storage ─────
 
   /** One slot per detected trade (V2 multi-trade review). */
   @Get("jobs/:id/drafts")
@@ -186,7 +186,7 @@ export class RecognitionController {
     return this.recognition.getDrafts(principal.userId, parseId(id));
   }
 
-  /** PUT …/drafts/:index — validated draft for ONE trade of the job. */
+  /** PUT …/drafts/:index - validated draft for ONE trade of the job. */
   @Put("jobs/:id/drafts/:index")
   async putDraftAtIndex(
     @CurrentUser() principal: AuthPrincipal,
@@ -203,7 +203,7 @@ export class RecognitionController {
     return this.recognition.saveDraftAtIndex(principal.userId, parseId(id), draft, tradeIndex);
   }
 
-  /** Crop re-recognition — the engine re-reads the selected zone. */
+  /** Crop re-recognition - the engine re-reads the selected zone. */
   @Post("jobs/:id/recrop")
   @HttpCode(HttpStatus.OK)
   async recrop(
@@ -218,7 +218,7 @@ export class RecognitionController {
    * SSE progress stream (V2): `data:` lines carry RecognitionProgressEvent
    * snapshots. The request-scoped build answers with the terminal state
    * immediately; the seam exists for async processing later (the mocked
-   * client build keeps calm polling — MSW cannot intercept EventSource).
+   * client build keeps calm polling - MSW cannot intercept EventSource).
    */
   @Get("jobs/:id/progress")
   async progress(
@@ -259,7 +259,7 @@ export class RecognitionController {
     });
   }
 
-  /** Quality analytics — funnel, correction rates, duplicates, performance. */
+  /** Quality analytics - funnel, correction rates, duplicates, performance. */
   @Get("analytics")
   async analytics(@CurrentUser() principal: AuthPrincipal, @Query("days") rawDays?: string) {
     const parsed = Number(rawDays ?? "30");
@@ -273,7 +273,7 @@ export class RecognitionController {
     return this.recognition.getStorage(principal.userId);
   }
 
-  /** Raw screenshot bytes — owner-scoped, private, never cached by proxies. */
+  /** Raw screenshot bytes - owner-scoped, private, never cached by proxies. */
   @Get("jobs/:id/screenshot")
   async screenshot(
     @CurrentUser() principal: AuthPrincipal,
@@ -288,7 +288,7 @@ export class RecognitionController {
       .send(image.bytes);
   }
 
-  // ── V3 — reprocess, fusion groups, collections ───────────────────────────
+  // ── V3 - reprocess, fusion groups, collections ───────────────────────────
 
   /** Reprocess (spec §45): NEW job over the SAME asset; history untouched. */
   @Post("jobs/:id/reprocess")
@@ -320,13 +320,13 @@ export class RecognitionController {
     return this.recognition.getGroup(principal.userId, parseId(id));
   }
 
-  /** Dissolve a group — members stay intact (spec §15). */
+  /** Dissolve a group - members stay intact (spec §15). */
   @Delete("groups/:id")
   async discardGroup(@CurrentUser() principal: AuthPrincipal, @Param("id") id: string) {
     return this.recognition.discardGroup(principal.userId, parseId(id));
   }
 
-  /** Edit the fused draft — SAME validated rules as a job draft (§74). */
+  /** Edit the fused draft - SAME validated rules as a job draft (§74). */
   @Put("groups/:id/draft")
   async putGroupDraft(
     @CurrentUser() principal: AuthPrincipal,
@@ -336,7 +336,7 @@ export class RecognitionController {
     return this.recognition.updateGroupDraft(principal.userId, parseId(id), draft);
   }
 
-  /** THE group human-in-the-loop gate — exactly ONE canonical trade (§70). */
+  /** THE group human-in-the-loop gate - exactly ONE canonical trade (§70). */
   @Post("groups/:id/confirm")
   @HttpCode(HttpStatus.OK)
   async confirmGroup(
@@ -347,7 +347,7 @@ export class RecognitionController {
     return this.recognition.confirmGroup(principal.userId, parseId(id), input ?? {});
   }
 
-  // ── V3 — screenshot collections (spec §41) ──────────────────────────────
+  // ── V3 - screenshot collections (spec §41) ──────────────────────────────
 
   @Get("collections")
   async listCollections(@CurrentUser() principal: AuthPrincipal) {

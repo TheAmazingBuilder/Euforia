@@ -20,7 +20,7 @@ import type { DashboardWidgetKey } from "@cosmoz/shared";
 import { widgetIcon } from "./widget-icons";
 
 /**
- * Widget Library (Phase 01 §8) — discover and add REAL registered widgets,
+ * Widget Library (Phase 01 §8) - discover and add REAL registered widgets,
  * grouped by category. Widgets already on the layout (visible or hidden)
  * show as added; a hidden instance can be restored from here. No fake
  * entries: every card renders with existing components and data.
@@ -51,7 +51,7 @@ export function WidgetLibraryDialog({
         <DialogHeader>
           <DialogTitle className="font-heading">Widget library</DialogTitle>
           <DialogDescription>
-            Everything you can put on this layout. Widgets marked Added are already here —
+            Everything you can put on this layout. Widgets marked Added are already here -
             hidden ones keep their place and settings.
           </DialogDescription>
         </DialogHeader>

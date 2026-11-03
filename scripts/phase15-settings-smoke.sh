@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Phase 15 — runtime smoke verification of the Settings bounded context.
+# Phase 15 - runtime smoke verification of the Settings bounded context.
 # Boots the real API (dev DB), then exercises: auth gates, doc read, domain
 # PATCH with write-through, reset, default-account ownership, mass-assignment
 # stripping. Exits non-zero on any failed expectation.
@@ -36,7 +36,7 @@ echo "[auth] unauthenticated GET /me/preferences → 401 OK"
 # ── 2. register + verify + login ─────────────────────────────────────────────
 curl -sf -X POST "$BASE/auth/register" -H 'content-type: application/json' \
   -d "{\"name\":\"Phase 15 Smoke\",\"email\":\"$EMAIL\",\"password\":\"correct-horse-battery\"}" > /dev/null
-# pino-pretty flushes from an async worker — give it a beat before grepping.
+# pino-pretty flushes from an async worker - give it a beat before grepping.
 sleep 3
 TOKEN=$(grep -o 'token=[A-Za-z0-9_-]*' "$LOG" | tail -1 | cut -d= -f2)
 [ -n "$TOKEN" ] || { echo "FAIL: no verification token in mail log"; exit 1; }

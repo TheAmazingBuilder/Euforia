@@ -1,5 +1,5 @@
 /**
- * Accounts bounded context (Phase 3) — Accounts / Trading Connectivity.
+ * Accounts bounded context (Phase 3) - Accounts / Trading Connectivity.
  *
  * Supporting subdomain (Phase 0 §I): follows the established flat
  * application-service + one-repository + thin-controllers discipline, with
@@ -9,17 +9,17 @@
  * Reuse over reinvention: error taxonomy, ZodValidationPipe, auth guard +
  * principal decorator come from the Foundation; security-relevant facts are
  * recorded through the shared append-only ledger port (SecurityEventModule,
- * Phase 16) — never through a second audit system; the sliding-window rate
+ * Phase 16) - never through a second audit system; the sliding-window rate
  * limiter class is reused with accounts-specific vectors; AES-256-GCM
  * encryption is parameterized per-domain (ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY
  * ≠ AUTH_MFA_ENCRYPTION_KEY). The repository is exported as the context's
- * narrow read contract — the Monitoring module (Phase 17 §26) consumes sync
+ * narrow read contract - the Monitoring module (Phase 17 §26) consumes sync
  * health from HERE instead of duplicating synchronization state.
  *
  * Provider registration (§57): the mock adapter is only registered when
- * config.accounts.mockProviderEnabled (default: on outside production).
+ * config.accounts.mockProviderEnabled (default: test-only).
  * Registering a real adapter later = implement the interface + add it to the
- * factory below + register in the registry — nothing else changes (§60).
+ * factory below + register in the registry - nothing else changes (§60).
  */
 import { Module, type Provider } from "@nestjs/common";
 import { ConfigModule } from "../../config/config.module";
@@ -62,10 +62,10 @@ const providerRegistryProvider: Provider = {
   ): ProviderRegistryService => {
     const adapters = [
       // V1: mock adapter only (§55/§57). Real adapters (MT5 bridge, Deriv,
-      // cTrader, …) register here when their integrations actually exist —
+      // cTrader, …) register here when their integrations actually exist -
       // never before (§56: do not fake real connectivity).
       ...(config.accounts.mockProviderEnabled ? [new MockTradingProviderAdapter()] : []),
-      // Phase 03: the FIRST real adapter — explicit opt-in per deployment
+      // Phase 03: the FIRST real adapter - explicit opt-in per deployment
       // (a real provider is never enabled by default). No credential lives
       // here: the adapter receives the vault-decrypted token per request.
       ...(config.accounts.oandaEnabled
@@ -76,7 +76,7 @@ const providerRegistryProvider: Provider = {
             }),
           ]
         : []),
-      // Phase 07: the SECOND real adapter — same §57 opt-in posture. One
+      // Phase 07: the SECOND real adapter - same §57 opt-in posture. One
       // documented dependency install (ws, the official WS client), a
       // deployment-owned app id, and the user's Read-scope API token; the
       // adapter never holds a credential and never sends a write verb.
@@ -89,7 +89,7 @@ const providerRegistryProvider: Provider = {
             }),
           ]
         : []),
-      // Phase 08: the THIRD real adapter — the FIRST push-based one. Same
+      // Phase 08: the THIRD real adapter - the FIRST push-based one. Same
       // §57 opt-in posture. No outbound dependency at all: the user's MT5
       // terminal (EuforiaBridge EA) pushes signed events to the ingest
       // endpoint; the adapter serves the server-persisted log back to the
@@ -109,22 +109,22 @@ const providerRegistryProvider: Provider = {
   // /trading-accounts surface (list-with-details + PATCH rename) is now
   // REGISTERED and consumed by the Accounts UI. GET /accounts remains the
   // journal identity list; the canonical documented surface stays
-  // accounts.controller.ts (doc C §2.1) — /trading-accounts adds the two
+  // accounts.controller.ts (doc C §2.1) - /trading-accounts adds the two
   // routes /accounts lacks instead of duplicating them silently.
   controllers: [AccountsController, TradingAccountsController, BrokerController],
   providers: [
     AccountsRepository,
     CredentialsEncryptionService,
     providerRegistryProvider,
-    // Phase 07 — universal broker layer: catalog + connect-time
+    // Phase 07 - universal broker layer: catalog + connect-time
     // identification ("which broker is this?"). Depends only on the registry.
     BrokerIdentificationService,
     TradingSyncService,
     TradingAccountService,
-    // Phase 08 — the public bridge ingest (HMAC + idempotency + activation).
+    // Phase 08 - the public bridge ingest (HMAC + idempotency + activation).
     Mt5BridgeIngestService,
     AccountsRateLimiterService,
-    // Phase 05 — scheduled synchronization + stale-run recovery (§9/§15).
+    // Phase 05 - scheduled synchronization + stale-run recovery (§9/§15).
     // The timer itself is config-gated (ACCOUNTS_SYNC_SCHEDULER, default
     // off); the recovery sweep runs once at init regardless.
     AccountsSyncSchedulerService,

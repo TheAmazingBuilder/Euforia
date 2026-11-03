@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Restore-save E2E smoke — Academy save (Line B).
+"""Restore-save E2E smoke - Academy save (Line B).
 
 Verifies the restored save boots and the core pages render, in light + dark
 (themed via the app's own toggle), desktop 1440 + mobile 390, with a clean
@@ -69,7 +69,7 @@ def main() -> int:
 
         # If redirected to login, sign in (demo account + 2FA demo code).
         if "/login" in page.url or "Sign in" in body_text:
-            print("Auth gate detected — signing in with demo credentials")
+            print("Auth gate detected - signing in with demo credentials")
             page.fill("input[type='email']", "alex@cosmoz.app")
             page.fill("input[type='password']", "cosmoz123")
             page.click("button[type='submit']")

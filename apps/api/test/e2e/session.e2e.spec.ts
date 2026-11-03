@@ -1,5 +1,5 @@
 /**
- * e2e — Session (B5): the server-assembled trading day over the REAL
+ * e2e - Session (B5): the server-assembled trading day over the REAL
  * AppModule + real database. Covers the timeline (entry/exit events from
  * the journal), the logbook round-trip (add → list → delete), shared
  * contract validation, ownership (IDOR → 404) and the auth boundary.
@@ -61,7 +61,7 @@ describe("session timeline (B5)", () => {
     expect(before.events).toHaveLength(0);
 
     // One full lifecycle today (recent timestamps, mood taps included).
-    // Date-string anchors INSIDE today (00:01/00:02 UTC) — immune to the
+    // Date-string anchors INSIDE today (00:01/00:02 UTC) - immune to the
     // midnight boundary that once emptied the "today" timeline mid-run.
     const today = new Date().toISOString().slice(0, 10);
     const entryAt = `${today}T00:01:00.000Z`;
@@ -144,11 +144,11 @@ describe("session logbook (B5)", () => {
       method: "POST",
       url: "/api/v1/session/notes",
       headers: user.authHeader,
-      payload: { text: "  Hesitated on the London sweep — waited for the reclaim.  " },
+      payload: { text: "  Hesitated on the London sweep - waited for the reclaim.  " },
     });
     expect(added.statusCode).toBe(201);
     const note = added.json() as { id: string; date: string; at: string; text: string };
-    expect(note.text).toBe("Hesitated on the London sweep — waited for the reclaim."); // trimmed
+    expect(note.text).toBe("Hesitated on the London sweep - waited for the reclaim."); // trimmed
     expect(note.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
     expect(note.at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
 

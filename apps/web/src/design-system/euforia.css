@@ -1,8 +1,8 @@
 /* ============================================================
-   EUFORIA — brand tokens (docs/brand-guide.md)
+   EUFORIA - brand tokens (docs/brand-guide.md)
    Values only: defines the brand palette and the two official
    gradients as CSS custom properties + two utility classes.
-   Nothing here is applied to existing components — the app's
+   Nothing here is applied to existing components - the app's
    theme system ("Le Registre") stays untouched. Opt-in styling
    only (logo lockups, featured/active states per the guide).
    ============================================================ */
@@ -28,7 +28,7 @@
   --eu-warning: #f59e0b;
   --eu-error: #ef4444;
 
-  /* Official gradients — sampled from the founder's reference artwork */
+  /* Official gradients - sampled from the founder's reference artwork */
   --eu-gradient-primary: linear-gradient(
     93deg,
     #7b22f4 0%,
@@ -40,7 +40,7 @@
 }
 
 /* Brand gradient as text fill (taglines, featured headings).
-   Use sparingly — the guide: gradients are accents, not defaults. */
+   Use sparingly - the guide: gradients are accents, not defaults. */
 .euforia-gradient-text {
   background: var(--eu-gradient-text);
   -webkit-background-clip: text;

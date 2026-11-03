@@ -22,19 +22,19 @@ import { WidgetContent, type DashboardWidgetData } from "./widgets-renderer";
 /**
  * The responsive dashboard grid (Phase 01 §6/§7/§14).
  *
- * Desktop (lg+): a real 12-column grid — each widget instance renders at
+ * Desktop (lg+): a real 12-column grid - each widget instance renders at
  * its configured width span and minimum height level (content always
- * grows past a level — nothing is clipped). Below lg the policy is a
+ * grows past a level - nothing is clipped). Below lg the policy is a
  * single-column stack in the same order (mobile, tablet), so a desktop
  * layout is never destroyed on a narrow screen.
  *
- * Edit mode: HTML5 drag-and-drop reordering (drag by the grip — same
+ * Edit mode: HTML5 drag-and-drop reordering (drag by the grip - same
  * proven mechanics as the previous inline editor), pointer resize
  * handles on the widget's right/bottom edges, and a full keyboard path
  * (move up/down + width/height step buttons).
  */
 
-/** Literal class map — Tailwind JIT needs every entry present in source. */
+/** Literal class map - Tailwind JIT needs every entry present in source. */
 const SPAN_CLASSES: Record<number, string> = {
   1: "lg:col-span-1",
   2: "lg:col-span-2",
@@ -50,7 +50,7 @@ const SPAN_CLASSES: Record<number, string> = {
   12: "lg:col-span-12",
 };
 
-/** Height levels — min-height semantics (content may exceed, never clip). */
+/** Height levels - min-height semantics (content may exceed, never clip). */
 const HEIGHT_CLASSES: Record<number, string> = {
   1: "",
   2: "lg:min-h-80",
@@ -65,10 +65,10 @@ interface DashboardGridProps {
   layout: DashboardLayoutDocument;
   data: DashboardWidgetData;
   editing: boolean;
-  /** The authoritative global filter context (Phase 03 §7) — forwarded to
+  /** The authoritative global filter context (Phase 03 §7) - forwarded to
    * the suite-fed widget renderers. */
   globalFilters?: DashboardFilters;
-  /** True when at least one global filter is active — unaffected widgets
+  /** True when at least one global filter is active - unaffected widgets
    * get an honest "not filtered" badge (Phase 03 §8, never a fake result). */
   showUnfilteredBadges?: boolean;
   onMoveTo: (instanceId: string, toIndex: number) => void;
@@ -181,7 +181,7 @@ export function DashboardGrid({
             onDrop={(event) => event.preventDefault()}
             onDragEnd={commitDrag}
             className={cn(
-              // min-w-0: grid items default to min-width:auto — without it,
+              // min-w-0: grid items default to min-width:auto - without it,
               // widgets with decorative negative-inset bleeds (risk gauge
               // tick, heatmap rail) would widen the section past its column
               // and inflate the page scroll width on mobile.
@@ -423,7 +423,7 @@ function WidgetEditTools({
       <button
         type="button"
         aria-label={`Hide ${label}`}
-        title="Hide — keeps its place and settings"
+        title="Hide - keeps its place and settings"
         data-testid={`dashboard-widget-hide-${key}`}
         onClick={() => onHide(widget.instanceId)}
         className={toolButton}
@@ -493,7 +493,7 @@ function ResizeHandle({
     try {
       event.currentTarget.releasePointerCapture(event.pointerId);
     } catch {
-      // pointer already released — nothing to clean up
+      // pointer already released - nothing to clean up
     }
   }, []);
 

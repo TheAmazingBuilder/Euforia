@@ -1,5 +1,5 @@
 /**
- * Trade Review controllers (B8) — reviews workspace + goals, mirroring
+ * Trade Review controllers (B8) - reviews workspace + goals, mirroring
  * `mocks/handlers/tradeReview.ts` exactly (9 routes). Global JwtAuthGuard,
  * ZodValidationPipe on every body, uuid-validated params.
  */
@@ -34,20 +34,20 @@ import { ReviewService } from "./review.service";
 export class ReviewsController {
   constructor(private readonly reviews: ReviewService) {}
 
-  /** GET /reviews/overview — the module's aggregate (stats + goals + lessons). */
+  /** GET /reviews/overview - the module's aggregate (stats + goals + lessons). */
   @Get("overview")
   async overview(@CurrentUser() principal: AuthPrincipal) {
     return this.reviews.overview(principal.userId);
   }
 
-  /** GET /reviews — every review row (pending + reviewed), joined with trades. */
+  /** GET /reviews - every review row (pending + reviewed), joined with trades. */
   @Get()
   async list(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.reviews.listReviews(principal.userId);
     return reviewsResponseSchema.parse(response);
   }
 
-  /** PUT /reviews/:tradeId — upsert the post-trade review (URL authoritative). */
+  /** PUT /reviews/:tradeId - upsert the post-trade review (URL authoritative). */
   @Put(":tradeId")
   async upsert(
     @CurrentUser() principal: AuthPrincipal,
@@ -59,14 +59,14 @@ export class ReviewsController {
     return this.reviews.upsertReview(principal.userId, id, payload);
   }
 
-  /** DELETE /reviews/:tradeId — undo a review (trade returns to pending). */
+  /** DELETE /reviews/:tradeId - undo a review (trade returns to pending). */
   @Delete(":tradeId")
   async remove(@CurrentUser() principal: AuthPrincipal, @Param("tradeId") tradeId: string) {
     const id = uuidSchema.parse(tradeId);
     return this.reviews.deleteReview(principal.userId, id);
   }
 
-  /** GET /reviews/lessons — the lessons library (union of all sources). */
+  /** GET /reviews/lessons - the lessons library (union of all sources). */
   @Get("lessons")
   async lessons(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.reviews.listLessons(principal.userId);
@@ -78,7 +78,7 @@ export class ReviewsController {
 export class GoalsController {
   constructor(private readonly goals: GoalService) {}
 
-  /** GET /goals — goals WITH computed progress (targets vs real behavior). */
+  /** GET /goals - goals WITH computed progress (targets vs real behavior). */
   @Get()
   async list(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.goals.listGoals(principal.userId);

@@ -1,4 +1,4 @@
-/** debug-oryon-boot.js — why doesn't the sidebar link appear? */
+/** debug-oryon-boot.js - why doesn't the sidebar link appear? */
 const { chromium } = require("playwright");
 
 (async () => {

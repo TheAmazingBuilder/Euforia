@@ -213,7 +213,7 @@ describe("layout validation", () => {
     expect(malformed.layouts[0]!.id).toBe("ok");
   });
 
-  it("skips only the malformed layout — valid siblings survive", () => {
+  it("skips only the malformed layout - valid siblings survive", () => {
     const snapshot = normalizeCustomization(
       [
         { id: "bad", name: "Bad", schemaVersion: 7, widgets: [] },
@@ -314,7 +314,7 @@ describe("per-widget configuration (Phase 02)", () => {
     const layout = normalizeLayout(raw)!;
     expect(layout).not.toBeNull();
     expect(layout.widgets[0]!.config).toEqual(VALID_METRICS_CONFIG);
-    // Invalid config dropped on read — the renderer falls back to defaults.
+    // Invalid config dropped on read - the renderer falls back to defaults.
     expect(layout.widgets[1]!.config).toBeUndefined();
   });
 
@@ -338,7 +338,7 @@ describe("per-widget configuration (Phase 02)", () => {
     const copy = cloneLayout(configured, { name: "Copy" });
     const copyMetrics = copy.widgets.find((w) => w.type === "METRICS_CARD")!;
     expect(copyMetrics.config).toEqual(VALID_METRICS_CONFIG);
-    // Fresh random instance ids — never the donor's.
+    // Fresh random instance ids - never the donor's.
     expect(copyMetrics.instanceId).not.toBe(metricsId);
   });
 
@@ -348,7 +348,7 @@ describe("per-widget configuration (Phase 02)", () => {
     layout = setWidgetConfig(layout, id, VALID_METRICS_CONFIG);
     expect(layout.widgets.find((w) => w.instanceId === id)!.config).toEqual(VALID_METRICS_CONFIG);
 
-    // Invalid payload is a no-op — never a corrupted layout.
+    // Invalid payload is a no-op - never a corrupted layout.
     const INVALID: unknown = { kind: "METRICS_CARD", v: 1, period: "BOGUS", metrics: [], comparison: "OFF", notation: "STANDARD", decimals: 2 };
     const invalid = setWidgetConfig(layout, id, INVALID as DashboardWidgetItem["config"]);
     expect(invalid).toBe(layout);

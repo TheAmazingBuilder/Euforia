@@ -1,5 +1,5 @@
 /**
- * Oryon indicator engine — unit tests (bun).
+ * Oryon indicator engine - unit tests (bun).
  *
  * Same honest convention as oryon-drawing-tests.ts: the repository has NO
  * JS unit-test runner, so these are bun-run TypeScript with plain
@@ -256,8 +256,8 @@ console.log("\n[volume + normalize]");
     candle(6000, 2, 3, 2, 3, 1500),
     candle(3000, 1, 2, 1, 2, 500),
     candle(9000, 3, 4, 3, 4, 2000),
-    candle(3000, 1, 2, 1, 2.5, 700), // duplicate t — last wins
-    candle(12000, Number.NaN, 5, 4, 5), // non-finite price — dropped
+    candle(3000, 1, 2, 1, 2.5, 700), // duplicate t - last wins
+    candle(12000, Number.NaN, 5, 4, 5), // non-finite price - dropped
   ];
   const normalized = normalizeCandles(shuffled);
   eq("sorted ascending", normalized.length, 3);
@@ -282,7 +282,7 @@ console.log("\n[latest values + format]");
   eq("rsi format", Number(formatIndicatorValue(56.324, instance("rsi"))), 56.32, 1e-9);
   ok("volume compact format", formatIndicatorValue(1_500_000, instance("volume")) === "1.5M");
   ok("price format", formatIndicatorValue(104_231.56, instance("sma")) === "104231.56");
-  ok("non-finite → em dash", formatIndicatorValue(Number.NaN, instance("ema")) === "—");
+  ok("non-finite → em dash", formatIndicatorValue(Number.NaN, instance("ema")) === "-");
 }
 
 // ── 9. registry + defaults ───────────────────────────────────────────────────
@@ -360,7 +360,7 @@ console.log("\n[persistence]");
     },
   };
 
-  // First visit — the PRD default template (volume + RSI 14), seeded + saved.
+  // First visit - the PRD default template (volume + RSI 14), seeded + saved.
   const seeded = loadIndicators();
   eq("first visit seeds 2 indicators", seeded.indicators.length, 2);
   ok("seed flags itself", seeded.seeded);

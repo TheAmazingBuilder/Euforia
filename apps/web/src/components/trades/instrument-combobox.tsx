@@ -5,22 +5,29 @@ import { Check, ChevronsUpDown, Search } from "lucide-react";
 import type { Instrument } from "@cosmoz/shared";
 
 import { useInstruments } from "@/lib/api/queries";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { assetClassBadge } from "@/lib/utils/instrument";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { assetClassBadge, formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
-/**
- * Search-first instrument combobox (spec §4): matches symbol AND name
- * ("eur" → EURUSD, "vol75" → VOL75(1s)), recents chips persisted in
- * localStorage (max 5). Search goes through GET /instruments?q= like the
- * future API — the component never filters a private copy of the catalog.
- */
-
-const RECENTS_KEY = "cosmoz.recent-instruments.v1";
+const RECENTS_KEY = "euforia.recent-instruments.v1";
 const RECENTS_MAX = 5;
 
+const CATEGORIES = [
+  { value: "ALL", label: "All" },
+  { value: "FOREX", label: "Forex" },
+  { value: "CRYPTO", label: "Crypto" },
+  { value: "SYNTHETIC", label: "Synthetic" },
+  { value: "INDEX", label: "Indices" },
+  { value: "METAL", label: "Metals" },
+  { value: "ENERGY", label: "Energy" },
+] as const;
+
+type InstrumentCategory = (typeof CATEGORIES)[number]["value"];
+
 function loadRecents(): string[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = window.localStorage.getItem(RECENTS_KEY);
     const parsed: unknown = raw === null ? [] : JSON.parse(raw);
@@ -45,7 +52,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
   const [open, setOpen] = React.useState(false);
   const [query, setQuery] = React.useState("");
   const [debouncedQuery, setDebouncedQuery] = React.useState("");
-  // Client-only mount (inside the modal) — localStorage is safe to read here.
+  const [category, setCategory] = React.useState<InstrumentCategory>("ALL");
   const [recents, setRecents] = React.useState<string[]>(() => loadRecents());
 
   React.useEffect(() => {
@@ -53,19 +60,17 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
     return () => window.clearTimeout(timer);
   }, [query]);
 
-  // Full catalog (recents resolution + fallback list) and the server search.
   const { data: allData } = useInstruments();
   const { data: searchData, isFetching } = useInstruments(debouncedQuery);
   const instruments = React.useMemo(() => {
-    if (debouncedQuery === "") return allData?.instruments ?? [];
-    return searchData?.instruments ?? [];
-  }, [allData, searchData, debouncedQuery]);
+    const catalog = debouncedQuery === "" ? allData?.instruments ?? [] : searchData?.instruments ?? [];
+    return category === "ALL" ? catalog : catalog.filter((item) => item.assetClass === category);
+  }, [allData, searchData, debouncedQuery, category]);
 
   const allById = React.useMemo(
     () => new Map((allData?.instruments ?? []).map((instrument) => [instrument.id, instrument])),
     [allData],
   );
-
   const selected = value !== null ? (allById.get(value) ?? null) : null;
   const recentInstruments = recents
     .map((id) => allById.get(id))
@@ -77,95 +82,133 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
     try {
       window.localStorage.setItem(RECENTS_KEY, JSON.stringify(nextRecents));
     } catch {
-      // Best-effort persistence.
+      // The catalogue remains usable when browser storage is disabled.
     }
     onChange(instrument);
     setOpen(false);
+    setQuery("");
+    setCategory("ALL");
   };
 
+  const triggerContent = selected ? (
+    <span className="flex min-w-0 items-center gap-2">
+      <span className="shrink-0 rounded-md border border-border bg-muted px-2 py-1 font-mono text-[11px] font-semibold tracking-wide">{formatInstrumentSymbol(selected.symbol, selected.assetClass)}</span>
+      <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {assetClassBadge(selected.assetClass)}
+      </span>
+      <span className="truncate text-xs text-muted-foreground">{selected.name}</span>
+    </span>
+  ) : <span className="text-sm">{T.triggerPlaceholder}</span>;
+
+  const renderInstrument = (instrument: Instrument) => (
+    <button
+      key={instrument.id}
+      type="button"
+      role="option"
+      aria-selected={instrument.id === value}
+      onClick={() => select(instrument)}
+      className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-1 focus-visible:ring-ring"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block font-mono text-sm font-semibold tracking-wide text-foreground">{formatInstrumentSymbol(instrument.symbol, instrument.assetClass)}</span>
+        <span className="block truncate text-xs text-muted-foreground">{instrument.name}</span>
+      </span>
+      <span className="rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+        {assetClassBadge(instrument.assetClass)}
+      </span>
+      {instrument.id === value ? <Check className="size-4 shrink-0 text-accent" aria-hidden="true" /> : null}
+    </button>
+  );
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger
+    <>
+      <Button
         type="button"
+        variant="outline"
         role="combobox"
         aria-expanded={open}
+        onClick={() => setOpen(true)}
         className={cn(
-          "flex h-10 w-full items-center gap-2 rounded-md border border-border bg-background px-3 text-left outline-none transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring",
+          "h-10 w-full justify-start gap-2 border-border bg-background px-3 text-left font-normal hover:bg-muted",
           selected ? "text-foreground" : "text-muted-foreground",
         )}
       >
-        {selected !== null ? (
-          <>
-            <span className="font-mono text-sm font-semibold tracking-wide">{selected.symbol}</span>
-            <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {assetClassBadge(selected.assetClass)}
-            </span>
-            <span className="truncate text-xs text-muted-foreground">{selected.name}</span>
-          </>
-        ) : (
-          <span className="text-sm">{T.triggerPlaceholder}</span>
-        )}
+        {triggerContent}
         <ChevronsUpDown className="ml-auto size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-      </PopoverTrigger>
-      <PopoverContent align="start" className="w-[calc(var(--radix-popover-trigger-width))] p-0">
-        <div className="flex items-center gap-2 border-b border-border px-3">
-          <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-          <input
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="eur, boom, vol75…"
-            aria-label={T.searchAria}
-            autoComplete="off"
-            className="h-10 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
-          />
-        </div>
+      </Button>
 
-        {recentInstruments.length > 0 && debouncedQuery === "" ? (
-          <div className="flex flex-wrap items-center gap-1.5 border-b border-border px-3 py-2">
-            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-              {T.recents}
-            </span>
-            {recentInstruments.map((instrument) => (
+      <Dialog open={open} onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) {
+          setQuery("");
+          setCategory("ALL");
+        }
+      }}>
+        <DialogContent className="flex h-[min(720px,85vh)] max-h-[85vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+          <DialogHeader className="border-b border-border px-4 pb-3 pt-4">
+            <DialogTitle className="font-heading text-base">Choose an instrument</DialogTitle>
+          </DialogHeader>
+          <div className="flex shrink-0 items-center gap-2 border-b border-border px-4">
+            <Search className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search symbol or name"
+              aria-label="Search symbol or name"
+              autoComplete="off"
+              autoFocus
+              className="h-12 w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+            <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">Esc</kbd>
+          </div>
+          <div className="flex shrink-0 gap-1 overflow-x-auto border-b border-border px-3 py-2" role="tablist" aria-label="Instrument categories">
+            {CATEGORIES.map((item) => (
               <button
-                key={instrument.id}
+                key={item.value}
                 type="button"
-                onClick={() => select(instrument)}
-                className="rounded-full border border-border bg-surface px-2 py-0.5 font-mono text-xs tabular-nums outline-none transition-colors hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-ring"
+                role="tab"
+                aria-selected={category === item.value}
+                onClick={() => setCategory(item.value)}
+                className={cn(
+                  "shrink-0 rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
+                  category === item.value ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
               >
-                {instrument.symbol}
+                {item.label}
               </button>
             ))}
           </div>
-        ) : null}
-
-        <div className="max-h-56 overflow-y-auto p-1" role="listbox" aria-label={T.listboxAria}>
-          {instruments.length === 0 ? (
-            <p className="px-3 py-4 text-center text-xs text-muted-foreground">
-              {isFetching ? T.searching : T.noMatch}
-            </p>
-          ) : (
-            instruments.map((instrument) => (
-              <button
-                key={instrument.id}
-                type="button"
-                role="option"
-                aria-selected={instrument.id === value}
-                onClick={() => select(instrument)}
-                className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left outline-none hover:bg-muted focus-visible:bg-muted focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <span className="font-mono text-sm font-semibold tracking-wide">{instrument.symbol}</span>
-                <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                  {assetClassBadge(instrument.assetClass)}
-                </span>
-                <span className="truncate text-xs text-muted-foreground">{instrument.name}</span>
-                {instrument.id === value ? (
-                  <Check className="ml-auto size-4 shrink-0 text-accent" aria-hidden="true" />
-                ) : null}
-              </button>
-            ))
-          )}
-        </div>
-      </PopoverContent>
-    </Popover>
+          {recentInstruments.length > 0 && debouncedQuery === "" && category === "ALL" ? (
+            <div className="shrink-0 border-b border-border px-3 py-3">
+              <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{T.recents}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {recentInstruments.map((instrument) => (
+                  <button
+                    key={instrument.id}
+                    type="button"
+                    onClick={() => select(instrument)}
+                    className="rounded-full border border-border bg-surface px-2.5 py-1 font-mono text-xs tabular-nums transition-colors hover:border-accent hover:text-accent"
+                  >
+                    {formatInstrumentSymbol(instrument.symbol, instrument.assetClass)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <div className="min-h-0 flex-1 overflow-y-auto p-2" role="listbox" aria-label={T.listboxAria}>
+            {instruments.length === 0 ? (
+              <p className="px-3 py-10 text-center text-sm text-muted-foreground">
+                {isFetching ? T.searching : T.noMatch}
+              </p>
+            ) : (
+              <div className="space-y-0.5">{instruments.map(renderInstrument)}</div>
+            )}
+          </div>
+          <div className="shrink-0 border-t border-border bg-muted/40 px-4 py-2.5 text-[11px] text-muted-foreground">
+            Search matches both ticker and instrument name. Only instruments in Euforia&apos;s active catalogue can be selected.
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

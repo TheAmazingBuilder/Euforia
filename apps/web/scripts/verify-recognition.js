@@ -1,5 +1,5 @@
 /**
- * Import & Recognition probe — PROMPT 3 definition-of-done walkthrough
+ * Import & Recognition probe - PROMPT 3 definition-of-done walkthrough
  * (spec §75): open → upload → configure → processing → result → edit →
  * draft → confirm → success → history, plus the FAILED and CANCEL paths,
  * responsive captures and a zero-pageerror guarantee.
@@ -15,11 +15,11 @@ const pageErrors = [];
 
 function ok(label, extra = "") {
   passed += 1;
-  console.log(`  ✓ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✓ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 function bad(label, extra = "") {
   failedCount += 1;
-  console.log(`  ✗ ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ✗ ${label}${extra ? ` - ${extra}` : ""}`);
 }
 async function check(label, condition, extra = "") {
   condition ? ok(label, extra) : bad(label, extra);
@@ -27,7 +27,7 @@ async function check(label, condition, extra = "") {
 
 /** Draw a fake MT5 screenshot in the page and return PNG bytes.
  *  `tint` shifts the background so different steps never produce
- *  pixel-identical shots (the pHash duplicate guard would — correctly —
+ *  pixel-identical shots (the pHash duplicate guard would - correctly -
  *  reject the confirmation otherwise). */
 async function makeScreenshotPng(page, width = 1280, height = 720, withText = true, tint = 0) {
   const dataUrl = await page.evaluate(
@@ -107,7 +107,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await page.waitForTimeout(600);
     await check("configure step shows preview", await page.locator('[data-testid="recognition-preview-image"]').isVisible().catch(() => false));
     await check("settings visible", await page.locator('[data-testid="recognition-settings"]').isVisible().catch(() => false));
-    // V1.1 — three recognition modes, ALL selectable (no coming-soon rows).
+    // V1.1 - three recognition modes, ALL selectable (no coming-soon rows).
     await check("three profile cards", (await page.locator('[data-testid^="recognition-profile-"]').count()) === 3);
     await check("no disabled profile rows", (await page.locator('[data-testid="recognition-settings"] [aria-disabled="true"]').count()) === 0);
     await page.screenshot({ path: "scripts/shots/recognition-configure.png", fullPage: true });
@@ -149,7 +149,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await check("draft sections render", (await page.locator('[data-testid="recognition-draft"] [data-testid^="draft-"]').count()) >= 9);
     await check("risk/reward computed", /[0-9]/.test(await page.locator('[data-testid="draft-risk-reward"]').innerText()));
     await page.screenshot({ path: "scripts/shots/recognition-draft.png", fullPage: true });
-    // V2 §60 — the confirm button now opens the explicit confirmation
+    // V2 §60 - the confirm button now opens the explicit confirmation
     // dialog; the final "Confirm trade" action lives inside it.
     await page.click('[data-testid="recognition-confirm"]');
     await page.waitForSelector('[data-testid="recognition-confirm-final"]', { timeout: 10000 });
@@ -293,7 +293,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await page.waitForSelector('[data-testid="recognition-collection-members-Imports"] [data-testid="recognition-collection-member"]', { timeout: 5000 });
     await check("create & add pre-filled the member", (await page.locator('[data-testid="recognition-collection-members-Imports"] [data-testid="recognition-collection-member"]').count()) === 1);
 
-    // Delete the empty collection — confirm dialog, recognitions untouched.
+    // Delete the empty collection - confirm dialog, recognitions untouched.
     await page.click('[data-testid="recognition-collection-delete-Review shots"]');
     await page.waitForSelector('[data-testid="recognition-collection-delete-confirm"]', { timeout: 5000 });
     await page.click('[data-testid="recognition-collection-delete-confirm"]');
@@ -302,7 +302,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await check("history rows untouched by collection ops", (await page.locator('[data-testid="recognition-history-row"]').count()) >= 5);
     await page.screenshot({ path: "scripts/shots/recognition-collections-final.png", fullPage: true });
 
-    // V2 §28b — the RESULT view lists the collections holding this screenshot.
+    // V2 §28b - the RESULT view lists the collections holding this screenshot.
     await page.locator('[data-testid^="recognition-collection-open-"]').first().click();
     await page.waitForSelector('[data-testid="recognition-result"]', { timeout: 10000 });
     await page.waitForSelector('[data-testid="recognition-result-collections"]', { timeout: 5000 });
@@ -311,7 +311,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
     await page.click('[data-testid="recognition-tab-history"]');
     await page.waitForTimeout(800);
 
-    // V2 §28c — the "by collection" filter isolates the collection's members.
+    // V2 §28c - the "by collection" filter isolates the collection's members.
     await page.click('[data-testid="recognition-collection-filter"]');
     await page.waitForSelector('[data-testid="recognition-collection-filter-menu"]', { timeout: 5000 });
     await page.click('[data-testid="recognition-collection-filter-option-Imports"]');
@@ -322,7 +322,7 @@ async function makeScreenshotPng(page, width = 1280, height = 720, withText = tr
 
     // ── 14. Responsive captures ──────────────────────────────────────────
     console.log("\n[14] Responsive captures");
-    // Fresh pages carry NO session — log in on each before capturing (§59).
+    // Fresh pages carry NO session - log in on each before capturing (§59).
     async function captureViewport(width, height, prefix) {
       const vp = await browser.newPage({ viewport: { width, height } });
       await vp.goto(`${BASE}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });

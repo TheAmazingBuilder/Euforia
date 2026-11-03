@@ -71,7 +71,7 @@ function ViolationMiniTimeline({
   return (
     <div>
       <p className="mb-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        Violation history — last 30 days
+        Violation history - last 30 days
       </p>
       <div className="relative h-8 rounded-md border border-border bg-surface-raised">
         {violations.map((violation) => {
@@ -81,7 +81,7 @@ function ViolationMiniTimeline({
           return (
             <span
               key={violation.id}
-              title={`${violation.occurredAt.slice(0, 10)}${violation.acknowledgedAt === null ? " — pending" : " — acknowledged"}`}
+              title={`${violation.occurredAt.slice(0, 10)}${violation.acknowledgedAt === null ? " - pending" : " - acknowledged"}`}
               className={cn(
                 "absolute top-1/2 size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-surface-raised",
                 SEVERITY_DOT[violation.ruleSeverity],
@@ -161,7 +161,7 @@ export function RuleCard({ rule, violations, windowStart, windowDays }: RuleCard
 
       {expanded ? (
         <div className="space-y-4 border-t border-border p-4">
-          {/* Remounts on every expand — the draft re-hydrates from the rule. */}
+          {/* Remounts on every expand - the draft re-hydrates from the rule. */}
           <RuleEditor rule={rule} onDone={() => setExpanded(false)} />
           <ViolationMiniTimeline
             violations={violations}

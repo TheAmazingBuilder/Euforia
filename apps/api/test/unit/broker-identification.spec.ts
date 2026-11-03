@@ -1,5 +1,5 @@
 /**
- * Unit — BrokerIdentificationService (Phase 07 universal broker layer).
+ * Unit - BrokerIdentificationService (Phase 07 universal broker layer).
  *
  * Covers the catalog integrity, the confidence ladder
  * (PROVIDER_REPORTED > PATTERN_MATCH > PLATFORM_KNOWN > UNKNOWN), the
@@ -12,13 +12,14 @@ import { BROKER_CATALOG, BROKER_CATALOG_VERSION } from "../../src/modules/accoun
 import { ProviderRegistryService } from "../../src/modules/accounts/provider-registry.service";
 import { DerivWsProviderAdapter } from "../../src/modules/accounts/providers/deriv/deriv-ws.provider";
 import { OandaRestProviderAdapter } from "../../src/modules/accounts/providers/oanda/oanda-rest.provider";
+import { Mt5BridgeProviderAdapter } from "../../src/modules/accounts/providers/mt5-bridge/mt5-bridge.provider";
 import {
   brokerCatalogResponseSchema,
   brokerIdentificationSchema,
   type TradingProviderDescriptor,
 } from "../../src/shared/contracts";
 
-/** Minimal registry stub — only get() is used by the service. */
+/** Minimal registry stub - only get() is used by the service. */
 function registryWith(...providerIds: string[]): ProviderRegistryService {
   const adapters = providerIds.map((id) => {
     const adapter =
@@ -26,9 +27,11 @@ function registryWith(...providerIds: string[]): ProviderRegistryService {
         ? new DerivWsProviderAdapter()
         : id === "oanda-v20"
           ? new OandaRestProviderAdapter()
-          : (() => {
-              throw new Error(`unknown test provider ${id}`);
-            })();
+          : id === "mt5-bridge"
+            ? new Mt5BridgeProviderAdapter({} as never)
+            : (() => {
+                throw new Error(`unknown test provider ${id}`);
+              })();
     return { descriptor: adapter.descriptor as TradingProviderDescriptor };
   });
   return new ProviderRegistryService(adapters as never);
@@ -47,6 +50,18 @@ describe("broker catalog integrity", () => {
       expect(entry.platforms.length).toBeGreaterThan(0);
       for (const platform of entry.platforms) expect(vocabulary.has(platform)).toBe(true);
     }
+  });
+
+  it("includes Axi and PU Prime as MT5-bridge broker entries without claiming direct APIs", () => {
+    const axi = BROKER_CATALOG.find((entry) => entry.brokerId === "axi");
+    const puPrime = BROKER_CATALOG.find((entry) => entry.brokerId === "puprime");
+
+    expect(axi?.platforms).toContain("MT5");
+    expect(axi?.connectorProviderId).toBe("mt5-bridge");
+    expect(axi?.notes).toMatch(/region\/account/i);
+    expect(puPrime?.platforms).toContain("MT5");
+    expect(puPrime?.connectorProviderId).toBe("mt5-bridge");
+    expect(puPrime?.notes).toMatch(/Terminal Bridge/);
   });
 
   it("every pattern is a VALID regex and carries a human signal", () => {
@@ -69,7 +84,7 @@ describe("broker catalog integrity", () => {
   });
 });
 
-describe("identify — confidence ladder", () => {
+describe("identify - confidence ladder", () => {
   it("OANDA external id shape → PATTERN_MATCH(oanda), connector available when registered", () => {
     const service = new BrokerIdentificationService(registryWith("oanda-v20"));
     const result = service.identify({ externalAccountId: "101-004-7192958-001" });
@@ -98,6 +113,40 @@ describe("identify — confidence ladder", () => {
     }
   });
 
+  it("recognizes Axi and PU Prime MT5 servers when the bridge connector is registered", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+
+    const axi = service.identify({ endpoint: "Axi-Live" });
+    expect(axi.brokerId).toBe("axi");
+    expect(axi.providerId).toBe("mt5-bridge");
+    expect(axi.platform).toBe("MT5");
+    expect(axi.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+
+    const puPrime = service.identify({ endpoint: "PUPrime-Live 2" });
+    expect(puPrime.brokerId).toBe("puprime");
+    expect(puPrime.providerId).toBe("mt5-bridge");
+    expect(puPrime.platform).toBe("MT5");
+    expect(puPrime.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+  });
+
+  it("does not attribute an unrecognized MT5 company to the first shared broker", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const result = service.identifyAtConnect({
+      providerId: "mt5-bridge",
+      externalAccountId: "12345678",
+      providerReported: {
+        brokerName: "Unlisted MT5 Company",
+        accountClass: "REAL",
+      },
+    });
+
+    expect(result.brokerId).toBe("unknown");
+    expect(result.displayName).toBe("Unlisted MT5 Company");
+    expect(result.platform).toBe("MT5");
+    expect(result.providerId).toBe("mt5-bridge");
+    expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+  });
+
   it("endpoint hint matching is exact-ish (host) and never dialled", () => {
     const service = new BrokerIdentificationService(registryWith());
     const result = service.identify({ endpoint: "api-fxpractice.oanda.com" });
@@ -124,6 +173,20 @@ describe("identify — confidence ladder", () => {
     expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
   });
 
+  it("shows the generic MT5 platform as available without guessing a broker", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const result = service.identify({
+      providerId: "mt5-bridge",
+      externalAccountId: "12345678",
+    });
+
+    expect(result.brokerId).toBe("metatrader-platform");
+    expect(result.platform).toBe("MT5");
+    expect(result.confidence).toBe("PLATFORM_KNOWN");
+    expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+    expect(result.providerId).toBe("mt5-bridge");
+  });
+
   it("PATTERN_MATCH on the endpoint beats an unmatched id but patterns win over platform knowledge", () => {
     const service = new BrokerIdentificationService(registryWith("deriv-ws"));
     const result = service.identify({
@@ -136,7 +199,7 @@ describe("identify — confidence ladder", () => {
   });
 });
 
-describe("identifyAtConnect — provider-reported identity wins", () => {
+describe("identifyAtConnect - provider-reported identity wins", () => {
   it("Deriv landing company → PROVIDER_REPORTED with the entity as displayName", () => {
     const service = new BrokerIdentificationService(registryWith("deriv-ws"));
     const result = service.identifyAtConnect({
@@ -154,6 +217,43 @@ describe("identifyAtConnect — provider-reported identity wins", () => {
     expect(brokerIdentificationSchema.safeParse(result).success).toBe(true);
   });
 
+  it("uses broker name evidence before a shared provider id (Axi)", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const result = service.identifyAtConnect({
+      providerId: "mt5-bridge",
+      externalAccountId: "12345678",
+      endpoint: "Axi-Live",
+      providerReported: {
+        brokerName: "AxiCorp Financial Services Pty Ltd",
+        accountClass: "REAL",
+      },
+    });
+
+    expect(result.brokerId).toBe("axi");
+    expect(result.displayName).toBe("AxiCorp Financial Services Pty Ltd");
+    expect(result.platform).toBe("MT5");
+    expect(result.providerId).toBe("mt5-bridge");
+    expect(result.confidence).toBe("PROVIDER_REPORTED");
+    expect(brokerIdentificationSchema.safeParse(result).success).toBe(true);
+  });
+
+  it("does not guess IC Markets when a shared bridge reports an unknown broker name", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const result = service.identifyAtConnect({
+      providerId: "mt5-bridge",
+      externalAccountId: "12345678",
+      providerReported: {
+        brokerName: "Some Unlisted Brokerage Ltd",
+        accountClass: "REAL",
+      },
+    });
+
+    expect(result.brokerId).toBe("unknown");
+    expect(result.displayName).toBe("Some Unlisted Brokerage Ltd");
+    expect(result.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+    expect(result.providerId).toBe("mt5-bridge");
+  });
+
   it("no provider-reported identity → falls through to the rules engine", () => {
     const service = new BrokerIdentificationService(registryWith("oanda-v20"));
     const result = service.identifyAtConnect({
@@ -167,6 +267,16 @@ describe("identifyAtConnect — provider-reported identity wins", () => {
 });
 
 describe("catalogForClient", () => {
+  it("marks Axi and PU Prime available only when the MT5 bridge is registered", () => {
+    const service = new BrokerIdentificationService(registryWith("mt5-bridge"));
+    const catalog = service.catalogForClient();
+    for (const brokerId of ["axi", "puprime", "icmarkets"]) {
+      const entry = catalog.brokers.find((broker) => broker.brokerId === brokerId);
+      expect(entry?.connectorStatus).toBe("CONNECTOR_AVAILABLE");
+      expect(entry?.providerId).toBe("mt5-bridge");
+    }
+  });
+
   it("returns the schema-valid catalog with connector status resolved against the registry", () => {
     const service = new BrokerIdentificationService(registryWith("deriv-ws", "oanda-v20"));
     const catalog = service.catalogForClient();
@@ -176,7 +286,7 @@ describe("catalogForClient", () => {
     expect(deriv?.connectorStatus).toBe("CONNECTOR_AVAILABLE");
     expect(deriv?.providerId).toBe("deriv-ws");
     const icmarkets = catalog.brokers.find((b) => b.brokerId === "icmarkets");
-    // Phase 08 — icmarkets now carries the mt5-bridge connector id; the
+    // Phase 08 - icmarkets now carries the mt5-bridge connector id; the
     // status stays honest against the registry this service was built with.
     expect(icmarkets?.connectorStatus).toBe("CONNECTOR_NOT_IMPLEMENTED");
     expect(icmarkets?.providerId).toBe("mt5-bridge");

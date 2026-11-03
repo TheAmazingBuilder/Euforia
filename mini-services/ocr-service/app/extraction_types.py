@@ -1,4 +1,4 @@
-"""Shared OCR line/word types — kept separate from extraction.py so
+"""Shared OCR line/word types - kept separate from extraction.py so
 templates.py and arbitration.py can import them without a cycle.
 """
 

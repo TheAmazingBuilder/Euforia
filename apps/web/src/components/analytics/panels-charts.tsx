@@ -137,7 +137,7 @@ export function EquityChart({
   return <EChart option={option} className={className} ariaLabel="Equity curve with drawdown overlay" />;
 }
 
-/** Cumulative-R step line (§9) — zero baseline emphasised. */
+/** Cumulative-R step line (§9) - zero baseline emphasised. */
 export function CumulativeRChart({ points, className }: { points: AnalyticsRPoint[]; className?: string }) {
   const { resolvedTheme } = useTheme();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -304,7 +304,7 @@ export function HistogramChart({
   return <EChart option={option} className={className} ariaLabel={ariaLabel} />;
 }
 
-/** Daily P&L bars — profit/loss by sign (§7). */
+/** Daily P&L bars - profit/loss by sign (§7). */
 export function DailyPnlChart({
   points,
   className,
@@ -353,7 +353,7 @@ export function DailyPnlChart({
   return <EChart option={option} className={className} ariaLabel="Daily P&L of the filtered dataset" />;
 }
 
-/** MAE/MFE vs realized-R scatter (§18) — excursion honesty lives in the panel. */
+/** MAE/MFE vs realized-R scatter (§18) - excursion honesty lives in the panel. */
 export function ExcursionScatter({
   scatter,
   className,
@@ -430,7 +430,7 @@ export function ExcursionScatter({
   return <EChart option={option} className={className} ariaLabel="MAE and MFE against realized R per trade" />;
 }
 
-/** Monte Carlo percentile fan (§25) — clearly labelled SIMULATION. */
+/** Monte Carlo percentile fan (§25) - clearly labelled SIMULATION. */
 export function MonteCarloChart({
   monteCarlo,
   className,

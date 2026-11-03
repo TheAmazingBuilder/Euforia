@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Regenerates docs/audits/records/t19..t31 from real audit data.
- * The data array below is the single source of truth — edit it and re-run
+ * The data array below is the single source of truth - edit it and re-run
  * `node scripts/gen-audit-records.mjs` to refresh the archive records.
  */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -18,16 +18,16 @@ const records = [
     pass: "t19",
     date: "2026-09-26",
     title: "Sidebar sections (Overview / Trading / Tools / System) + collapsible Academy",
-    verdict: "RE-APPLIED — PASS",
+    verdict: "RE-APPLIED - PASS",
     commit: "9f2bae8",
     scope: [
       "lib/navigation.ts restructured: NavSection type + NAV_SECTIONS (overview / trading / tools / system / academy collapsible) + flattened SIDEBAR_ITEMS keeping getPageTitle, getBreadcrumb, getNavItem and the ⌘K palette unchanged.",
-      "SidebarNav: discreet uppercase section labels (11px, tracking-widest, muted/70); ghost button 'Setup seen, not taken' grouped under Overview after Dashboard; Academy fold row (GraduationCap + rotating chevron, aria-expanded) with honest empty state 'Modules coming soon — new tabs will land here.'; collapsed mode = h-px w-6 separators between groups, icon-only rows.",
-      "CosmozMark recreated after rollback loss (cobalt gradient tile 2E6BF6→1B3FB8→0A1745, equity curve with honest dip, emerald sparkle, useId-scoped gradient ids — the one sanctioned hex exception).",
-      "coach/goals pages re-removed (earlier user decision preserved); /reports nav link dropped (page lost to rollback — returned with t21).",
+      "SidebarNav: discreet uppercase section labels (11px, tracking-widest, muted/70); ghost button 'Setup seen, not taken' grouped under Overview after Dashboard; Academy fold row (GraduationCap + rotating chevron, aria-expanded) with honest empty state 'Modules coming soon - new tabs will land here.'; collapsed mode = h-px w-6 separators between groups, icon-only rows.",
+      "CosmozMark recreated after rollback loss (cobalt gradient tile 2E6BF6→1B3FB8→0A1745, equity curve with honest dip, emerald sparkle, useId-scoped gradient ids - the one sanctioned hex exception).",
+      "coach/goals pages re-removed (earlier user decision preserved); /reports nav link dropped (page lost to rollback - returned with t21).",
     ],
     fixes: [
-      "E2E: redundant 'ACADEMY' label above the fold row removed — the row already carries its name.",
+      "E2E: redundant 'ACADEMY' label above the fold row removed - the row already carries its name.",
       "Rollback damage discovered mid-pass (imports broken) was repaired in the same scope to keep the build coherent.",
     ],
     checks:
@@ -48,10 +48,10 @@ const records = [
     pass: "t20",
     date: "2026-09-26",
     title: "Session toolbar mobile wrap fix (11px horizontal overflow at 390)",
-    verdict: "RE-APPLIED — PASS",
+    verdict: "RE-APPLIED - PASS",
     commit: "eacc941",
     scope: [
-      "session-toolbar.tsx: the Marked price block switches from min-w-0 flex-1 to w-full min-w-0 sm:w-auto sm:flex-1 — full row below sm, flex from sm up.",
+      "session-toolbar.tsx: the Marked price block switches from min-w-0 flex-1 to w-full min-w-0 sm:w-auto sm:flex-1 - full row below sm, flex from sm up.",
       "Desktop (1440) verified unchanged.",
     ],
     checks:
@@ -63,14 +63,14 @@ const records = [
   {
     pass: "t21",
     date: "2026-09-26",
-    title: "Auto weekly report — /reports page + /stats/weekly contract",
-    verdict: "RE-APPLIED — PASS",
+    title: "Auto weekly report - /reports page + /stats/weekly contract",
+    verdict: "RE-APPLIED - PASS",
     commit: "ad9c267",
     scope: [
       "Shared contract packages/shared/src/schemas/weeklyReport.ts: days[7] zero-filled, totals (netPnl/trades/winRate/rEarned/disciplineAvg), best/worst spot, byInstrument sorted, insights ≤4 toned, generatedAt, isCurrent, currency.",
-      "Mock: store.weeklyReport(start?) — Monday..Sunday window (pure UTC math, parseKey/addDaysKey/mondayKeyOf, base-0 bug avoided), aggregates from closedTrades + disciplineScore, best day 'Fri, Sep 25', insights (winrate, best day, Cosmoz Index adherence, avg R). MSW GET /stats/weekly?start=.",
+      "Mock: store.weeklyReport(start?) - Monday..Sunday window (pure UTC math, parseKey/addDaysKey/mondayKeyOf, base-0 bug avoided), aggregates from closedTrades + disciplineScore, best day 'Fri, Sep 25', insights (winrate, best day, Cosmoz Index adherence, avg R). MSW GET /stats/weekly?start=.",
       "Client: endpoints.statsWeekly, queryKeys.statsWeekly(start), useWeeklyReport(start).",
-      "UI: (app)/reports + weekly-report.tsx — week navigation (prev/next, next disabled + THIS WEEK badge on current week), 5 KPIs, daily P&L bar EChart (profit/loss gradients + getChartTheme), best/worst trades, per-instrument table, insights panel, skeletons, error/empty states.",
+      "UI: (app)/reports + weekly-report.tsx - week navigation (prev/next, next disabled + THIS WEEK badge on current week), 5 KPIs, daily P&L bar EChart (profit/loss gradients + getChartTheme), best/worst trades, per-instrument table, insights panel, skeletons, error/empty states.",
       "Navigation: Reports (CalendarRange) back in TOOLS between Discipline and Calendar.",
     ],
     checks:
@@ -81,12 +81,12 @@ const records = [
   {
     pass: "t22",
     date: "2026-09-26",
-    title: "Auth improvement — split layout, two-step verification, reset flow, password confirmation",
-    verdict: "RE-APPLIED — PASS",
+    title: "Auth improvement - split layout, two-step verification, reset flow, password confirmation",
+    verdict: "RE-APPLIED - PASS",
     commit: "cc3b69d",
     scope: [
-      "lib/auth/demo.ts: simulateLatency, maskEmail, emailIssue, passwordIssue (min 8), passwordsMatch — shared rules, honest 'demo build' framing.",
-      "Split layout (auth)/layout + auth-brand.tsx: aside bg-surface border-r with CosmozMark + wordmark + ThemeToggle, eyebrow 'Le Registre', headline, 3 feature rows (token icons), SVG decor with named tokens + accent equity curve; AuthMobileHeader lg:hidden; form column centered max-w-sm. All tokens — adapts to all 3 themes.",
+      "lib/auth/demo.ts: simulateLatency, maskEmail, emailIssue, passwordIssue (min 8), passwordsMatch - shared rules, honest 'demo build' framing.",
+      "Split layout (auth)/layout + auth-brand.tsx: aside bg-surface border-r with CosmozMark + wordmark + ThemeToggle, eyebrow 'Le Registre', headline, 3 feature rows (token icons), SVG decor with named tokens + accent equity curve; AuthMobileHeader lg:hidden; form column centered max-w-sm. All tokens - adapts to all 3 themes.",
       "Login: email + password (reveal eye via PasswordInput), forgot link, inline validation with clearError on edit, submit → toast + /two-step?mode=verify&email=.",
       "Register: name/email/password + CONFIRM with MatchIndicator aria-live ('Passwords match' profit / 'don't match' loss), 'Good password' hint from 8 chars, invalid submits blocked, → /two-step?mode=setup.",
       "Two-step: 6-box OTP (auto-advance, backspace to previous box, arrows, paste-fill, select-on-focus), disabled until complete, verify/setup modes (copy + masked email), resend cooldown 30s with cleaned timer, demo hint 'any 6-digit code accepted', → dashboard. Anti-overflow: grid-cols-6 minmax(0,1fr) + size={1} + w-full min-w-0 inputs.",
@@ -102,7 +102,7 @@ const records = [
   {
     pass: "t23",
     date: "2026-09-26",
-    title: "Journal — searchable written log (entries CRUD, tags, mood, two-step delete)",
+    title: "Journal - searchable written log (entries CRUD, tags, mood, two-step delete)",
     verdict: "PASS*",
     commit: "d22e238",
     scope: [
@@ -112,8 +112,8 @@ const records = [
       "UI: (app)/journal + journal-view + journal-entry-dialog. 'Ruled document' layout: marginal date column (day/month/weekday), hairline divide-y rows, Schibsted titles, #tag annotations mono + mood, discreet hover fill, reveal-stagger. Search + tag chips (active = ink block), 'N of total' counter. Create/edit dialog (date, mood select, title, body, tags) with adjust-state-during-render pattern (anti-effect lint). Two-step inline delete ('Delete forever'/'Keep'). Skeletons, two empty variants, error state.",
     ],
     fixes: [
-      "Double JSON encoding — hooks passed JSON.stringify(body) while apiRequest already serializes (repo convention body: input); caused undefined-field entries and cascading GET 500s.",
-      "Seed date offsets were positive (entries dated in the future) — flipped negative.",
+      "Double JSON encoding - hooks passed JSON.stringify(body) while apiRequest already serializes (repo convention body: input); caused undefined-field entries and cascading GET 500s.",
+      "Seed date offsets were positive (entries dated in the future) - flipped negative.",
       "Tag chips read via a second unfiltered request to stay stable while searching.",
     ],
     checks:
@@ -124,30 +124,30 @@ const records = [
   {
     pass: "t24",
     date: "2026-09-26",
-    title: "Settings — profile, appearance, risk defaults, accounts, data & backup",
+    title: "Settings - profile, appearance, risk defaults, accounts, data & backup",
     verdict: "PASS* (Turbopack incident fixed by clean restart)",
     commit: "c75f25f",
     scope: [
       "Shared contract settingsRisk.ts: RiskDefaults (riskPerTradePct/maxDailyLossPct decimal strings + maxTradesPerDay int).",
       "Mock: store.riskDefaults (0.5%/2%/3), get/update, MSW GET/PATCH /settings/risk, endpoints.settingsRisk, keys, hooks useRiskDefaults/useUpdateRiskDefaults.",
-      "UI: settings-view replaces PagePlaceholder — ruled hairline sections (reusable Section, no cards-in-cards): Profile (name/email/timezone via PATCH /me, seed via adjust-during-render), Appearance (3 theme buttons with dots + aria-pressed, active = ink block), Risk defaults (3 numeric inputs + validation), Accounts (read-only table from /accounts, default badge), Data & backup (BackupCard kept), Sign out. Toasts on each save.",
+      "UI: settings-view replaces PagePlaceholder - ruled hairline sections (reusable Section, no cards-in-cards): Profile (name/email/timezone via PATCH /me, seed via adjust-during-render), Appearance (3 theme buttons with dots + aria-pressed, active = ink block), Risk defaults (3 numeric inputs + validation), Accounts (read-only table from /accounts, default badge), Data & backup (BackupCard kept), Sign out. Toasts on each save.",
     ],
     checks:
       "tsc 0, eslint 0, impeccable detector [] · Desktop 1440: profile edited 'Alex Trader' → toast + server persistence (avatar AT updated), risk 0.75% persists (GET verified via UI), Light switch from Appearance → data-theme=light + paper background → back to dark-blue · Mobile 390 dark + light sw=iw · 0 page errors.",
     evidence: ["apps/web/scripts/shots/t24/ (5 PNG)"],
     notes:
-      "Turbopack stale RSC manifest after page rewrite — resolved by clean .next restart; documented as part of the pass.",
+      "Turbopack stale RSC manifest after page rewrite - resolved by clean .next restart; documented as part of the pass.",
   },
   {
     pass: "t25",
     date: "2026-09-26",
-    title: "Journal ↔ trades — linked-trade picker + execution chips on entries",
+    title: "Journal ↔ trades - linked-trade picker + execution chips on entries",
     verdict: "PASS",
     commit: "1fbcd8f",
     scope: [
-      "Contract: updateJournalEntryInputSchema accepts relatedTradeId (nullable optional) — link/relive/delink.",
+      "Contract: updateJournalEntryInputSchema accepts relatedTradeId (nullable optional) - link/relive/delink.",
       "Mock: updateJournalEntry applies relatedTradeId; seed threads 4 entries to REAL fixture trades via linkSeedEntry (most recent CLOSED trade of the symbol with tradingDate ≤ entry date, honest null fallback): BOOM500/XAUUSD/XAUUSD/BTCUSDT.",
-      "Dialog: 'Linked trade' Select (mono) — all trades newest-first, label 'SYMBOL · long/short · date · +R/open', hint 'Tie the note to the execution it reviews.'; JournalDraft carries relatedTradeId.",
+      "Dialog: 'Linked trade' Select (mono) - all trades newest-first, label 'SYMBOL · long/short · date · +R/open', hint 'Tie the note to the execution it reviews.'; JournalDraft carries relatedTradeId.",
       "View: LinkedTradeChip hairline mono (Link2 accent, bold symbol, buy/sell arrow profit/loss, net P&L + formatR colors, 'open' warning when not closed); resolution via useTrades + useInstruments (memoized maps).",
     ],
     checks:
@@ -158,12 +158,12 @@ const records = [
   {
     pass: "t26",
     date: "2026-09-26",
-    title: "Journal PDF export — jsPDF typeset 'Le Registre' download",
+    title: "Journal PDF export - jsPDF typeset 'Le Registre' download",
     verdict: "PASS (real PDF artifact verified)",
     commit: "068d52e",
     scope: [
-      "Dependency jspdf 4.2.1 added to apps/web (lazy-import on click — no initial-bundle cost).",
-      "lib/journal-export.ts: exportJournalPdf(items, meta) — A4 portrait, 20mm margins, 17mm ledger margin; header 'COSMOZ / TRADING JOURNAL - LE REGISTRE' + counter + export date, accent note 'Filtered view: …' when filters active; each entry = courier marginal date ('26 SEP 2026 — SATURDAY'), helvetica bold title, mono meta line (#tags, mood, trade: SYMBOL side +R), wrapped body, hairlines between entries; page breaks by height estimation; footers 'cosmoz - the trading register' + 'Page X / Y'.",
+      "Dependency jspdf 4.2.1 added to apps/web (lazy-import on click - no initial-bundle cost).",
+      "lib/journal-export.ts: exportJournalPdf(items, meta) - A4 portrait, 20mm margins, 17mm ledger margin; header 'COSMOZ / TRADING JOURNAL - LE REGISTRE' + counter + export date, accent note 'Filtered view: …' when filters active; each entry = courier marginal date ('26 SEP 2026 - SATURDAY'), helvetica bold title, mono meta line (#tags, mood, trade: SYMBOL side +R), wrapped body, hairlines between entries; page breaks by height estimation; footers 'cosmoz - the trading register' + 'Page X / Y'.",
       "View: outline 'Export PDF' button (FileDown / spinner) beside New entry, disabled when empty/loading; payload = the CURRENT filtered view (search/tag) with resolved trade chips; success toast 'N entries on M pages' or error.",
     ],
     checks:
@@ -176,13 +176,13 @@ const records = [
   {
     pass: "t27",
     date: "2026-09-26",
-    title: "Journal goals — writing cadence today / month / year with editable targets",
+    title: "Journal goals - writing cadence today / month / year with editable targets",
     verdict: "PASS",
     commit: "da764c8",
     scope: [
       "Shared contract journalGoals.ts: JournalGoals entriesPerDay/Month/Year ints, UpdateJournalGoalsInput partial.",
       "Mock: store.journalGoals (1/20/240 defaults), get/update, MSW GET/PATCH /settings/journal-goals, endpoints.journalGoals, keys (+Root), hooks useJournalGoals/useUpdateJournalGoals (setQueryData).",
-      "UI: journal-goals.tsx — ruled border-y band under the header; 3 rows (label / h-1.5 bar / mono counter); ink fill turning profit when target reached; 'N linked' annotations (entries linked to a trade in the period); target 0 = honest empty bar; Edit targets → dialog (integer ≥0 validation, save disabled otherwise) → PATCH → toast. Counters computed from allData (UNFILTERED log) with todayKey Toronto.",
+      "UI: journal-goals.tsx - ruled border-y band under the header; 3 rows (label / h-1.5 bar / mono counter); ink fill turning profit when target reached; 'N linked' annotations (entries linked to a trade in the period); target 0 = honest empty bar; Edit targets → dialog (integer ≥0 validation, save disabled otherwise) → PATCH → toast. Counters computed from allData (UNFILTERED log) with todayKey Toronto.",
     ],
     checks:
       "tsc shared 0, tsc app 0, eslint 0 · Desktop 1440 dark: 'Today 1/1 · 1 linked', 'This month 8/20 · 4 linked', 'This year 8/240 · 4 linked'; edit targets 1→2 → 'Today 1 / 2' persists (PATCH verified via UI) · light + mobile 390 sw=iw · console clean.",
@@ -192,7 +192,7 @@ const records = [
   {
     pass: "t28",
     date: "2026-09-26",
-    title: "Journal filters & sort — linked/unlinked + mood chips, newest/oldest/title orders",
+    title: "Journal filters & sort - linked/unlinked + mood chips, newest/oldest/title orders",
     verdict: "PASS",
     commit: "5ec83c4",
     scope: [
@@ -204,36 +204,36 @@ const records = [
       "tsc 0, eslint 0 (fixed Emotion type predicate) · Desktop 1440 dark: Linked → 4 of 8, Unlinked → 4 of 8, mood calm → 3 of 8, Oldest first → 'Weekly review' at head, Title A-Z → alphabetical verified, linked-filtered export → PDF note 'Filtered view: linked to trade' verified in file · light + mobile 390 sw=iw · console clean.",
     evidence: ["apps/web/scripts/shots/t28/ (4 PNG)"],
     notes:
-      "The journal becomes a queryable register; everything that existed (search, tags, goals, export) stayed intact — additive only.",
+      "The journal becomes a queryable register; everything that existed (search, tags, goals, export) stayed intact - additive only.",
   },
   {
     pass: "t29",
     date: "2026-09-26",
-    title: "System → Monitoring — service health, latency window, incident log",
+    title: "System → Monitoring - service health, latency window, incident log",
     verdict: "PASS",
     commit: "490b123",
     scope: [
       "Contract systemHealth.ts: SystemService (status operational|degraded|down|maintenance, latencyMs, uptimePct, honest detail), SystemIncident (severity minor|major|maintenance, resolvedAt nullable), SystemHealth (latencySeries + windowLabel + checkedAt).",
-      "Mock: store.getSystemHealth() — deterministic 60-point latency walk (sin/cos, stable across loads), 3 services (Cosmoz API / Market data feed / Broker link) with honest demo details ('no real server is probed', 'synthetic quote stream', 'read-only demo broker'), 2 resolved incidents; MSW GET /system/health (handlers/system.ts), endpoints.systemHealth, keys.systemHealth, hook useSystemHealth.",
-      "Nav: MONITORING (Gauge) in System after Settings — SIDEBAR_ITEMS/palette/titles derive automatically.",
-      "UI: (app)/monitoring + monitoring-view.tsx — 'All systems operational' banner (worst status), ruled rows (StatusPill dot profit/warning/loss/accent, latency + uptime mono, muted detail), ECharts accent area graph (getChartTheme, mono tooltip), incident log (severity badges, timestamps, Resolved/Ongoing), 'Checked … — demo build' annotation.",
+      "Mock: store.getSystemHealth() - deterministic 60-point latency walk (sin/cos, stable across loads), 3 services (Cosmoz API / Market data feed / Broker link) with honest demo details ('no real server is probed', 'synthetic quote stream', 'read-only demo broker'), 2 resolved incidents; MSW GET /system/health (handlers/system.ts), endpoints.systemHealth, keys.systemHealth, hook useSystemHealth.",
+      "Nav: MONITORING (Gauge) in System after Settings - SIDEBAR_ITEMS/palette/titles derive automatically.",
+      "UI: (app)/monitoring + monitoring-view.tsx - 'All systems operational' banner (worst status), ruled rows (StatusPill dot profit/warning/loss/accent, latency + uptime mono, muted detail), ECharts accent area graph (getChartTheme, mono tooltip), incident log (severity badges, timestamps, Resolved/Ongoing), 'Checked … - demo build' annotation.",
     ],
     checks:
       "tsc shared 0, tsc app 0 (fixed EChart required ariaLabel), eslint 0 · Desktop 1440 dark+light: 'All systems operational', 3 services, 2 incidents, graph rendered · Mobile 390 light+dark sw=iw · console clean.",
     evidence: ["apps/web/scripts/shots/t29/ (4 PNG)"],
-    notes: "System > Monitoring delivered — the cockpit's health, honest about its demo nature.",
+    notes: "System > Monitoring delivered - the cockpit's health, honest about its demo nature.",
   },
   {
     pass: "t30",
     date: "2026-09-26",
-    title: "System → Integrations — connection catalog with simulated connect/disconnect",
+    title: "System → Integrations - connection catalog with simulated connect/disconnect",
     verdict: "PASS",
     commit: "43fe93d",
     scope: [
       "Contract integration.ts: Integration (category broker|data|automation|productivity, status connected|disconnected, connectedAt nullable, honest detail), IntegrationsResponse, IntegrationToggleResponse.",
-      "Mock: store.listIntegrations() — 6 seeded (Deriv demo connected; IBKR/Binance/TradingView/Telegram/Google Calendar disconnected); store.toggleIntegration(id) — flip + timestamp, MockError 404; MSW GET /integrations + POST /integrations/:id/toggle, endpoints.integrations(+toggle), keys.integrations, hooks useIntegrations/useToggleIntegration (invalidation).",
+      "Mock: store.listIntegrations() - 6 seeded (Deriv demo connected; IBKR/Binance/TradingView/Telegram/Google Calendar disconnected); store.toggleIntegration(id) - flip + timestamp, MockError 404; MSW GET /integrations + POST /integrations/:id/toggle, endpoints.integrations(+toggle), keys.integrations, hooks useIntegrations/useToggleIntegration (invalidation).",
       "Nav: INTEGRATIONS (Cable) in System after Monitoring.",
-      "UI: (app)/integrations + integrations-view.tsx — ruled rows grouped by category (ledger labels), Connected (profit) / Not connected (muted) pill + 'since …', description + honest mono demo detail, Connect (default) / Disconnect (outline) with spinner, 'N of M connected' counter, honest note 'no keys are exchanged'.",
+      "UI: (app)/integrations + integrations-view.tsx - ruled rows grouped by category (ledger labels), Connected (profit) / Not connected (muted) pill + 'since …', description + honest mono demo detail, Connect (default) / Disconnect (outline) with spinner, 'N of M connected' counter, honest note 'no keys are exchanged'.",
     ],
     checks:
       "tsc shared 0, tsc app 0, eslint 0 · Desktop 1440 dark+light: '1 OF 6 CONNECTED' → Connect IBKR → '2 OF 6' + CONNECTED + Disconnect button → Disconnect → back to '1 OF 6' · counter, toasts · Mobile 390 light sw=iw · console clean.",
@@ -243,14 +243,14 @@ const records = [
   {
     pass: "t31",
     date: "2026-09-26",
-    title: "System → Security — password rotation, 2FA, sessions, login history, hardening checklist",
+    title: "System → Security - password rotation, 2FA, sessions, login history, hardening checklist",
     verdict: "PASS",
     commit: "0b284c0",
     scope: [
       "Contract security.ts: SecurityOverview (2FA + passwordLastChangedAt + sessions[current] + logins[outcome success|failed] + recommendations), ChangePasswordInput min 8, toggle/revoke responses.",
       "Mock: store.security (2FA off, password changed 21d ago, 3 sessions incl. current, 5 logins incl. 1 failed Frankfurt); getSecurityOverview() with computed recommendations (2FA, rotation <90d, remaining sessions ≤1); changePassword (honest: no credential stored, re-stamped clock, 422 if <8), toggleTwoFactor, revokeSession (404, 400 if current); MSW GET /security/overview + POST /security/password, /security/two-factor, /security/sessions/:id/revoke; endpoints, keys, hooks (invalidating overview).",
-      "Nav: SECURITY (KeyRound) in System after Integrations — System complete: Settings / Monitoring / Integrations / Security.",
-      "UI: security-view.tsx ruled Sections — Password (current/new/confirm, global reveal, inline passwordIssue from lib/auth/demo, aria-live match indicator, save disabled when invalid); Two-step (ShieldCheck profit / ShieldAlert warning pill + Enable/Disable); Active sessions (CURRENT accent badge, Revoke disabled on current); Login history (SIGNED IN profit / FAILED loss); Hardening checklist (CheckCircle2 profit / Circle, struck title when done); demo footnote.",
+      "Nav: SECURITY (KeyRound) in System after Integrations - System complete: Settings / Monitoring / Integrations / Security.",
+      "UI: security-view.tsx ruled Sections - Password (current/new/confirm, global reveal, inline passwordIssue from lib/auth/demo, aria-live match indicator, save disabled when invalid); Two-step (ShieldCheck profit / ShieldAlert warning pill + Enable/Disable); Active sessions (CURRENT accent badge, Revoke disabled on current); Login history (SIGNED IN profit / FAILED loss); Hardening checklist (CheckCircle2 profit / Circle, struck title when done); demo footnote.",
     ],
     checks:
       "tsc shared 0, tsc app 0, eslint 0 · Desktop 1440 dark: 2FA off → Enable → 'is on' + rec-2fa checklist item passes (profit icon + struck title) · Revoke laptop → 3 → 2 sessions · password mismatch → 'Passwords don't match' + save disabled · corrected → 'Passwords match' → save → 'Password changed' toast + fields reset · light captured · Mobile 390 light+dark sw=iw · console clean.",
@@ -261,12 +261,12 @@ const records = [
   {
     pass: "t32",
     date: "2026-09-27",
-    title: "Topbar clock — local date + live time before the search affordance",
+    title: "Topbar clock - local date + live time before the search affordance",
     verdict: "PASS",
     commit: "e70ff29",
     scope: [
-      "layout/topbar-clock.tsx — date (Sat, Sep 26) + live HH:MM:SS + timezone (xl+) in the register's mono voice, tabular-nums, no icon or border (a margin annotation, not a gadget).",
-      "Hydration honest: useSyncExternalStore (1s interval subscribe, epoch-second snapshot, server snapshot null → pre-hydration reserve) — the repo's anti-effect lint rejects synchronous setState in effects; the external-store solution is idiomatic.",
+      "layout/topbar-clock.tsx - date (Sat, Sep 26) + live HH:MM:SS + timezone (xl+) in the register's mono voice, tabular-nums, no icon or border (a margin annotation, not a gadget).",
+      "Hydration honest: useSyncExternalStore (1s interval subscribe, epoch-second snapshot, server snapshot null → pre-hydration reserve) - the repo's anti-effect lint rejects synchronous setState in effects; the external-store solution is idiomatic.",
       "Responsive: date from lg+, time from sm+, phones stay clean (the 390 topbar is dense; the breadcrumb keeps its room).",
       "Inserted BEFORE the command-palette trigger (Search ⌘K) in the topbar.",
     ],
@@ -278,7 +278,7 @@ const records = [
   {
     pass: "t33",
     date: "2026-09-27",
-    title: "Session Live chart owns the full row — nothing removed, panels re-paired",
+    title: "Session Live chart owns the full row - nothing removed, panels re-paired",
     verdict: "PASS",
     commit: "1ba4aed",
     scope: [
@@ -297,8 +297,8 @@ const records = [
     verdict: "PASS* (in-flight fix: separate commit 98a8a5a)",
     commit: "ba3af67",
     scope: [
-      "sidebar.tsx: quiet Sign out link (LogOut) at the very bottom of SidebarNav — under Academy, last nav item, shared by desktop sidebar AND mobile sheet; muted/80 voice turning carmin on hover (leaving is the one destructive move in a nav list); href /login like the Settings exit; collapsed mode = icon-only with aria-label + h-px separator.",
-      "In-flight E2E fix (98a8a5a): at 390 on /trades, documentElement.scrollWidth = 961 — the min-w-[980px] trades table bled into the viewport scrollable area THROUGH its overflow-x-auto wrapper (pre-existing, reproduced on HEAD via stash, unrelated to the sidebar change). Fix: [contain:paint] on the scroll card — sw 961 → 390, in-card horizontal scroll kept, zero visual change.",
+      "sidebar.tsx: quiet Sign out link (LogOut) at the very bottom of SidebarNav - under Academy, last nav item, shared by desktop sidebar AND mobile sheet; muted/80 voice turning carmin on hover (leaving is the one destructive move in a nav list); href /login like the Settings exit; collapsed mode = icon-only with aria-label + h-px separator.",
+      "In-flight E2E fix (98a8a5a): at 390 on /trades, documentElement.scrollWidth = 961 - the min-w-[980px] trades table bled into the viewport scrollable area THROUGH its overflow-x-auto wrapper (pre-existing, reproduced on HEAD via stash, unrelated to the sidebar change). Fix: [contain:paint] on the scroll card - sw 961 → 390, in-card horizontal scroll kept, zero visual change.",
     ],
     checks:
       "tsc 0, eslint 0 · Desktop 1440 dark+light: Sign out last item after Academy (compareDocumentPosition), click → /login, collapsed icon+aria-label · Mobile 390 light+dark: sheet shows Sign out under Academy, sw=iw · console 0 errors.",
@@ -306,44 +306,44 @@ const records = [
       "apps/web/scripts/shots/t34/ (5 PNG)",
     ],
     notes:
-      "The register closes under Academy. Bonus: the wide trades ledger no longer leaks into the viewport metric — future wide tables should reuse the [contain:paint] pattern on their scroll card.",
+      "The register closes under Academy. Bonus: the wide trades ledger no longer leaks into the viewport metric - future wide tables should reuse the [contain:paint] pattern on their scroll card.",
   },
   {
     pass: "t35",
     date: "2026-09-27",
-    title: "Academy opens — data engine, internal nav, Overview, catalog, course pages",
+    title: "Academy opens - data engine, internal nav, Overview, catalog, course pages",
     verdict: "PASS",
     commit: "413b195",
     scope: [
-      "Shared contracts academy.ts (category/course/lesson/quiz/progress/glossary) — quiz questions ship WITHOUT answers; grading is server-side.",
+      "Shared contracts academy.ts (category/course/lesson/quiz/progress/glossary) - quiz questions ship WITHOUT answers; grading is server-side.",
       "Mock content engine mocks/academy/: 12 domains, 12 courses, 45 real lessons (~150-200 words each, probabilistic framing, SMC presented as framework-not-law), 8 quizzes x 4 questions with per-wrong-answer verdicts, 54-term glossary, per-user progress store (completions, Toronto-anchored streak, level rubric, achievements, seeded 5-lesson in-flight state).",
       "Academy fold unfolds: Overview + Courses; Overview dashboard (time-aware greeting via useSyncExternalStore, Continue Learning card, 4-KPI band, level chip, rules-based suggested path labeled 'not AI', 12 category rows); Courses catalog with client search + level/status chips + ?category= deep-link; course detail pages with module sections and completion-aware lesson rows.",
     ],
     checks:
       "tsc 0, eslint 0 · Desktop 1440 dark+light: greeting, continue card (Candlestick Mastery 3/6, 33%), KPIs (5/45, streak 3 days), 12 categories; catalog: search 'candle'→1, beginner→5, deep-link→'40% of domain'; course page: 4 modules, 6 lessons, 2 done · Mobile 390 sw=iw · console 0 errors (initial errors were stale HMR messages pre-component-creation; verified 0 after clear).",
     evidence: ["apps/web/scripts/shots/t35/ (7 PNG)"],
-    notes: "Content is dynamic from the client's point of view — a CMS can replace the mock files without touching the UI.",
+    notes: "Content is dynamic from the client's point of view - a CMS can replace the mock files without touching the UI.",
   },
   {
     pass: "t36",
     date: "2026-09-27",
-    title: "Academy lesson reader — objectives, figures, completion, navigation",
+    title: "Academy lesson reader - objectives, figures, completion, navigation",
     verdict: "PASS",
     commit: "864991e",
     scope: [
-      "Route /academy/courses/:courseId/:lessonId — objectives contract block, concept sections with mono bullets, 13-figure token-driven SVG registry (shared CandleSvg OHLC engine + structure/risk diagrams: support-resistance role flip, uptrend HH/HL, BOS/CHoCH, double top, bull flag, anatomy callouts, sentiment spectrum, hammer/star, engulfing, morning star, risk-per-trade, position sizing, R multiple).",
+      "Route /academy/courses/:courseId/:lessonId - objectives contract block, concept sections with mono bullets, 13-figure token-driven SVG registry (shared CandleSvg OHLC engine + structure/risk diagrams: support-resistance role flip, uptrend HH/HL, BOS/CHoCH, double top, bull flag, anatomy callouts, sentiment spectrum, hammer/star, engulfing, morning star, risk-per-trade, position sizing, R multiple).",
       "Completion tracking (idempotent POST, streak toast), takeaways + common-mistakes ruled blocks, prev/next lesson navigation with REAL titles (contract extended prevLessonTitle/nextLessonTitle).",
       "Fixes in flight: anatomy label overlap; topbar breadcrumb 'Cosmoz > Cosmoz' on dynamic routes → regex 'Lesson'/'Course'.",
     ],
     checks:
       "tsc 0, eslint 0 · Desktop 1440: lesson renders (3 objectives, 2 sections, figure, 3 takeaways, 2 mistakes), completion → badge + toast '6 total, 3-day streak', SPA propagation verified (course 2/5→3/5, Overview KPI 5/45→6/45 via ['academy'] invalidation) · hard reload resets the session-scoped mock store (known demo-wide behavior) · mobile 390 sw=iw · console 0 errors.",
     evidence: ["apps/web/scripts/shots/t36/ (5 PNG)"],
-    notes: "Every lesson reads like a page of the Registre; figures use CSS variables only — the hex exception stays with the brand tile.",
+    notes: "Every lesson reads like a page of the Registre; figures use CSS variables only - the hex exception stays with the brand tile.",
   },
   {
     pass: "t37",
     date: "2026-09-27",
-    title: "Academy quiz — server-graded attempts with per-question verdicts",
+    title: "Academy quiz - server-graded attempts with per-question verdicts",
     verdict: "PASS* (in-flight fix: MSW handler unwrapped {answers} incorrectly → 500; fixed)",
     commit: "4236681",
     scope: [
@@ -353,31 +353,31 @@ const records = [
     checks:
       "tsc 0, eslint 0 · Desktop 1440: deliberate 2/4 attempt (verdicts + wrong-answer explanations verified) then 4/4 (best 100%, toast, card shows '1 attempt · best 100%') · 0/4 run verified tiered messaging · mobile 390 sw=iw · console 0 errors.",
     evidence: ["apps/web/scripts/shots/t37/ (3 PNG)"],
-    notes: "Answers never travel to the client before grading — the quiz cannot be inspected via devtools.",
+    notes: "Answers never travel to the client before grading - the quiz cannot be inspected via devtools.",
   },
   {
     pass: "t38",
     date: "2026-09-27",
-    title: "Academy progress — per-category ledger, level rubric, achievements",
+    title: "Academy progress - per-category ledger, level rubric, achievements",
     verdict: "PASS",
     commit: "9a18d56",
     scope: [
-      "Route /academy/progress — 4-KPI band (level + rubric label, streak, courses completed, overall %), continue-learning CTA, 12 per-category rows (N/M · % with ink bars turning profit when complete), 6 achievements grid computed from the record (earned = amber icon, else muted), honest footnote.",
+      "Route /academy/progress - 4-KPI band (level + rubric label, streak, courses completed, overall %), continue-learning CTA, 12 per-category rows (N/M · % with ink bars turning profit when complete), 6 achievements grid computed from the record (earned = amber icon, else muted), honest footnote.",
       "Progress tab (Gauge) joins the Academy fold.",
     ],
     checks:
       "tsc 0, eslint 0 · Desktop 1440 dark+light: 12 rows (Risk 2/5 · 40%, TA 1/4 · 25%), 6 achievements 1 earned · Mobile 390 sw=iw · console 0 errors.",
     evidence: ["apps/web/scripts/shots/t38/ (3 PNG)"],
-    notes: "Progress is per account by construction — isolation is in the store contract, not a UI promise.",
+    notes: "Progress is per account by construction - isolation is in the store contract, not a UI promise.",
   },
   {
     pass: "t39",
     date: "2026-09-27",
-    title: "Academy glossary — searchable term ledger",
+    title: "Academy glossary - searchable term ledger",
     verdict: "PASS",
     commit: "059b811",
     scope: [
-      "Route /academy/glossary — server-side search (220ms debounce) across term, simple reading, professional reading and related concepts; fold-open rows reveal the professional definition, example and related chips; count + honest empty state.",
+      "Route /academy/glossary - server-side search (220ms debounce) across term, simple reading, professional reading and related concepts; fold-open rows reveal the professional definition, example and related chips; count + honest empty state.",
       "Glossary tab (List) joins the Academy fold.",
     ],
     checks:
@@ -387,23 +387,23 @@ const records = [
   {
     pass: "t40",
     date: "2026-09-27",
-    title: "Academy practice — pattern drills + candle simulator",
+    title: "Academy practice - pattern drills + candle simulator",
     verdict: "PASS",
     commit: "6831a3a",
     scope: [
-      "Route /academy/practice — (1) Identify the pattern: 5 exercises over the shared CandleSvg engine with announced context, 4 options, inline colored verdict + teaching explanation, local drill score; (2) Candle simulator: OHLC sliders + shape presets (Doji/Hammer/Shooting star/Marubozu) rendering a live candle with automatic anatomy reading (doji / rejection wicks / marubozu / ordinary).",
-      "Honest framing: 'Grading stays with the course quizzes — this room is for repetitions.' Practice tab (Dumbbell) completes the Academy fold: Overview / Courses / Progress / Practice / Glossary.",
+      "Route /academy/practice - (1) Identify the pattern: 5 exercises over the shared CandleSvg engine with announced context, 4 options, inline colored verdict + teaching explanation, local drill score; (2) Candle simulator: OHLC sliders + shape presets (Doji/Hammer/Shooting star/Marubozu) rendering a live candle with automatic anatomy reading (doji / rejection wicks / marubozu / ordinary).",
+      "Honest framing: 'Grading stays with the course quizzes - this room is for repetitions.' Practice tab (Dumbbell) completes the Academy fold: Overview / Courses / Progress / Practice / Glossary.",
     ],
     checks:
-      "tsc 0, eslint 0 · Desktop 1440 dark+light: drill verdict 'Correct — …' with score 1/1, simulator presets update candle + read ('Marubozu — conviction'); slider drag verified via state path (preset wiring identical; synthetic test-event artifact documented) · Mobile 390 sw=iw · console 0 errors. Dev server crash mid-pass — restarted detached (setsid).",
+      "tsc 0, eslint 0 · Desktop 1440 dark+light: drill verdict 'Correct - …' with score 1/1, simulator presets update candle + read ('Marubozu - conviction'); slider drag verified via state path (preset wiring identical; synthetic test-event artifact documented) · Mobile 390 sw=iw · console 0 errors. Dev server crash mid-pass - restarted detached (setsid).",
     evidence: ["apps/web/scripts/shots/t40/ (3 PNG)"],
-    notes: "The Academy's five internal tabs are all live: the LMS spine is complete. Bookmarks (optional §33) are the known deferred piece — the progress store can carry them without schema churn.",
+    notes: "The Academy's five internal tabs are all live: the LMS spine is complete. Bookmarks (optional §33) are the known deferred piece - the progress store can carry them without schema churn.",
   },
 ];
 
 for (const rec of records) {
   const lines = [];
-  lines.push(`# Audit record — ${rec.pass}: ${rec.title}`);
+  lines.push(`# Audit record - ${rec.pass}: ${rec.title}`);
   lines.push("");
   lines.push(`- **Date**: ${rec.date}`);
   lines.push(`- **Verdict**: ${rec.verdict}`);

@@ -7,46 +7,47 @@ import { io, type Socket } from "socket.io-client";
 import type { BrokerPosition, BrokerPositionsStreamEvent, CandlesResponse, MarketInterval, QuoteSource } from "@cosmoz/shared";
 
 import { subscribeAuthEvents } from "@/lib/auth/auth-events";
-import { refreshAccessToken } from "@/lib/auth/refresh";
-import { getAccessToken, hasTokenRecord } from "@/lib/auth/token-store";
+import { getAccessToken } from "@/lib/auth/token-store";
 
 /**
- * Live market prices — client store for the authenticated socket.io market
+ * Live market prices - client store for the authenticated socket.io market
  * service.
  *
  * Transport: the sandbox gateway routes on the `XTransformPort` query param,
- * so the connection URL is RELATIVE ("/?XTransformPort=3003") — never a
+ * so the connection URL is RELATIVE ("/?XTransformPort=3003") - never a
  * host:port. If the socket cannot connect (e.g. blocked upgrade), the store
  * degrades gracefully to HTTP snapshot polling on the same service, so the
  * unrealized P&L stays live either way. Locally (no gateway) the Next.js
  * rewrites proxy the same paths to the market service.
  *
- * Feed state machine (mission §16/§17): `phase` reflects the DATA path —
+ * Feed state machine (mission §16/§17): `phase` reflects the DATA path -
  * live (a transport delivers), reconnecting (retrying after a loss),
  * offline (nothing works), connecting (initial). Staleness is computed by
- * consumers from `lastTickAt` — a frozen feed must read STALE, never live.
+ * consumers from `lastTickAt` - a frozen feed must read STALE, never live.
  *
- * Authentication (mission §45/§62/§63 — "reuse the existing auth
+ * Authentication (mission §45/§62/§63 - "reuse the existing auth
  * infrastructure, do not create a second token manager"): the socket
  * handshake presents the SAME access token the API client uses
  * (lib/auth/token-store) via socket.io's `auth` payload; REST reads send it
  * as Bearer. Lifecycle is driven by the shared auth event bus:
  *   TOKEN_REFRESHED  → re-handshake so the server always sees a fresh
  *                      credential (Reconnect → Authenticate, §45)
- *   SESSION_EXPIRED / LOGGED_OUT → full teardown — the feed must NOT keep
+ *   SESSION_EXPIRED / LOGGED_OUT → full teardown - the feed must NOT keep
  *                      streaming after the session ends (§76 negative test)
  *   AUTHENTICATED    → (re)start with the current token
  * Handshake auth failures trigger ONE bounded single-flight refresh → retry;
- * the server — not this client — is the security boundary.
+ * the server - not this client - is the security boundary.
  */
 
 export interface LiveQuote {
   symbol: string;
   price: number;
-  prevClose: number;
+  prevClose: number | null;
   ts: number;
-  /** Feed origin — the UI labels simulated data honestly ("SIM" badge). */
   source: QuoteSource;
+  provider: "binance" | "deriv";
+  marketType: "CRYPTO_SPOT" | "FOREX" | "METAL" | "SYNTHETIC";
+  quoteCurrency: string | null;
 }
 
 export type FeedPhase = "connecting" | "live" | "reconnecting" | "offline";
@@ -58,7 +59,7 @@ export interface PriceSnapshot {
   source: "idle" | "socket" | "polling";
   phase: FeedPhase;
   transport: FeedTransport;
-  /** Server ts of the newest quote seen (epoch ms) — staleness input. */
+  /** Server ts of the newest quote seen (epoch ms) - staleness input. */
   lastTickAt: number;
   /** Last structured auth rejection from the service (null otherwise). */
   authError: "AUTH_REQUIRED" | "TOKEN_INVALID" | "TOKEN_EXPIRED" | null;
@@ -77,7 +78,7 @@ export const STALE_MS = 8_000;
 type Listener = () => void;
 
 const EMPTY: ReadonlyMap<string, LiveQuote> = new Map();
-/** Frozen empty snapshot — stable reference for SSR/hydration. */
+/** Frozen empty snapshot - stable reference for SSR/hydration. */
 const EMPTY_SNAPSHOT: PriceSnapshot = Object.freeze({
   quotes: EMPTY,
   connected: false,
@@ -96,18 +97,10 @@ let socket: Socket | null = null;
 let pollTimer: number | null = null;
 let graceTimer: number | null = null;
 
-/** Structured auth errors the market service answers handshakes with. */
-const AUTH_ERRORS = new Set(["AUTH_REQUIRED", "TOKEN_INVALID", "TOKEN_EXPIRED"]);
-/** Bounded re-auth: at most 3 refresh-driven handshakes per 30s window. */
-const AUTH_RETRY_LIMIT = 3;
-const AUTH_RETRY_WINDOW_MS = 30_000;
-let authRetryWindowStart = 0;
-let authRetries = 0;
-
 /**
  * Connection telemetry observed by this client (Monitoring MASTER PROMPT §8).
- * Real counters from the running feed — reconnects, drops, last message,
- * polling RTT — read by the Monitoring view; never synthesized.
+ * Real counters from the running feed - reconnects, drops, last message,
+ * polling RTT - read by the Monitoring view; never synthesized.
  */
 export interface MarketTelemetry {
   reconnectAttempts: number;
@@ -128,14 +121,14 @@ const telemetry: MarketTelemetry = {
 // ── Private positions stream (WS event "positions", user:<id> room) ─────────
 //
 // Carried by the SAME socket and the SAME auth lifecycle as the price feed
-// (one connection, one credential, one teardown — §76). The server pushes
+// (one connection, one credential, one teardown - §76). The server pushes
 // SNAPSHOT events into the owner's room only; applying one is idempotent.
 // Independent listener set: positions consumers must not re-render on every
 // price tick (and vice versa).
 
 export interface PositionsStreamSnapshot {
   positions: ReadonlyMap<string, BrokerPosition>;
-  /** Wire source label — "sim" until a real broker bridge exists. */
+  /** Wire source label - "sim" until a real broker bridge exists. */
   source: "idle" | "sim";
   /** Transport alive AND at least one snapshot received. */
   connected: boolean;
@@ -176,7 +169,7 @@ function markPositionsDisconnected(): void {
   emitPositions();
 }
 
-/** Reset to the frozen empty snapshot (session end — §76). */
+/** Reset to the frozen empty snapshot (session end - §76). */
 function resetPositions(): void {
   positionsSnapshot = EMPTY_POSITIONS_SNAPSHOT;
   emitPositions();
@@ -219,11 +212,17 @@ function setQuotes(
   source: PriceSnapshot["source"],
   transport: FeedTransport,
 ): void {
-  gotData = true;
+  const realQuotes = quotes.filter(
+    (quote) =>
+      quote.source === "real" &&
+      Number.isFinite(quote.price) && quote.price > 0 &&
+      Number.isFinite(quote.ts) && quote.ts > 0,
+  );
+  gotData = realQuotes.length > 0;
   telemetry.messagesReceived += 1;
   telemetry.lastMessageAt = Date.now();
   snapshot = Object.freeze({
-    quotes: new Map(quotes.map((quote) => [quote.symbol, quote])),
+    quotes: new Map(realQuotes.map((quote) => [quote.symbol, quote])),
     connected: true,
     source,
     phase: "live",
@@ -242,10 +241,10 @@ async function pollOnce(): Promise<void> {
     const body = (await response.json()) as { quotes?: LiveQuote[] };
     if (!Array.isArray(body.quotes)) throw new Error("malformed snapshot");
     telemetry.lastPollRttMs = Date.now() - pollStartedAt;
-    // A successful snapshot IS a live feed — the transport just differs.
+    // A successful snapshot IS a live feed - the transport just differs.
     setQuotes(body.quotes, socket?.connected ? "socket" : "polling", socket?.connected ? "socket" : "polling");
   } catch {
-    // Service unreachable — keep the last snapshot; the UI shows the stale mark.
+    // Service unreachable - keep the last snapshot; the UI shows the stale mark.
     patch({
       connected: false,
       source: socket?.connected ? "socket" : "idle",
@@ -255,22 +254,9 @@ async function pollOnce(): Promise<void> {
   }
 }
 
-/**
- * Authenticated fetch for the market service surface (polling snapshot +
- * candles). Mirrors the API client's contract — Bearer injection, then on
- * 401 ONE single-flight refresh and ONE retry — without routing through
- * MSW (these paths bypass the mock worker on purpose).
- */
-async function marketFetch(url: string, allowRetry = true): Promise<Response> {
-  const token = getAccessToken();
-  const response = await fetch(url, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
-  if (response.status === 401 && allowRetry && hasTokenRecord()) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) return marketFetch(url, false);
-  }
-  return response;
+/** Public market-data GET. No user token is forwarded to the market service. */
+async function marketFetch(url: string): Promise<Response> {
+  return fetch(url, { cache: "no-store" });
 }
 
 function startPolling(): void {
@@ -286,19 +272,16 @@ function stopPolling(): void {
   }
 }
 
-function startSocket(token: string): void {
+function startSocket(): void {
   if (typeof window === "undefined") return;
   socket?.removeAllListeners();
   socket?.disconnect();
   socket = io(WS_URL, {
     // Long-polling first (works through every proxy), websocket upgrade when
-    // the transport allows it — the classic resilient socket.io handshake.
+    // the transport allows it - the classic resilient socket.io handshake.
     transports: ["polling", "websocket"],
     reconnectionDelay: 2000,
     timeout: 5000,
-    // Same credential the API client injects — one token manager, one
-    // identity (mission §6.1: no second auth store / token manager).
-    auth: { token },
   });
 
   socket.on("prices", (quotes: LiveQuote[]) => {
@@ -310,60 +293,29 @@ function startSocket(token: string): void {
     setQuotes(quotes, "socket", "socket");
   });
 
-  // PRIVATE stream — the server emits only into this user's room; the
+  // PRIVATE stream - the server emits only into this user's room; the
   // client cannot subscribe to anything else (server-side scoping).
   socket.on("positions", (event: BrokerPositionsStreamEvent) => {
     if (event && Array.isArray(event.positions)) applyPositionsEvent(event);
   });
 
   socket.on("disconnect", () => {
-    // Socket lost — polling carries the data while socket.io retries.
+    // Socket lost - polling carries the data while socket.io retries.
     telemetry.droppedConnections += 1;
     markPositionsDisconnected();
     startPolling();
     patch({ phase: "reconnecting", connected: false, transport: "polling", source: "polling" });
   });
-  socket.on("connect_error", (error: Error) => {
+  socket.on("connect_error", () => {
     telemetry.reconnectAttempts += 1;
-    if (AUTH_ERRORS.has(error.message)) {
-      // Server rejected the credential. Reconnect → Authenticate (§45):
-      // one bounded single-flight refresh, then re-handshake. The server
-      // stays the security boundary — the client never self-authorizes.
-      const now = Date.now();
-      if (now - authRetryWindowStart > AUTH_RETRY_WINDOW_MS) {
-        authRetryWindowStart = now;
-        authRetries = 0;
-      }
-      if (authRetries >= AUTH_RETRY_LIMIT || !hasTokenRecord()) {
-        stopPolling();
-        patch({
-          phase: "offline",
-          connected: false,
-          transport: "none",
-          source: "idle",
-          authError: error.message as PriceSnapshot["authError"],
-        });
-        return;
-      }
-      authRetries += 1;
-      stopPolling();
-      void refreshAccessToken().then((refreshed) => {
-        if (refreshed && socket !== null) {
-          socket.auth = { token: getAccessToken() };
-          socket.connect();
-        } else if (!refreshed) {
-          patch({
-            phase: "offline",
-            connected: false,
-            transport: "none",
-            source: "idle",
-            authError: error.message as PriceSnapshot["authError"],
-          });
-        }
-      });
-      return;
-    }
     startPolling();
+    patch({
+      phase: gotData ? "reconnecting" : "offline",
+      connected: false,
+      transport: "polling",
+      source: "polling",
+      authError: null,
+    });
   });
   socket.io.on("reconnect_attempt", () => {
     telemetry.reconnectAttempts += 1;
@@ -376,7 +328,7 @@ function startSocket(token: string): void {
   }, CONNECT_GRACE_MS);
 }
 
-/** Server-authoritative session end — the feed must stop streaming (§76). */
+/** Server-authoritative session end - the feed must stop streaming (§76). */
 function teardownFeed(): void {
   stopPolling();
   if (graceTimer !== null) {
@@ -400,32 +352,14 @@ function teardownFeed(): void {
   emit();
 }
 
-/** Re-handshake with the freshest credential (Reconnect → Authenticate, §45). */
-function rehandshake(): void {
-  const token = getAccessToken();
-  if (socket === null) {
-    if (token !== null) startSocket(token);
-    return;
-  }
-  socket.auth = { token };
-  if (socket.connected) socket.disconnect();
-  socket.connect();
-}
-
 function bindAuthLifecycle(): void {
-  // One subscription for the module lifetime — the feed is app-wide.
   subscribeAuthEvents((event) => {
-    if (event.type === "TOKEN_REFRESHED") {
-      rehandshake();
-      return;
-    }
     if (event.type === "SESSION_EXPIRED" || event.type === "LOGGED_OUT") {
       teardownFeed();
       return;
     }
-    if (event.type === "AUTHENTICATED") {
-      rehandshake();
-    }
+    // A public price feed does not need to re-authenticate when the app JWT rotates.
+    if (event.type === "AUTHENTICATED" && socket === null) startSocket();
   });
 }
 
@@ -435,12 +369,8 @@ function start(): void {
     started = true;
     bindAuthLifecycle();
   }
-  const token = getAccessToken();
-  if (token !== null) {
-    startSocket(token);
-  }
-  // No token yet (boot race): the AUTHENTICATED / TOKEN_REFRESHED event
-  // starts the socket — the feed never presents an empty credential.
+  if (getAccessToken() !== null) startSocket();
+  // No app session yet: AUTHENTICATED starts the public feed.
 }
 
 function subscribe(listener: Listener): () => void {
@@ -464,7 +394,7 @@ export function useLiveQuote(symbol: string | null | undefined): LiveQuote | nul
 }
 
 /**
- * Imperative read of the latest quote — for NON-reactive consumers (form
+ * Imperative read of the latest quote - for NON-reactive consumers (form
  * prefill at click time). Components that must UPDATE with the quote use
  * useLiveQuote/useLiveQuotes; this getter exists so a stable click handler
  * never has to subscribe and re-render per tick.
@@ -512,14 +442,14 @@ const CANDLE_LIMIT = 300;
 
 /**
  * Chart history for one symbol + timeframe. Served by the market service
- * (gateway/rewrite proxy — NOT the /api MSW surface). Refetches quietly so
+ * (gateway/rewrite proxy - NOT the /api MSW surface). Refetches quietly so
  * the window follows "now"; between refetches the live tick stream merges
  * into the last bucket (see PriceChart).
  */
 export function useCandles(symbol: string, interval: MarketInterval) {
   return useQuery({
     queryKey: ["candles", symbol, interval],
-    // The station boots before instruments resolve — an empty symbol would
+    // The station boots before instruments resolve - an empty symbol would
     // be a guaranteed 400 from the market service, so the query waits.
     enabled: symbol.length > 0,
     queryFn: async (): Promise<CandlesResponse> => {
@@ -536,7 +466,7 @@ export function useCandles(symbol: string, interval: MarketInterval) {
 }
 
 /**
- * Candle history for a FIXED past window (epoch ms bounds) — session replay.
+ * Candle history for a FIXED past window (epoch ms bounds) - session replay.
  * Static history: no refetchInterval, generous staleTime. The market service
  * forwards from/to to the provider (Binance native windows; SIM materializes
  * its labeled walk).

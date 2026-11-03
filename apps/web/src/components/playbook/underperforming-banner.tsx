@@ -11,7 +11,7 @@ import type { StrategiesStatsResponse } from "@cosmoz/shared";
 /**
  * Strategy-decay coach banner (Phase 8). The target strategy is COMPUTED
  * server-side (most negative last-20 expectancy, minimum sample) and read
- * from the API payload — this component never knows the name in advance.
+ * from the API payload - this component never knows the name in advance.
  */
 export function UnderperformingBanner({
   underperforming,

@@ -36,16 +36,16 @@ import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 import { useOcrCollections } from "@/lib/api/queries";
 
 /**
- * RecognitionHistory — every imported screenshot with its outcome
+ * RecognitionHistory - every imported screenshot with its outcome
  * (PROMPT 3 §30/§31/§33).
  *
  * Desktop: a ruled ledger table. Mobile: the same rows collapse to stacked
- * ruled cards (§35 — intentional adaptation, not a shrunken table).
+ * ruled cards (§35 - intentional adaptation, not a shrunken table).
  * Status filters map to the empty-state messages (§33). Deleting asks for
  * confirmation in a focused dialog (§61) and goes through the service
  * layer, never a page reload (§56).
  *
- * V2 §28 — collections: a per-row membership menu, a "by collection"
+ * V2 §28 - collections: a per-row membership menu, a "by collection"
  * filter over the loaded pages, and the CollectionsPanel below the table
  * (all three read the same React Query cache).
  */
@@ -72,18 +72,18 @@ export function RecognitionHistory({
   loading: boolean;
   onOpen: (id: string) => void;
   onDelete: (id: string) => void;
-  /** V2 §32/§39 — re-run the pipeline on a stored row. */
+  /** V2 §32/§39 - re-run the pipeline on a stored row. */
   onReprocess?: (id: string) => void;
-  /** V2 §62 — keyset "Load more". */
+  /** V2 §62 - keyset "Load more". */
   hasMore?: boolean;
   onLoadMore?: () => void;
 }) {
   const [filter, setFilter] = React.useState<(typeof FILTERS)[number]["key"]>("all");
   const [pendingDelete, setPendingDelete] = React.useState<OcrRecognition | null>(null);
-  // V2 §62 — derived-state filters (corrected / flagged) apply client-side
+  // V2 §62 - derived-state filters (corrected / flagged) apply client-side
   // over the loaded pages; they are read-time derivations, not columns.
   const [derivedFilter, setDerivedFilter] = React.useState<"none" | "corrected" | "flagged">("none");
-  // V2 §28 — membership filter over the loaded pages (read-time too).
+  // V2 §28 - membership filter over the loaded pages (read-time too).
   const collectionList = useOcrCollections();
   const collections = collectionList.data?.collections ?? [];
   const [collectionFilterId, setCollectionFilterId] = React.useState<string | null>(null);
@@ -153,7 +153,7 @@ export function RecognitionHistory({
           </Button>
         ))}
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        {/* V2 §28 — "by collection" filter (members of the selected
+        {/* V2 §28 - "by collection" filter (members of the selected
             collection, over the loaded pages). */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -254,7 +254,7 @@ export function RecognitionHistory({
                     ) : null}
                   </td>
                   <td className="px-3 py-2 font-mono text-sm tabular-nums">
-                    {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}
+                    {item.status === "FAILED" ? "-" : `${recognitionConfidence(item.fields) ?? 0}%`}
                   </td>
                   <td className="px-3 py-2 text-sm text-muted-foreground">{formatRelative(item.createdAt)}</td>
                   <td className="px-3 py-2">
@@ -318,7 +318,7 @@ export function RecognitionHistory({
         ) : null}
       </div>
 
-      {/* Mobile — stacked ruled rows (§35). */}
+      {/* Mobile - stacked ruled rows (§35). */}
       <div className="flex flex-col md:hidden">
         {loading ? (
           <HistoryRowSkeleton cols={1} mobile />
@@ -335,7 +335,7 @@ export function RecognitionHistory({
                     <span className="font-mono text-[11px] tabular-nums text-muted-foreground">
                       {modeStampLabel(item.extractionProfile, dict)}
                       {" · "}
-                      {item.status === "FAILED" ? "—" : `${recognitionConfidence(item.fields) ?? 0}%`}
+                      {item.status === "FAILED" ? "-" : `${recognitionConfidence(item.fields) ?? 0}%`}
                       {" · "}
                       {formatRelative(item.createdAt)}
                     </span>
@@ -389,7 +389,7 @@ export function RecognitionHistory({
         ) : null}
       </div>
 
-      {/* Delete confirmation — focused dialog, keyboard-friendly (§61). */}
+      {/* Delete confirmation - focused dialog, keyboard-friendly (§61). */}
       <Dialog open={Boolean(pendingDelete)} onOpenChange={(open) => !open && setPendingDelete(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -421,14 +421,14 @@ export function RecognitionHistory({
         </DialogContent>
       </Dialog>
 
-      {/* V2 §28 — the collections surface (panel + its dialogs), sibling of
+      {/* V2 §28 - the collections surface (panel + its dialogs), sibling of
           the ledger: list, expand, create, delete, per-member open/remove. */}
       <CollectionsPanel dict={dict} items={items} onOpen={onOpen} />
     </div>
   );
 }
 
-/** Lazy authenticated thumbnail — placeholder while loading / on failure. */
+/** Lazy authenticated thumbnail - placeholder while loading / on failure. */
 function HistoryThumbnail({ recognition, dict }: { recognition: OcrRecognition; dict: RecognitionDict }) {
   const [url, setUrl] = React.useState<string | null>(null);
   const [failed, setFailed] = React.useState(false);

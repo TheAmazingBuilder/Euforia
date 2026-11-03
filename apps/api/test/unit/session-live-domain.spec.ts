@@ -1,5 +1,5 @@
 /**
- * Unit — Session Live pure domain (Phase 10): lifecycle rules, summary
+ * Unit - Session Live pure domain (Phase 10): lifecycle rules, summary
  * engine, timeline assembly (stable derived ids, honest empties).
  */
 import { describe, expect, it } from "vitest";
@@ -115,7 +115,7 @@ describe("session summary engine", () => {
   });
 
   it("keeps markets empty when no trades and the placeholder symbol is set", () => {
-    const summary = computeSessionSummary({ ...base, primarySymbol: "—", windowTrades: [] });
+    const summary = computeSessionSummary({ ...base, primarySymbol: "-", windowTrades: [] });
     expect(summary.markets).toEqual([]);
   });
 
@@ -212,7 +212,7 @@ describe("timeline assembly", () => {
     expect(events[1]?.kind).toBe("EXIT");
   });
 
-  // ── mood strip (seam closure — Trade psychology columns are real) ──────────
+  // ── mood strip (seam closure - Trade psychology columns are real) ──────────
 
   it("builds NO moods when the trades carry no psychology data", () => {
     const { moods } = assembleTimeline({ trades: [timelineTrade()] });

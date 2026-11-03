@@ -1,5 +1,5 @@
 /**
- * i18n core configuration — English-only application.
+ * i18n core configuration - English-only application.
  *
  * Design contract (user decision: the app ships in ONE language, English):
  *   - EN is the ONLY locale: dictionaries render English with zero network,
@@ -20,12 +20,12 @@ export function isLocale(value: unknown): value is Locale {
   return value === "en";
 }
 
-/** BCP-47 tag for Intl formatting (single source — LocalizationCard uses it too). */
+/** BCP-47 tag for Intl formatting (single source - LocalizationCard uses it too). */
 export function localeTag(_locale?: Locale): string {
   return "en-US";
 }
 
-/** Legacy mirror key — read only to clear stale values from old builds. */
+/** Legacy mirror key - read only to clear stale values from old builds. */
 export const LOCALE_MIRROR_KEY = "cosmoz:i18n:locale";
 
 export function readLocaleMirror(): Locale {
@@ -33,11 +33,11 @@ export function readLocaleMirror(): Locale {
     // English-only app: wipe any stale language choice from earlier builds.
     window.localStorage.removeItem(LOCALE_MIRROR_KEY);
   } catch {
-    // Storage unavailable — nothing to clean.
+    // Storage unavailable - nothing to clean.
   }
   return DEFAULT_LOCALE;
 }
 
 export function writeLocaleMirror(_locale: Locale): void {
-  // English-only — no language persistence needed anymore.
+  // English-only - no language persistence needed anymore.
 }

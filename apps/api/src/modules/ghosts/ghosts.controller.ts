@@ -1,5 +1,5 @@
 /**
- * Ghost Trades controller (B6) — the Registre des Regrets HTTP surface.
+ * Ghost Trades controller (B6) - the Registre des Regrets HTTP surface.
  * Global JwtAuthGuard (no @Public), ZodValidationPipe on every body,
  * @CurrentUser principal, uuid-validated params. Mirrors
  * `mocks/handlers/ghosts.ts` exactly (3 routes).
@@ -20,14 +20,14 @@ import { GhostsService } from "./ghosts.service";
 export class GhostsController {
   constructor(private readonly ghosts: GhostsService) {}
 
-  /** GET /skipped-trades — the regret feed (most recent first). */
+  /** GET /skipped-trades - the regret feed (most recent first). */
   @Get()
   async list(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.ghosts.listSkippedTrades(principal.userId);
     return skippedTradesResponseSchema.parse(response);
   }
 
-  /** POST /skipped-trades — 10-second ghost capture. */
+  /** POST /skipped-trades - 10-second ghost capture. */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
@@ -38,7 +38,7 @@ export class GhostsController {
     return this.ghosts.createSkippedTrade(principal.userId, payload);
   }
 
-  /** PATCH /skipped-trades/:id/settle — would have won / lost / unknown (+R). */
+  /** PATCH /skipped-trades/:id/settle - would have won / lost / unknown (+R). */
   @Patch(":skippedId/settle")
   async settle(
     @CurrentUser() principal: AuthPrincipal,

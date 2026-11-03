@@ -1,4 +1,4 @@
-/** probe-playbook-overflow.js — find the element overflowing at 390px on /playbook. */
+/** probe-playbook-overflow.js - find the element overflowing at 390px on /playbook. */
 const { chromium } = require("playwright");
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 

@@ -1,5 +1,5 @@
 /**
- * Verify — Playbook strategy color picker redesign.
+ * Verify - Playbook strategy color picker redesign.
  * Probes: create-mode default = Auto, 13 radios (12 named + auto), named
  * selection + live readout + preview dot color, check mark, arrow-key
  * roving selection, create flow stores the color (card sparkline stroke),
@@ -24,7 +24,7 @@ const CORAL = "#F87171";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/playbook`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "New Strategy" }).first().waitFor({ timeout: 15000 });
@@ -162,7 +162,7 @@ const CORAL = "#F87171";
   await page.keyboard.press("Escape");
   await page.evaluate(() => document.documentElement.setAttribute("data-theme", "dark-blue"));
 
-  // 11. Mobile 390px — picker wraps, no horizontal overflow
+  // 11. Mobile 390px - picker wraps, no horizontal overflow
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto(`${BASE}/playbook`, { waitUntil: "networkidle" });
   await mobile.getByRole("button", { name: "New Strategy" }).first().waitFor({ timeout: 15000 });
@@ -171,7 +171,7 @@ const CORAL = "#F87171";
   const overflow = await mobile.evaluate(
     () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
   );
-  check("Mobile 390px — no horizontal overflow", overflow <= 0, `overflow=${overflow}px`);
+  check("Mobile 390px - no horizontal overflow", overflow <= 0, `overflow=${overflow}px`);
   await mobile.screenshot({ path: "scripts/shots/color-picker/mobile-390.png" });
   await mobile.close();
 

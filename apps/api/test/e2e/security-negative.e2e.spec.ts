@@ -1,10 +1,11 @@
 /**
- * e2e — security NEGATIVE tests (Phase 1 mandate §33).
+ * e2e - security NEGATIVE tests (Phase 1 mandate §33).
  * Proves unsafe behaviors are rejected, not just that happy paths work.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
+import { TEST_DB_NAME } from "../global-setup";
 import { EnvValidationError, validateEnv } from "../../src/config/env.schema";
 
 let app: NestFastifyApplication;
@@ -39,7 +40,7 @@ describe("rate limiting foundation", () => {
 
 describe("oversized payloads are rejected", () => {
   it("body beyond BODY_LIMIT_BYTES → 413 with the error envelope", async () => {
-    // Beyond the COHERENT default (9 MB — must clear the 6 MB image caps,
+    // Beyond the COHERENT default (9 MB - must clear the 6 MB image caps,
     // see env.schema superRefine). 9.6 MB of JSON trips the Fastify limit.
     const bigPayload = JSON.stringify({ name: "x".repeat(9_600_000), count: 1 });
     const res = await app.inject({
@@ -57,7 +58,7 @@ describe("oversized payloads are rejected", () => {
 
 describe("readiness reflects database failure (without leaking internals)", () => {
   it("/health/ready → 503 with plain down-status when the DB is unreachable", async () => {
-    // PrismaClient reconnects lazily, so a real outage cannot be simulated —
+    // PrismaClient reconnects lazily, so a real outage cannot be simulated -
     // stub the Prisma capability at the DI boundary instead. The layer under
     // test is the readiness contract, not Prisma internals.
     const downApp = await buildTestApp({ prismaPing: async () => false });
@@ -89,23 +90,21 @@ describe("environment validation fails safely at startup", () => {
     }
   });
 
-  it("SECURITY: production without explicit CORS origins is rejected", () => {
-    // In production the wildcard default must never silently apply.
-    const result = validateEnv({
-      NODE_ENV: "production",
+  it("SECURITY: production rejects wildcard CORS after unrelated settings validate", () => {
+    const productionConfig = {
+      NODE_ENV: "production" as const,
       DATABASE_URL: "postgresql://u:p@h/db",
       AUTH_JWT_SECRET: "prod-jwt-secret-0123456789abcdef0123456789",
       AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
       ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
-      // Integration Hub (B14) — webhook-secret vault key (required since B14).
       INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=",
-    });
-    // Schema default still applies here by design (dev default); the
-    // production gate is enforced in two layers:
-    // (1) wildcard "*" is always rejected,
-    // (2) deployment contract requires explicit origins (documented).
-    expect(Array.isArray(result.CORS_ORIGINS)).toBe(true);
-    expect(() => validateEnv({ DATABASE_URL: "postgresql://u:p@h/db", CORS_ORIGINS: "*" })).toThrow(
+      SMTP_USER: "ci-mail@example.test",
+      SMTP_APP_PASSWORD: "ci-only-app-password",
+      WEB_APP_URL: "https://app.euforia.test",
+    };
+    const result = validateEnv(productionConfig);
+    expect(result.CORS_ORIGINS).toEqual(["http://localhost:3000"]);
+    expect(() => validateEnv({ ...productionConfig, CORS_ORIGINS: "*" })).toThrow(
       /must not contain/,
     );
   });
@@ -123,9 +122,13 @@ describe("environment validation fails safely at startup", () => {
 });
 
 describe("test database safety", () => {
-  it("the running test process targets the dedicated cosmoz_test database", () => {
+  it("the running test process targets the dedicated test database (TEST_DB_NAME)", () => {
+    // The DB name is parameterized: default "cosmoz_test", overridable via
+    // DATABASE_URL_TEST (e.g. ".../euforia_test"). Same static import as
+    // test/setup.ts - global-setup top-level code is pure constants, no
+    // side effects at module load.
     const url = new URL(process.env.DATABASE_URL as string);
-    expect(url.pathname).toBe("/cosmoz_test");
+    expect(url.pathname).toBe(`/${TEST_DB_NAME}`);
     expect(process.env.NODE_ENV).toBe("test");
   });
 });

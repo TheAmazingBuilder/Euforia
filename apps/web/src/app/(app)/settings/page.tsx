@@ -7,7 +7,7 @@ import { SettingsView } from "@/components/settings/settings-view";
 export const metadata: Metadata = {
   title: "Settings",
   description:
-    "Preferences center — profile, trading defaults, risk limits, journal rules, notifications, appearance, privacy and localization.",
+    "Preferences center - profile, trading defaults, risk limits, journal rules, notifications, appearance, privacy and localization.",
 };
 
 export default function SettingsPage() {

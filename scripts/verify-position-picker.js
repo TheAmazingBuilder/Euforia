@@ -1,4 +1,4 @@
-// Position-tool edge handles (TP/SL) + TradingView palette picker — E2E probe.
+// Position-tool edge handles (TP/SL) + TradingView palette picker - E2E probe.
 // PROD-SAFE: DOM/testids only, no dev handles. Run against :3000 (build).
 //
 // Part 1 (handles): create a long position, drag the TARGET mid-line handle
@@ -27,7 +27,7 @@ async function ensureLogin(page) {
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, label, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 
 function noiseFiltered(errors) {
@@ -127,7 +127,7 @@ async function storedPrefs(page) {
     await page.keyboard.press("Escape");
     await page.waitForTimeout(250);
 
-    // SL handle: nominal (midX ≈ x0, y0 + RISK). Drag +40px down — the
+    // SL handle: nominal (midX ≈ x0, y0 + RISK). Drag +40px down - the
     // target must stay PUT (rr absorbs): 140 / (60+40) = 1.4.
     await page.mouse.move(x0, y0 + RISK);
     await page.mouse.down();
@@ -205,7 +205,7 @@ async function storedPrefs(page) {
     const bgCustom = await trigger.evaluate((el) => getComputedStyle(el).backgroundColor);
     check(`P5-${tag}`, "custom color added + applied", customRow === 1 && bgCustom === "rgb(18, 52, 86)", `${customRow} ${bgCustom}`);
 
-    // Escape closes ONLY the popover layer (the dialog stays open) — the
+    // Escape closes ONLY the popover layer (the dialog stays open) - the
     // Radix layering contract; the footer buttons are clickable again.
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);

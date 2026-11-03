@@ -1,16 +1,13 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import {
   Activity,
-  ArrowUpRight,
   BellRing,
   Database,
   Download,
   FileClock,
   ListChecks,
-  PlugZap,
   ScrollText,
   Settings2,
   Siren as SirenIcon,
@@ -39,7 +36,7 @@ import { PanelCard } from "./monitoring-panels";
 
 /**
  * Monitoring panels, part 2 (MASTER PROMPT §9–§16): API, Database,
- * Queues & Jobs, Notifications, Integration Health, Audit / System Events
+ * Queues & Jobs, Notifications and Audit / System Events
  * (with incidents and the configurable alert rules §14).
  */
 
@@ -55,7 +52,7 @@ export function ApiPanel({ api }: { api: Overview["api"] }) {
       <PanelCard
         icon={Activity}
         title="Traffic observed this session"
-        description="Every request the typed API client actually made — counts, latency and errors as the browser measured them."
+        description="Every request the typed API client actually made - counts, latency and errors as the browser measured them."
         testId="monitoring-api-stats"
       >
         <div className="grid gap-1.5 sm:grid-cols-2">
@@ -70,7 +67,7 @@ export function ApiPanel({ api }: { api: Overview["api"] }) {
           />
         </div>
 
-        {/* Time-based analysis — per-minute buckets (§9) */}
+        {/* Time-based analysis - per-minute buckets (§9) */}
         {api.buckets.length > 0 && (
           <div className="pt-2">
             <p className="pb-1 text-[11px] uppercase tracking-wide text-muted-foreground">
@@ -80,7 +77,7 @@ export function ApiPanel({ api }: { api: Overview["api"] }) {
               {api.buckets.map((bucket) => (
                 <div
                   key={bucket.at}
-                  title={`${bucket.at} — ${bucket.count} requests, ${bucket.errorCount} errors`}
+                  title={`${bucket.at} - ${bucket.count} requests, ${bucket.errorCount} errors`}
                   className="flex h-full flex-1 flex-col justify-end gap-px"
                 >
                   {bucket.errorCount > 0 && (
@@ -214,7 +211,7 @@ export function JobsPanel({
       <PanelCard
         icon={ListChecks}
         title="Job ledger"
-        description="Executions that actually ran in this session — seed, provider syncs, pipeline runs and manual runs."
+        description="Executions that actually ran in this session - seed, provider syncs, pipeline runs and manual runs."
       >
         {jobs.map((job) => (
           <div
@@ -237,7 +234,7 @@ export function JobsPanel({
                 title={
                   job.manualRunnable
                     ? "Run this job now"
-                    : "Driven by the app in this build — no synthetic run is fabricated"
+                    : "Driven by the app in this build - no synthetic run is fabricated"
                 }
                 onClick={() => onRun(job.id)}
                 data-testid={`job-run-${job.id}`}
@@ -286,7 +283,7 @@ export function NotificationsPanel({ notifications }: { notifications: Overview[
       <PanelCard
         icon={BellRing}
         title="Channels"
-        description="Delivery state per channel — unwired channels stay Unknown instead of fake-green."
+        description="Delivery state per channel - unwired channels stay Unknown instead of fake-green."
       >
         {notifications.channels.map((channel) => (
           <div key={channel.channel} className="rounded-lg border border-border/60 p-3">
@@ -308,7 +305,7 @@ export function NotificationsPanel({ notifications }: { notifications: Overview[
       <PanelCard
         icon={FileClock}
         title="Recent in-app deliveries"
-        description="The notification center's latest items — the in-app channel's real traffic."
+        description="The notification center's latest items - the in-app channel's real traffic."
       >
         {notifications.recent.length === 0 ? (
           <p className="text-sm text-muted-foreground">No delivery recorded yet.</p>
@@ -332,78 +329,6 @@ export function NotificationsPanel({ notifications }: { notifications: Overview[
   );
 }
 
-// ── Integration health (§13) ─────────────────────────────────────────────────
-
-export function IntegrationsHealthPanel({ integrations }: { integrations: Overview["integrations"] }) {
-  const nowMs = useNowClock();
-  return (
-    <div className="space-y-4" data-testid="monitoring-integrations-health">
-      <PanelCard
-        icon={PlugZap}
-        title="Provider health"
-        description="Live from the Integration Hub engine — Monitoring never keeps its own copy."
-        action={
-          <Button asChild variant="ghost" size="sm" className="gap-1 text-xs text-muted-foreground">
-            <Link href="/integrations">
-              Manage
-              <ArrowUpRight className="size-3" aria-hidden="true" />
-            </Link>
-          </Button>
-        }
-      >
-        {integrations.map((integration) => (
-          <div key={integration.providerId} className="rounded-lg border border-border/60 p-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="flex items-center gap-2 text-sm font-medium">
-                {integration.name}
-                <Badge variant="outline" className="text-[10px]">{integration.kind.toLowerCase()}</Badge>
-              </span>
-              <span className="flex items-center gap-2">
-                <Badge
-                  variant={
-                    integration.status === "CONNECTED"
-                      ? "default"
-                      : integration.status === "DISCONNECTED"
-                        ? "outline"
-                        : "secondary"
-                  }
-                >
-                  {integration.status === "AUTH_REQUIRED" ? "auth required" : integration.status.toLowerCase()}
-                </Badge>
-              </span>
-            </div>
-            <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
-              <MetricLine
-                label="Last successful sync"
-                value={
-                  integration.lastSuccessfulSyncAt === null
-                    ? "never"
-                    : ageLabel(ageFromIso(integration.lastSuccessfulSyncAt, nowMs))
-                }
-              />
-              <MetricLine
-                label="Last failed attempt"
-                value={
-                  integration.lastFailedSyncAt === null
-                    ? "—"
-                    : ageLabel(ageFromIso(integration.lastFailedSyncAt, nowMs))
-                }
-              />
-              <MetricLine label="Latency" value={integration.latencyMs === null ? "—" : `${integration.latencyMs} ms`} />
-              <MetricLine label="Errors (ledger)" value={String(integration.errorCount)} />
-              <MetricLine label="Provider status" value={integration.providerStatus} muted />
-              <MetricLine label="Credential status" value={integration.credentialStatus} muted />
-            </div>
-          </div>
-        ))}
-        <EvidenceNote>
-          Credential status comes from expiry facts only — secret material never leaves the vault (§13, §19).
-        </EvidenceNote>
-      </PanelCard>
-    </div>
-  );
-}
-
 // ── Audit / System events (§15) + incidents (§16) + alert rules (§14) ───────
 
 export function EventsPanel({
@@ -419,7 +344,7 @@ export function EventsPanel({
 }) {
   const nowMs = useNowClock();
 
-  // Local draft of the numeric knobs — applied per row on “Apply”.
+  // Local draft of the numeric knobs - applied per row on “Apply”.
   const [knobs, setKnobs] = React.useState<Record<string, string>>({});
   const knobValue = (rule: AlertRule): string =>
     knobs[rule.id] ?? (rule.thresholdValue === null ? "" : String(rule.thresholdValue));
@@ -427,15 +352,12 @@ export function EventsPanel({
   /** Export the FULL event ledger (system + integration) as CSV. */
   const exportLedgerCsv = () => {
     // Shared csvCell (Phase 12): structural escape + formula-injection guard
-    // — provider names are user-controlled free text.
+    // - provider names are user-controlled free text.
     const escape = (value: string): string => csvCell(value);
     const rows: string[] = [
       "at,log,source,type,level,message",
       ...data.events.map((event) =>
         [event.at, "system", event.source, event.type, event.level, event.message].map((cell) => escape(String(cell))).join(","),
-      ),
-      ...data.integrationEvents.map((event) =>
-        [event.occurredAt, "integration", event.providerName, event.type, "INFO", event.message].map((cell) => escape(String(cell))).join(","),
       ),
     ];
     const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8" });
@@ -449,11 +371,11 @@ export function EventsPanel({
 
   return (
     <div className="space-y-4" data-testid="monitoring-events">
-      {/* Alert rules — configurable (§14): toggles AND numeric knobs */}
+      {/* Alert rules - configurable (§14): toggles AND numeric knobs */}
       <PanelCard
         icon={Settings2}
         title="Alert rules"
-        description="Toggle the conditions Monitoring watches and tune their thresholds — persisted in the engine, evaluated against live telemetry."
+        description="Toggle the conditions Monitoring watches and tune their thresholds - persisted in the engine, evaluated against live telemetry."
       >
         <div className="grid gap-1.5" data-testid="monitoring-alert-rules">
           {data.thresholds.rules.map((rule) => {
@@ -515,7 +437,7 @@ export function EventsPanel({
       <PanelCard
         icon={SirenIcon}
         title="Incidents"
-        description="Derived from the event log — root causes appear only when the evidence states one."
+        description="Derived from the event log - root causes appear only when the evidence states one."
       >
         {data.incidents.length === 0 ? (
           <p className="text-sm text-muted-foreground">No incident recorded in this session.</p>
@@ -549,11 +471,11 @@ export function EventsPanel({
                 </div>
                 <p className="mt-2 text-xs">
                   <span className="font-medium">Resolution: </span>
-                  {incident.resolution ?? "open — awaiting a recovery event"}
+                  {incident.resolution ?? "open - awaiting a recovery event"}
                 </p>
                 <p className="text-xs">
                   <span className="font-medium">Root cause: </span>
-                  {incident.rootCause ?? "under investigation — no automated root cause in the evidence"}
+                  {incident.rootCause ?? "under investigation - no automated root cause in the evidence"}
                 </p>
               </div>
             ))}
@@ -565,7 +487,7 @@ export function EventsPanel({
       <PanelCard
         icon={SirenIcon}
         title="Raised alerts"
-        description="Deduplicated by rule — occurrences count while a condition persists."
+        description="Deduplicated by rule - occurrences count while a condition persists."
         testId="monitoring-raised-alerts"
       >
         {data.alerts.length === 0 ? (
@@ -589,11 +511,11 @@ export function EventsPanel({
         )}
       </PanelCard>
 
-      {/* System event log (§15) — append-only, exportable */}
+      {/* System event log (§15) - append-only, exportable */}
       <PanelCard
         icon={ScrollText}
         title="System events"
-        description="Append-only — connection changes, failures, recoveries and config changes. Distinct from the Security audit log."
+        description="Append-only - connection changes, failures, recoveries and config changes. Distinct from the Security audit log."
         testId="monitoring-system-events"
         action={
           <Button
@@ -630,29 +552,6 @@ export function EventsPanel({
         )}
       </PanelCard>
 
-      {/* Integration events — the other real log (§13/§15) */}
-      <PanelCard
-        icon={FileClock}
-        title="Integration events"
-        description="The Integration Hub's own audit trail, mirrored here for the full system picture."
-      >
-        {data.integrationEvents.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No integration event recorded.</p>
-        ) : (
-          <div className="grid gap-1">
-            {data.integrationEvents.map((event) => (
-              <div key={event.id} className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border/40 pb-1 text-xs last:border-0">
-                <span>
-                  <span className="font-mono text-[11px] text-muted-foreground">{event.occurredAt.slice(11, 19)} UTC</span>{" "}
-                  <span className="font-mono text-[11px] font-medium">{event.type}</span>{" "}
-                  <span className="text-muted-foreground">{event.message}</span>
-                </span>
-                <span className="font-mono text-[10px] text-muted-foreground/70">{event.providerName}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </PanelCard>
     </div>
   );
 }

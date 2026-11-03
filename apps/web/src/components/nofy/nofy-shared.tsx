@@ -21,7 +21,7 @@ import type { NofyRefKind, NofyTag } from "@cosmoz/shared";
 import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * Nofy shared primitives — relative time, tag/folder chips, empty states,
+ * Nofy shared primitives - relative time, tag/folder chips, empty states,
  * inline-markdown rendering and reference-kind identity. Everything is
  * token-colored; no raw HTML is ever rendered (XSS-safe by construction).
  */
@@ -30,12 +30,12 @@ import type { Dictionary } from "@/i18n/dictionaries/en";
 
 const DAY_MS = 86_400_000;
 
-/** Locale-aware relative time — takes the nofy.time dictionary slice. */
+/** Locale-aware relative time - takes the nofy.time dictionary slice. */
 export function nofyRelativeTime(
   iso: string | null | undefined,
   time: Dictionary["nofy"]["time"],
 ): string {
-  if (!iso) return "—";
+  if (!iso) return "-";
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const ago = (value: number, unit: string): string =>
@@ -108,7 +108,7 @@ export function FolderChip({ name, className }: { name: string | null; className
   );
 }
 
-// ── Inline markdown (render only — the editor shows raw text) ───────────────
+// ── Inline markdown (render only - the editor shows raw text) ───────────────
 
 type InlineToken =
   | { kind: "plain"; value: string }
@@ -117,7 +117,7 @@ type InlineToken =
   | { kind: "code"; value: string };
 
 /**
- * Parses **bold**, *italic* and `code` spans into React nodes — text only,
+ * Parses **bold**, *italic* and `code` spans into React nodes - text only,
  * so no HTML ever reaches the DOM from note content (spec §49).
  */
 export function parseInlineMarkdown(text: string): InlineToken[] {
@@ -170,7 +170,7 @@ export const NOFY_REF_META: Record<NofyRefKind, { label: string; icon: LucideIco
   NOTE: { label: "Note", icon: NotebookText, hue: "var(--accent)" },
 };
 
-/** Href guard — only in-app SPA paths are ever linked (spec §49). */
+/** Href guard - only in-app SPA paths are ever linked (spec §49). */
 export function safeNofyHref(href: string | null | undefined): string | null {
   if (!href) return null;
   return href.startsWith("/") ? href : null;

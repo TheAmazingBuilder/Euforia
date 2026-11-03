@@ -1,5 +1,5 @@
 /**
- * Session Live data access (B9) — the ONLY place the context touches
+ * Session Live data access (B9) - the ONLY place the context touches
  * Prisma. Rows land in sessionLiveRow with a `kind`
  * (SESSION | ANALYSIS | LEVEL); the row id IS the entity id.
  */
@@ -16,7 +16,7 @@ export interface SessionLiveRow {
 
 /**
  * Normalized-generation row shapes per the session_live migration
- * (prisma/migrations/20261003180600_session_live — TradingSession,
+ * (prisma/migrations/20261003180600_session_live - TradingSession,
  * TradingSessionEvent, SavedAnalysis, KeyLevel, SessionNote tables).
  * The wired row-store reads SessionLiveRow; these type-only exports exist
  * so the Phase-7 contract mappers type-check against the normalized shapes
@@ -40,7 +40,7 @@ export interface TradingSessionRow {
   notes: string | null;
   riskPerTradePct: Prisma.Decimal | null;
   dailyRiskLimitPct: Prisma.Decimal | null;
-  /** Aggregated child rows (TradingSessionEvent) — repository include, not a column. */
+  /** Aggregated child rows (TradingSessionEvent) - repository include, not a column. */
   events: TradingSessionEventRow[];
   createdAt: Date;
   updatedAt: Date;
@@ -57,7 +57,7 @@ export interface TradingSessionEventRow {
   source: string | null;
 }
 
-/** SavedAnalysis row (migration 20261003180600) — JSONB chart state columns. */
+/** SavedAnalysis row (migration 20261003180600) - JSONB chart state columns. */
 export interface SavedAnalysisRow {
   id: string;
   userId: string;

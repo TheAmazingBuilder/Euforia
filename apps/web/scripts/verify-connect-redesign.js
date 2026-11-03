@@ -1,14 +1,14 @@
 /**
- * verify-connect-redesign.js — Connect Accounts modal redesign + dashboard welcome.
+ * verify-connect-redesign.js - Connect Accounts modal redesign + dashboard welcome.
  *
  * Owner request (2026-10-15):
  *   1. "ameliorer le modal de connect accounts, il est trop long et ça déborde,
- *      on ne voit presque rien — redesign très bien" → the wizard is now a
+ *      on ne voit presque rien - redesign très bien" → the wizard is now a
  *      pinned-header / scrollable-body / pinned-footer shell capped at 92 dvh.
  *   2. "message de Bienvenue sur le dashboard quand on crée un compte et on se
  *      connecte, ex: Welcome Dev Trader" → the dashboard h1 greets the signed-in
  *      trader by name ("Welcome, X" for accounts < 48 h old, "Welcome back, X"
- *      otherwise — derived from the REAL signup timestamp).
+ *      otherwise - derived from the REAL signup timestamp).
  *
  * Probe plan:
  *   A. Desktop dashboard with the seeded demo account → "Welcome back, Dev Trader".
@@ -23,7 +23,7 @@
  * (or: node apps/web/scripts/verify-connect-redesign.js with :3000 listening)
  *
  * Probe conventions (verify-phase11/verify-accounts lessons): no networkidle
- * (socket.io keeps sockets open) — domcontentloaded + waits; nextjs-portal
+ * (socket.io keeps sockets open) - domcontentloaded + waits; nextjs-portal
  * removed so it cannot swallow clicks; demo login via the shared helper.
  */
 
@@ -49,7 +49,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 function note(label) {
@@ -139,8 +139,8 @@ async function checkShellContained(page, surfaceLabel) {
   fs.mkdirSync(SHOT_DIR, { recursive: true });
   const browser = await chromium.launch();
 
-  // ── A. Dashboard greeting — seeded demo account (created ~90 days ago) ────
-  console.log("\n[A] Dashboard welcome — existing account");
+  // ── A. Dashboard greeting - seeded demo account (created ~90 days ago) ────
+  console.log("\n[A] Dashboard welcome - existing account");
   {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const page = await context.newPage();
@@ -163,7 +163,7 @@ async function checkShellContained(page, surfaceLabel) {
     const welcome = page.locator('[data-testid="dashboard-welcome"]');
     await welcome.waitFor({ state: "visible", timeout: 15_000 });
     const greetingA = (await welcome.innerText()).trim();
-    // The demo seed's display name is owned by the mock auth engine — assert
+    // The demo seed's display name is owned by the mock auth engine - assert
     // the SHAPE (welcome-back + non-empty name), not a hardcoded name.
     check(
       "existing account greets by name",
@@ -172,8 +172,8 @@ async function checkShellContained(page, surfaceLabel) {
     );
     await page.screenshot({ path: `${SHOT_DIR}/dashboard-welcome-back.png`, fullPage: false });
 
-    // ── C. Connect dialog — desktop (1440×900) ──────────────────────────────
-    console.log("\n[C] Connect dialog — desktop");
+    // ── C. Connect dialog - desktop (1440×900) ──────────────────────────────
+    console.log("\n[C] Connect dialog - desktop");
     await page.locator('a[href="/accounts"]').first().click();
     await page.waitForFunction(
       () => document.querySelector("h1")?.textContent?.trim() === "Accounts",
@@ -202,7 +202,7 @@ async function checkShellContained(page, surfaceLabel) {
     await page.locator('[data-testid="connect-next"]').click();
     await page.waitForTimeout(500);
 
-    // Step 2 — environment cards carry icon + honest description.
+    // Step 2 - environment cards carry icon + honest description.
     const envDemo = page.locator('[data-testid="connect-environment-DEMO"]');
     await envDemo.waitFor({ state: "visible", timeout: 8_000 });
     const envText = (await envDemo.innerText()).replace(/\n/g, " ");
@@ -218,20 +218,20 @@ async function checkShellContained(page, surfaceLabel) {
     await page.locator('[data-testid="connect-next"]').click();
     await page.waitForTimeout(500);
 
-    // Step 3 — identity fields.
+    // Step 3 - identity fields.
     await page.locator('[data-testid="connect-external-id"]').waitFor({ state: "visible", timeout: 8_000 });
     check("identity fields reachable", await page.locator('[data-testid="connect-secret"]').isVisible());
     await checkShellContained(page, "desktop/step3");
     await page.screenshot({ path: `${SHOT_DIR}/dialog-desktop-step3-identity.png` });
 
-    // Close without connecting — Part B does its own registration flow.
+    // Close without connecting - Part B does its own registration flow.
     await page.keyboard.press("Escape");
     await page.waitForTimeout(500);
     check("desktop: no unexpected page errors", pageErrors.length === 0, pageErrors.slice(0, 3).join(" | "));
     await context.close();
   }
 
-  // ── B. THE OWNER SCENARIO — create an account, log in, see the welcome ────
+  // ── B. THE OWNER SCENARIO - create an account, log in, see the welcome ────
   console.log("\n[B] Fresh account → Welcome, Dev Trader");
   {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
@@ -262,7 +262,7 @@ async function checkShellContained(page, surfaceLabel) {
     if ((await openVerification.count()) > 0) {
       await openVerification.click();
     } else {
-      note("mock verification button absent — falling back to email-less flow");
+      note("mock verification button absent - falling back to email-less flow");
     }
 
     await page.waitForSelector('[data-testid="verify-state-success"]', { timeout: 15_000 });
@@ -290,8 +290,8 @@ async function checkShellContained(page, surfaceLabel) {
     await context.close();
   }
 
-  // ── D. Connect dialog — mobile bottom Sheet (390×844) ─────────────────────
-  console.log("\n[D] Connect dialog — mobile sheet");
+  // ── D. Connect dialog - mobile bottom Sheet (390×844) ─────────────────────
+  console.log("\n[D] Connect dialog - mobile sheet");
   {
     const context = await browser.newContext({
       viewport: { width: 390, height: 844 },
@@ -312,7 +312,7 @@ async function checkShellContained(page, surfaceLabel) {
     await page.waitForTimeout(2_000);
     await clearDevOverlay(page);
 
-    // Mobile login — the sidebar nav lives in a drawer behind the topbar
+    // Mobile login - the sidebar nav lives in a drawer behind the topbar
     // burger, so the shared ensureLogin (which waits for a VISIBLE sidebar)
     // never resolves here. Wait for the topbar instead.
     const sidebar = page.locator('nav[aria-label="Main navigation"]');
@@ -339,7 +339,7 @@ async function checkShellContained(page, surfaceLabel) {
       note("mobile dashboard welcome not present yet (slow hydrate)");
     }
 
-    // Navigate straight to /accounts — the mobile drawer interaction is not
+    // Navigate straight to /accounts - the mobile drawer interaction is not
     // the subject here; the bottom Sheet containment is.
     await page.goto(`${BASE}/accounts`, { waitUntil: "domcontentloaded", timeout: 60_000 });
     await page.waitForTimeout(2_000);

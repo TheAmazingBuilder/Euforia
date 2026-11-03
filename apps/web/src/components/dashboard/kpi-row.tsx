@@ -25,7 +25,7 @@ function signedFormat(value: string, digits: number): string {
 }
 
 /** Ledger delta PILL: tinted semantic ink on its own chip so it can sit
- * right next to the value — the label line stays clean, nothing is
+ * right next to the value - the label line stays clean, nothing is
  * cramped. Direction reads at a glance (arrow + color). */
 function DeltaMark({
   delta,
@@ -62,7 +62,7 @@ function DeltaMark({
       )}
     >
       <Icon className="size-3" aria-hidden="true" />
-      {/* The arrow is decorative for assistive tech — the direction must
+      {/* The arrow is decorative for assistive tech - the direction must
           also be spoken (Phase 10: color/shape cues are never the ONLY cue). */}
       <span className="sr-only">{up ? "Up" : "Down"} vs previous period: </span>
       {format(delta.value)}
@@ -70,7 +70,7 @@ function DeltaMark({
   );
 }
 
-/** Sign-aware tint behind hero cells — token-driven gradient that reacts
+/** Sign-aware tint behind hero cells - token-driven gradient that reacts
  * to the metric's direction (profit when ahead, loss when behind). */
 function heroTint(token: "--profit" | "--loss" | "--accent"): string {
   return `linear-gradient(120deg, color-mix(in srgb, var(${token}) 10%, transparent), transparent 58%)`;
@@ -89,7 +89,7 @@ interface KpiCellProps {
 }
 
 /** Compact KPI cell (row 2 of the band, span 3 of 12). The delta pill
- * sits NEXT TO the value on one baseline — never against the label. */
+ * sits NEXT TO the value on one baseline - never against the label. */
 function KpiCell({
   label,
   value,
@@ -177,7 +177,7 @@ function HeroCell({
   );
 }
 
-/** Top KPI band — ONE ruled ledger band on a 12-column grid:
+/** Top KPI band - ONE ruled ledger band on a 12-column grid:
  * row 1 = two hero cells (Net P&L, Discipline score), row 2 = four KPI
  * cells (Win rate, Profit factor, Expectancy, Hesitation cost). All
  * aggregates come from GET /stats/overview (server-computed). Deltas
@@ -199,7 +199,7 @@ export function KpiRow({ overview }: { overview: StatsOverviewResponse }) {
   return (
     <>
       <section aria-label="Key performance indicators" className="stat-strip reveal-stagger">
-        {/* ── Row 1 — heroes (span 6 each) ─────────────────────────── */}
+        {/* ── Row 1 - heroes (span 6 each) ─────────────────────────── */}
         <HeroCell
           label="Net P&L"
           value={formatSignedMoney(overview.netPnl, overview.currency)}
@@ -226,7 +226,7 @@ export function KpiRow({ overview }: { overview: StatsOverviewResponse }) {
           sparklineLabel="Discipline score over the recent window"
           tintToken="--accent"
         />
-        {/* ── Row 2 — KPI cells (span 3 each) ──────────────────────── */}
+        {/* ── Row 2 - KPI cells (span 3 each) ──────────────────────── */}
         <KpiCell
           label="Win rate"
           value={formatPercent(overview.winRate)}

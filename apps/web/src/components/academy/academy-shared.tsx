@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Shared Academy primitives — category icon registry, category identity hues,
+ * Shared Academy primitives - category icon registry, category identity hues,
  * level badge, ruled progress bar, ring gauge and hue chips. Icon names arrive
  * from the API as strings; this registry is the single client-side mapping.
  */
@@ -50,7 +50,7 @@ export function hueOf(categoryId: string | null | undefined): string {
   return (categoryId && CATEGORY_HUES[categoryId]) || "var(--accent)";
 }
 
-/** Alpha tint of a hue — color-mix keeps everything token-driven. */
+/** Alpha tint of a hue - color-mix keeps everything token-driven. */
 export function tint(hue: string, percent: number): string {
   return `color-mix(in srgb, ${hue} ${percent}%, transparent)`;
 }
@@ -75,7 +75,7 @@ export function CategoryIcon({ icon, className }: { icon: string; className?: st
   return <Icon className={cn("size-4", className)} aria-hidden="true" />;
 }
 
-/** Level machine ids — labels resolve through dict.academy.shared.levels. */
+/** Level machine ids - labels resolve through dict.academy.shared.levels. */
 export function LevelBadge({ level, className }: { level: AcademyLevel; className?: string }) {
   const { dict } = useI18n();
   return (
@@ -93,7 +93,7 @@ export function LevelBadge({ level, className }: { level: AcademyLevel; classNam
   );
 }
 
-/** Ruled progress bar — hairline track, ink fill (or category hue), mono percentage outside. */
+/** Ruled progress bar - hairline track, ink fill (or category hue), mono percentage outside. */
 export function ProgressBar({
   percent,
   className,
@@ -105,7 +105,7 @@ export function ProgressBar({
   className?: string;
   testid?: string;
   label?: string;
-  /** CSS var — fills the bar with a category identity hue instead of the accent. */
+  /** CSS var - fills the bar with a category identity hue instead of the accent. */
   hue?: string;
 }) {
   const clamped = Math.max(0, Math.min(100, percent));
@@ -131,7 +131,7 @@ export function ProgressBar({
   );
 }
 
-/** Ring gauge — single arc on a hairline track, rounded caps, token color.
+/** Ring gauge - single arc on a hairline track, rounded caps, token color.
  *  The arc draws itself the first time it scrolls into view (IntersectionObserver,
  *  once); honors prefers-reduced-motion by rendering the final state instantly. */
 export function ProgressRing({
@@ -191,7 +191,7 @@ export function ProgressRing({
   );
 }
 
-/** Hue chip — small identity tile for an icon: tinted fill, hairline frame. */
+/** Hue chip - small identity tile for an icon: tinted fill, hairline frame. */
 export function HueChip({
   hue,
   icon: Icon,
@@ -251,7 +251,7 @@ export function useInViewOnce<T extends HTMLElement>(rootMargin = "0px 0px -8% 0
     const node = ref.current;
     if (!node || inView) return;
     if (typeof IntersectionObserver === "undefined") {
-      // Ancient engines / test environments — reveal async (never sync in effect).
+      // Ancient engines / test environments - reveal async (never sync in effect).
       const timer = window.setTimeout(() => setInView(true), 0);
       return () => window.clearTimeout(timer);
     }
@@ -273,7 +273,7 @@ export function useInViewOnce<T extends HTMLElement>(rootMargin = "0px 0px -8% 0
   return { ref, inView };
 }
 
-/** Live preference for reduced motion — animations render their final state.
+/** Live preference for reduced motion - animations render their final state.
  *  Backed by useSyncExternalStore: no setState-in-effect, SSR-safe. */
 export function usePrefersReducedMotion(): boolean {
   const subscribe = React.useCallback((onChange: () => void) => {

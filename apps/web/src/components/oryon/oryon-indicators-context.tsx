@@ -16,24 +16,24 @@ import {
 } from "@/lib/oryon/indicators/store";
 
 /**
- * Oryon indicators context — PER-PANEL indicator state (Phase 3 spec §4D
+ * Oryon indicators context - PER-PANEL indicator state (Phase 3 spec §4D
  * + Phase 7 spec §11 ownership).
  *
  * Phase 7: indicators BELONG to the chart panel they are configured on. A
  * registry hands each panel its own OryonIndicatorStore (same store class,
  * same validation, same engine diffing). The DEFAULT panel's store keeps
- * the Phase 3 browser-local persistence (`euforia.oryon.indicators.v1`) —
+ * the Phase 3 browser-local persistence (`euforia.oryon.indicators.v1`) -
  * the single-chart analysis setup survives reloads exactly as before.
  * Additional panels' stacks live in memory and are captured by SAVED
- * layouts (explicit save — the same discipline as the workspace session),
+ * layouts (explicit save - the same discipline as the workspace session),
  * which also keeps honest bounds on local storage.
  *
  * The TOOLBAR dialog (add/settings) and template save/apply resolve the
- * ACTIVE panel's store through the workspace config context — the dialog
+ * ACTIVE panel's store through the workspace config context - the dialog
  * is modal, so the target cannot change while it is open.
  *
  * Re-render discipline: consuming components subscribe to their store
- * themselves (useSyncExternalStore) — commits are rare (config edits,
+ * themselves (useSyncExternalStore) - commits are rare (config edits,
  * add/remove). Ticks never touch this context.
  */
 

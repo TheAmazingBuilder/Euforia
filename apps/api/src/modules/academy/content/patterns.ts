@@ -3,13 +3,13 @@ import type { AcademyCandle } from "../../../shared/contracts";
 /**
  * Pattern-identification drill exemplars. Each entry: a deterministic candle
  * series rendered by the client, its correct label, distractors and an
- * explanation. The engine serves these as randomized drills — answers are
+ * explanation. The engine serves these as randomized drills - answers are
  * graded server-side and the correct option is never leaked pre-submission.
  *
  * The library covers the complete professional canon: the single-, double-
  * and triple-candle reversal families plus the multi-candle continuation
  * methods. Every entry carries a `family` (how many candles take part) and a
- * `bias` (the directional teaching tag) so the drill can teach taxonomy —
+ * `bias` (the directional teaching tag) so the drill can teach taxonomy -
  * patterns are classified by ANATOMY and LOCATION, never by candle color.
  */
 
@@ -24,9 +24,9 @@ export type PatternBias =
 export type PatternExemplar = {
   id: string;
   label: string;
-  /** Family grouping — rendered as a chip in the drill UI. */
+  /** Family grouping - rendered as a chip in the drill UI. */
   family: PatternFamily;
-  /** Directional teaching tag — rendered as a chip in the drill UI. */
+  /** Directional teaching tag - rendered as a chip in the drill UI. */
   bias: PatternBias;
   context: string;
   /** Correct answer + 3 distractors (by pattern id). */
@@ -36,7 +36,7 @@ export type PatternExemplar = {
   candles: AcademyCandle[];
 };
 
-/** Compact candle helper — prices in abstract units, renderer normalizes. */
+/** Compact candle helper - prices in abstract units, renderer normalizes. */
 const c = (o: number, h: number, l: number, cl: number): AcademyCandle => ({ o, h, l, c: cl });
 
 export const PATTERN_EXEMPLARS: PatternExemplar[] = [
@@ -50,7 +50,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "doji",
     distractors: ["spinning-top", "marubozu-bull", "hammer"],
     explanation:
-      "Open and close meet at the same price: perfect balance. After an extended rally it hints the fuel is burning out — but it becomes tradeable only when the next candles resolve the balance.",
+      "Open and close meet at the same price: perfect balance. After an extended rally it hints the fuel is burning out - but it becomes tradeable only when the next candles resolve the balance.",
     candles: [c(10, 12.4, 9.6, 12), c(12, 13.2, 11.4, 12.6), c(12.6, 14.8, 12.5, 14.7)],
   },
   {
@@ -62,7 +62,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "dragonfly-doji",
     distractors: ["gravestone-doji", "hammer", "doji"],
     explanation:
-      "Open and close meet at the session HIGH after a deep intraday plunge was fully bought back: sellers had their auction and lost it. After a decline, this is the doji family's most location-sensitive bullish hint — wait for the next candle's resolve.",
+      "Open and close meet at the session HIGH after a deep intraday plunge was fully bought back: sellers had their auction and lost it. After a decline, this is the doji family's most location-sensitive bullish hint - wait for the next candle's resolve.",
     candles: [c(12, 12.2, 11.4, 11.5), c(11.5, 11.6, 10.7, 10.9), c(10.9, 11.0, 9.0, 10.95)],
   },
   {
@@ -86,7 +86,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "long-legged-doji",
     distractors: ["doji", "spinning-top", "gravestone-doji"],
     explanation:
-      "Long wicks on both sides with open and close nearly equal: a violent fight ending in balance. More dramatic than a plain doji — the longer the legs, the louder the disagreement — but still only a warning until the market resolves it.",
+      "Long wicks on both sides with open and close nearly equal: a violent fight ending in balance. More dramatic than a plain doji - the longer the legs, the louder the disagreement - but still only a warning until the market resolves it.",
     candles: [c(12, 12.4, 10.2, 12.1), c(12.1, 13.4, 11.3, 13.2), c(13.2, 14.8, 11.6, 13.3)],
   },
   {
@@ -98,7 +98,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "hammer",
     distractors: ["shooting-star", "doji", "hanging-man"],
     explanation:
-      "Small body at the top of the candle's range with a long lower wick: sellers pushed hard, buyers took everything back. The name depends on location — after a decline it is a hammer.",
+      "Small body at the top of the candle's range with a long lower wick: sellers pushed hard, buyers took everything back. The name depends on location - after a decline it is a hammer.",
     candles: [c(12, 12.3, 11.5, 11.7), c(11.7, 11.8, 10.9, 11.1), c(11.1, 11.3, 9.4, 11.2)],
   },
   {
@@ -110,7 +110,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "hanging-man",
     distractors: ["hammer", "inverted-hammer", "marubozu-bear"],
     explanation:
-      "Same shape as the hammer — long lower wick, small body — but printed after an ADVANCE: the intraday push below and recovery hints supply is stirring near the top.",
+      "Same shape as the hammer - long lower wick, small body - but printed after an ADVANCE: the intraday push below and recovery hints supply is stirring near the top.",
     candles: [c(10, 11.8, 9.9, 11.6), c(11.6, 12.9, 11.5, 12.7), c(12.7, 12.9, 11.2, 12.6)],
   },
   {
@@ -122,7 +122,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "inverted-hammer",
     distractors: ["shooting-star", "hammer", "doji"],
     explanation:
-      "Long upper wick, small body at the bottom of the candle's range — buyers probed upward for the first time after a decline. Confirmation from the next candle is required.",
+      "Long upper wick, small body at the bottom of the candle's range - buyers probed upward for the first time after a decline. Confirmation from the next candle is required.",
     candles: [c(12, 12.2, 11.4, 11.5), c(11.5, 11.6, 10.7, 10.9), c(10.9, 12.4, 10.8, 11.1)],
   },
   {
@@ -146,7 +146,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "spinning-top",
     distractors: ["doji", "hammer", "marubozu-bear"],
     explanation:
-      "Small body with wicks on both sides: hesitation with movement, not balance as pure as a doji. In mid-range it carries little information — location gives patterns their meaning.",
+      "Small body with wicks on both sides: hesitation with movement, not balance as pure as a doji. In mid-range it carries little information - location gives patterns their meaning.",
     candles: [c(11, 12, 10.6, 11.8), c(11.8, 12.9, 11.2, 12.4), c(12.4, 13.4, 11.6, 12.6)],
   },
   {
@@ -158,7 +158,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "marubozu-bull",
     distractors: ["doji", "bullish-engulfing", "three-white-soldiers"],
     explanation:
-      "A full body with (almost) no wicks: one-sided control for the entire period. As a breakout candle it shows buyers refusing any discount — real displacement.",
+      "A full body with (almost) no wicks: one-sided control for the entire period. As a breakout candle it shows buyers refusing any discount - real displacement.",
     candles: [c(11.4, 11.5, 10.8, 10.9), c(10.9, 11, 10.4, 10.6), c(10.7, 13.2, 10.6, 13.1)],
   },
   {
@@ -170,7 +170,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "marubozu-bear",
     distractors: ["doji", "bearish-engulfing", "shooting-star"],
     explanation:
-      "Full bearish body, no meaningful wicks: sellers controlled every minute of the period and refused any premium — a strong rejection candle at the level.",
+      "Full bearish body, no meaningful wicks: sellers controlled every minute of the period and refused any premium - a strong rejection candle at the level.",
     candles: [c(11, 12.5, 10.9, 12.3), c(12.3, 13.7, 12.2, 13.5), c(13.5, 13.6, 11, 11.1)],
   },
   {
@@ -182,7 +182,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "belt-hold-bull",
     distractors: ["marubozu-bull", "bullish-engulfing", "hammer"],
     explanation:
-      "Opens ON the session low — no lower wick — then drives up all period in one long bullish body. Also called the yobuse: a one-sided rejection of the open. The meaning concentrates at support after a decline.",
+      "Opens ON the session low - no lower wick - then drives up all period in one long bullish body. Also called the yobuse: a one-sided rejection of the open. The meaning concentrates at support after a decline.",
     candles: [c(12.2, 12.4, 11.3, 11.4), c(11.4, 11.6, 10.6, 10.7), c(10.6, 12.3, 10.6, 12.1)],
   },
   {
@@ -194,7 +194,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "belt-hold-bear",
     distractors: ["marubozu-bear", "bearish-engulfing", "shooting-star"],
     explanation:
-      "Opens ON the session high — no upper wick — then sells off all period in one long bearish body: the bearish mirror of the bullish belt hold.",
+      "Opens ON the session high - no upper wick - then sells off all period in one long bearish body: the bearish mirror of the bullish belt hold.",
     candles: [c(11.2, 12.2, 11.1, 12.1), c(12.1, 13.2, 12.0, 13.1), c(13.1, 13.1, 11.4, 11.6)],
   },
 
@@ -208,7 +208,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "bullish-engulfing",
     distractors: ["piercing-line", "hammer", "three-inside-up"],
     explanation:
-      "A bullish body that fully swallows the prior bearish body: the argument flipped within one period. Body engulfs BODY — wicks are secondary.",
+      "A bullish body that fully swallows the prior bearish body: the argument flipped within one period. Body engulfs BODY - wicks are secondary.",
     candles: [c(12.8, 12.9, 12.2, 12.3), c(12.3, 12.4, 11.6, 11.8), c(11.6, 13.1, 11.5, 13)],
   },
   {
@@ -244,7 +244,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "tweezer-top",
     distractors: ["tweezer-bottom", "bearish-engulfing", "dark-cloud-cover"],
     explanation:
-      "The bearish mirror of the tweezer bottom: two candles topping at one identical price — sellers rejecting the same level twice. The matching highs matter more than either candle's color.",
+      "The bearish mirror of the tweezer bottom: two candles topping at one identical price - sellers rejecting the same level twice. The matching highs matter more than either candle's color.",
     candles: [c(11.2, 12.6, 11.1, 12.4), c(12.4, 13.4, 12.3, 13.3), c(13.3, 13.4, 12.1, 12.2)],
   },
   {
@@ -256,7 +256,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "piercing-line",
     distractors: ["bullish-engulfing", "three-inside-up", "doji"],
     explanation:
-      "Bullish candle opening below the prior close and closing above the prior body's MIDPOINT — buyers reclaimed real ground, not a rounding error.",
+      "Bullish candle opening below the prior close and closing above the prior body's MIDPOINT - buyers reclaimed real ground, not a rounding error.",
     candles: [c(13, 13.1, 11.5, 11.6), c(11.4, 12.6, 11.3, 12.4)],
   },
   {
@@ -268,7 +268,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "dark-cloud-cover",
     distractors: ["bearish-engulfing", "shooting-star", "evening-star"],
     explanation:
-      "Bearish candle opening above the prior high and closing below the prior body's midpoint — the bearish mirror of the piercing line.",
+      "Bearish candle opening above the prior high and closing below the prior body's midpoint - the bearish mirror of the piercing line.",
     candles: [c(11.5, 13.1, 11.4, 13), c(13.2, 13.3, 11.9, 12)],
   },
   {
@@ -280,7 +280,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "bullish-harami",
     distractors: ["bearish-harami", "three-inside-up", "bullish-engulfing"],
     explanation:
-      "A small bullish body printed entirely INSIDE the prior bearish body: selling stalled so hard the whole next period stayed within it. Harami means 'pregnant' — the inside candle is the hint, the next close is the confirmation.",
+      "A small bullish body printed entirely INSIDE the prior bearish body: selling stalled so hard the whole next period stayed within it. Harami means 'pregnant' - the inside candle is the hint, the next close is the confirmation.",
     candles: [c(13, 13.1, 11.6, 11.7), c(11.8, 11.95, 11.6, 12.05)],
   },
   {
@@ -292,7 +292,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "bearish-harami",
     distractors: ["bullish-harami", "three-inside-down", "bearish-engulfing"],
     explanation:
-      "A small bearish body contained inside the prior bullish body: buyers stopped making progress without heavy selling — hesitation at altitude. Confirmed by a close below the pattern's range.",
+      "A small bearish body contained inside the prior bullish body: buyers stopped making progress without heavy selling - hesitation at altitude. Confirmed by a close below the pattern's range.",
     candles: [c(11.6, 13, 11.5, 12.9), c(12.6, 12.85, 12.5, 12.2)],
   },
   {
@@ -304,7 +304,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "bullish-kicker",
     distractors: ["bullish-engulfing", "morning-star", "marubozu-bull"],
     explanation:
-      "The second candle opens above the FIRST candle's open — a true gap over the entire prior body — and never looks back. Kickers are among the strongest two-candle reversal reads; they still demand location and confirmation like everything else.",
+      "The second candle opens above the FIRST candle's open - a true gap over the entire prior body - and never looks back. Kickers are among the strongest two-candle reversal reads; they still demand location and confirmation like everything else.",
     candles: [c(12.8, 12.9, 11.4, 11.5), c(12.85, 14.2, 12.8, 14.1)],
   },
   {
@@ -316,7 +316,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "bearish-kicker",
     distractors: ["bearish-engulfing", "evening-star", "marubozu-bear"],
     explanation:
-      "The second candle opens below the FIRST candle's open and sells off without filling the gap — the bearish mirror of the bullish kicker.",
+      "The second candle opens below the FIRST candle's open and sells off without filling the gap - the bearish mirror of the bullish kicker.",
     candles: [c(11.4, 12.9, 11.3, 12.8), c(11.35, 11.45, 10.0, 10.1)],
   },
 
@@ -378,7 +378,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "abandoned-baby-bull",
     distractors: ["morning-doji-star", "morning-star", "dragonfly-doji"],
     explanation:
-      "The rarest star variant: a doji isolated by gaps on BOTH sides — an island of indecision nobody could trade into. Its scarcity is the point; when it prints at support, the reversal read is strong.",
+      "The rarest star variant: a doji isolated by gaps on BOTH sides - an island of indecision nobody could trade into. Its scarcity is the point; when it prints at support, the reversal read is strong.",
     candles: [c(13, 13.1, 11.6, 11.7), c(11.15, 11.3, 11.0, 11.15), c(11.6, 12.9, 11.55, 12.75)],
   },
   {
@@ -390,7 +390,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "three-white-soldiers",
     distractors: ["marubozu-bull", "bullish-engulfing", "morning-star"],
     explanation:
-      "Three consecutive strong bullish candles with steady closes and small upper wicks — a staircase of control, not overlapping drift.",
+      "Three consecutive strong bullish candles with steady closes and small upper wicks - a staircase of control, not overlapping drift.",
     candles: [c(11, 12, 10.9, 11.9), c(11.8, 12.9, 11.7, 12.8), c(12.7, 13.8, 12.6, 13.7)],
   },
   {
@@ -402,7 +402,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "three-black-crows",
     distractors: ["marubozu-bear", "bearish-engulfing", "evening-star"],
     explanation:
-      "Three consecutive strong bearish candles with steady closes and small lower wicks — sustained seller control.",
+      "Three consecutive strong bearish candles with steady closes and small lower wicks - sustained seller control.",
     candles: [c(13.5, 13.6, 12.6, 12.7), c(12.8, 12.9, 11.8, 11.9), c(12, 12.1, 11, 11.1)],
   },
   {
@@ -414,7 +414,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "three-inside-up",
     distractors: ["morning-star", "piercing-line", "bullish-engulfing"],
     explanation:
-      "A reversal candle, then a small bullish candle inside its body, then a close above the reversal candle's high — the conservative, confirmation-first variant.",
+      "A reversal candle, then a small bullish candle inside its body, then a close above the reversal candle's high - the conservative, confirmation-first variant.",
     candles: [c(12.6, 12.7, 11.2, 11.4), c(11.5, 11.7, 11.4, 11.6), c(11.6, 12.9, 11.5, 12.8)],
   },
   {
@@ -426,7 +426,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "three-inside-down",
     distractors: ["three-inside-up", "bearish-harami", "evening-star"],
     explanation:
-      "The bearish mirror of the three inside up: a small bearish body inside the prior bullish body, then a close below the first candle's low — the confirmation-first topping sequence.",
+      "The bearish mirror of the three inside up: a small bearish body inside the prior bullish body, then a close below the first candle's low - the confirmation-first topping sequence.",
     candles: [c(11.6, 13, 11.5, 12.9), c(12.6, 12.8, 12.5, 12.2), c(12.5, 12.55, 11.2, 11.3)],
   },
   {
@@ -462,7 +462,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "upside-tasuki-gap",
     distractors: ["three-white-soldiers", "rising-three-methods", "bullish-engulfing"],
     explanation:
-      "A bullish candle, a gap-up continuation candle, then a small bearish candle closing WITHOUT filling the gap: sellers probed the gap and were refused — the trend's argument stands.",
+      "A bullish candle, a gap-up continuation candle, then a small bearish candle closing WITHOUT filling the gap: sellers probed the gap and were refused - the trend's argument stands.",
     candles: [c(11, 11.9, 10.9, 11.8), c(12.1, 13, 12.05, 12.9), c(12.85, 13.0, 12.3, 12.4)],
   },
   {
@@ -486,7 +486,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "stick-sandwich",
     distractors: ["tweezer-bottom", "morning-star", "bullish-harami"],
     explanation:
-      "Bearish, bullish, bearish — with the two bearish candles closing at one identical price: the market tested the same close twice around a bounce. The matching closes form the double touch; the read is bullish while the level holds.",
+      "Bearish, bullish, bearish - with the two bearish candles closing at one identical price: the market tested the same close twice around a bounce. The matching closes form the double touch; the read is bullish while the level holds.",
     candles: [c(12.9, 13, 11.9, 12), c(12, 12.9, 11.95, 12.85), c(12.85, 12.9, 11.9, 12)],
   },
   {
@@ -494,11 +494,11 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     label: "Advance Block",
     family: "Triple candle",
     bias: "Bearish reversal",
-    context: "Three rising candles near the end of an advance — with shrinking bodies.",
+    context: "Three rising candles near the end of an advance - with shrinking bodies.",
     answer: "advance-block",
     distractors: ["three-white-soldiers", "shooting-star", "evening-star"],
     explanation:
-      "Three bullish candles that keep making highs while their bodies shrink and upper wicks stretch: each push is bought for less distance. A caution pattern — not a sell signal by itself, but a warning the advance is tiring. Structure confirms.",
+      "Three bullish candles that keep making highs while their bodies shrink and upper wicks stretch: each push is bought for less distance. A caution pattern - not a sell signal by itself, but a warning the advance is tiring. Structure confirms.",
     candles: [c(11, 12, 10.9, 11.9), c(11.8, 12.9, 11.7, 12.4), c(12.3, 13.4, 12.2, 12.5)],
   },
 
@@ -512,7 +512,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "rising-three-methods",
     distractors: ["three-white-soldiers", "falling-three-methods", "bullish-engulfing"],
     explanation:
-      "A tall bullish candle, three small candles drifting down inside its range, then a tall bullish close above the first candle's high: the trend caught its breath without surrendering. One of the most trusted continuation reads — the pause is measured, not emotional.",
+      "A tall bullish candle, three small candles drifting down inside its range, then a tall bullish close above the first candle's high: the trend caught its breath without surrendering. One of the most trusted continuation reads - the pause is measured, not emotional.",
     candles: [c(11, 12, 10.9, 11.9), c(11.9, 12.1, 11.4, 11.6), c(11.7, 11.9, 11.35, 11.5), c(11.55, 11.8, 11.3, 11.45), c(11.5, 12.9, 11.45, 12.8)],
   },
   {
@@ -524,7 +524,7 @@ export const PATTERN_EXEMPLARS: PatternExemplar[] = [
     answer: "falling-three-methods",
     distractors: ["three-black-crows", "rising-three-methods", "bearish-engulfing"],
     explanation:
-      "The bearish mirror: a tall bearish candle, three small candles drifting up inside its range, then a tall bearish close below the first candle's low — the decline resumed exactly where it left off.",
+      "The bearish mirror: a tall bearish candle, three small candles drifting up inside its range, then a tall bearish close below the first candle's low - the decline resumed exactly where it left off.",
     candles: [c(13.5, 13.6, 12.6, 12.7), c(12.7, 12.95, 12.5, 12.85), c(12.8, 13, 12.7, 12.95), c(12.9, 13.05, 12.75, 13), c(12.85, 12.9, 11.3, 11.4)],
   },
 ];

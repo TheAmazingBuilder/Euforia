@@ -1,20 +1,20 @@
 /**
- * Settings bounded context (Phase 15) — user preferences & display
+ * Settings bounded context (Phase 15) - user preferences & display
  * configuration.
  *
  * Owns (§3/§43): the 9-domain preferences document (trading, risk, journal,
- * notifications, appearance, dashboard, academy, privacy, localization) —
+ * notifications, appearance, dashboard, academy, privacy, localization) -
  * HOW the user prefers Euforia to behave/display information.
  *
  * Does NOT own (§42): identity/profile (Identity), authentication, security
- * controls (Security), trading accounts (Accounts — Settings only holds a
+ * controls (Security), trading accounts (Accounts - Settings only holds a
  * validated default-account REFERENCE, §21), integrations, trades, calendar,
  * monitoring, system configuration (§6).
  *
  * Persistence: reuses the existing `User.preferences` JSON column through
- * IdentityRepository's narrow preferences contract (§28 — evolve, don't
+ * IdentityRepository's narrow preferences contract (§28 - evolve, don't
  * duplicate; no new table, no migration). Audit: records into the shared
- * SecurityEvent ledger — no second audit system (§33).
+ * SecurityEvent ledger - no second audit system (§33).
  */
 import { Module } from "@nestjs/common";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";
@@ -29,7 +29,7 @@ import { SettingsService } from "./settings.service";
   controllers: [SettingsController],
   providers: [SettingsService],
   // Narrow contract (house pattern): consumers of the preferences doc
-  // (calendar guard-line) consume the service — never User rows directly.
+  // (calendar guard-line) consume the service - never User rows directly.
   exports: [SettingsService],
 })
 export class SettingsModule {}

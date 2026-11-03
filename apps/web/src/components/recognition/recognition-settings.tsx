@@ -17,9 +17,9 @@ import { useAccounts } from "@/lib/api/queries";
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * RecognitionSettings — the recognition configuration step (PROMPT 3 §14,
- * V1.1 redesign). The three extraction profiles are SELECTABLE CARDS —
- * trade details, account / position, chart analysis — each stating what
+ * RecognitionSettings - the recognition configuration step (PROMPT 3 §14,
+ * V1.1 redesign). The three extraction profiles are SELECTABLE CARDS -
+ * trade details, account / position, chart analysis - each stating what
  * the engine reads in that mode. Platform detection stays the engine's
  * job: the UI shows it as auto-detect information, never a fake selector.
  */
@@ -51,9 +51,9 @@ export function RecognitionSettings({
   dict: RecognitionDict;
   profile: OcrExtractionProfile;
   onProfile: (profile: OcrExtractionProfile) => void;
-  /** What the engine expects to classify — informational, not a selector. */
+  /** What the engine expects to classify - informational, not a selector. */
   detectedPlatform: string;
-  /** ACCOUNTS attachment (engine quality §3.1) — null = default account. */
+  /** ACCOUNTS attachment (engine quality §3.1) - null = default account. */
   accountId: string | null;
   onAccountId: (accountId: string | null) => void;
   onStart: () => void;
@@ -72,7 +72,7 @@ export function RecognitionSettings({
         </header>
       </section>
 
-      {/* Recognition mode — three selectable cards (V1.1: all enabled). */}
+      {/* Recognition mode - three selectable cards (V1.1: all enabled). */}
       <fieldset className="flex flex-col gap-3">
         <legend className="ledger-label mb-1">{dict.settings.profile}</legend>
         <p className="text-xs text-muted-foreground">{dict.settings.profileHint}</p>
@@ -148,7 +148,7 @@ export function RecognitionSettings({
       </fieldset>
 
       <div className="grid gap-5 border-t border-border pt-5 sm:grid-cols-2">
-        {/* Platform — engine-detected, informational (§14). */}
+        {/* Platform - engine-detected, informational (§14). */}
         <div>
           <p className="ledger-label">{dict.settings.platform}</p>
           <div className="mt-2 flex items-center gap-2">
@@ -161,7 +161,7 @@ export function RecognitionSettings({
           </p>
         </div>
 
-        {/* Account attachment (engine quality §3.1) — where confirmed trades land. */}
+        {/* Account attachment (engine quality §3.1) - where confirmed trades land. */}
         <div>
           <p className="ledger-label">{dict.settings.account}</p>
           <p className="mt-1.5 text-xs text-muted-foreground">{dict.settings.accountHint}</p>

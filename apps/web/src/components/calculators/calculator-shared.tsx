@@ -7,10 +7,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /**
- * Shared presentational primitives for the TOOLS calculators — ledger-grade
+ * Shared presentational primitives for the TOOLS calculators - ledger-grade
  * surfaces (design system: ledger-label annotations, mono tabular numbers,
  * hairline separations, the accounting double rule under totals). Dict copy
- * travels in as props — these primitives never reach into i18n themselves.
+ * travels in as props - these primitives never reach into i18n themselves.
  */
 
 // ── Numeric field with inline error ──────────────────────────────────────────
@@ -20,7 +20,7 @@ export interface CalculatorFieldProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  /** Dict-rendered error copy — null/undefined means valid. */
+  /** Dict-rendered error copy - null/undefined means valid. */
   error?: string | null;
   placeholder?: string;
   hint?: string;
@@ -106,7 +106,7 @@ export interface PresetChipsProps {
   ariaLabel: string;
 }
 
-/** Convenience preset chips — a click fills the owning field. Not advice. */
+/** Convenience preset chips - a click fills the owning field. Not advice. */
 export function PresetChips({ label, presets, activeValue, onSelect, ariaLabel }: PresetChipsProps) {
   return (
     <div className="space-y-1.5">
@@ -147,7 +147,7 @@ export interface BreakdownRowData {
 
 /**
  * Label/value ledger with hairline separators; the last row sits on the
- * double rule — the accounting signature of the design system.
+ * double rule - the accounting signature of the design system.
  */
 export function BreakdownLedger({ rows, ariaLabel }: { rows: BreakdownRowData[]; ariaLabel: string }) {
   return (

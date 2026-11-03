@@ -3,7 +3,7 @@ import path from "node:path";
 import { defineConfig } from "vitest/config";
 
 /**
- * Web unit tests — pure logic only: (Phase 01 + Phase 07) the dashboard
+ * Web unit tests - pure logic only: (Phase 01 + Phase 07) the dashboard
  * customization model/registry/templates/persistence/reducer + notification
  * rule summaries, (MASTER QA) the canonical API-mode matrix, and (GSAP
  * onboarding) the eligibility/resume/transition state machine. No DOM,

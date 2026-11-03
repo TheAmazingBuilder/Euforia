@@ -1,5 +1,5 @@
 /**
- * Unit — Calendar domain (Phase 13).
+ * Unit - Calendar domain (Phase 13).
  *
  * Pure engine rules, no framework: provider payload normalization (§48
  * safe rejection, §15 impact mapping, §12 status derivation, §18/§19
@@ -64,7 +64,7 @@ describe("normalizeProviderEvent", () => {
       payload({ actual: "2.9", scheduledAtIso: "2026-06-20T12:30:00.000Z" }),
       FUTURE,
     );
-    // Actual before the scheduled instant is inconsistent provider data —
+    // Actual before the scheduled instant is inconsistent provider data -
     // the event stays SCHEDULED (time has not passed yet).
     expect(futureActual.ok && futureActual.event.status).toBe("SCHEDULED");
 
@@ -87,7 +87,7 @@ describe("normalizeProviderEvent", () => {
     }
   });
 
-  it("preserves textual values verbatim — no numeric coercion (§18/§19)", () => {
+  it("preserves textual values verbatim - no numeric coercion (§18/§19)", () => {
     const outcome = normalizeProviderEvent(
       payload({ actual: "0.25%", forecast: "250K", previous: "Unchanged" }),
       FUTURE,
@@ -164,7 +164,7 @@ describe("BuiltinEconomicProvider", () => {
     }
   });
 
-  it("returns a deliberately provider-shaped wire (§5 — not the domain shape)", async () => {
+  it("returns a deliberately provider-shaped wire (§5 - not the domain shape)", async () => {
     const payloads = await new BuiltinEconomicProvider(NOW).fetchWindow(from, to);
     const sample = payloads[0]!;
     expect(Object.keys(sample).sort()).toEqual([
@@ -245,7 +245,7 @@ describe("buildCalendarView", () => {
     expect(view.days[0]!.excludedFromStats).toBe(true);
     expect(view.summary.daysOff).toBe(1);
     expect(view.summary.blockedDays).toBe(1);
-    expect(view.summary.tradingDays).toBe(1); // only 06-03? no — 06-03 has 0 trades
+    expect(view.summary.tradingDays).toBe(1); // only 06-03? no - 06-03 has 0 trades
     expect(view.summary.totalPnl).toBe("120.5"); // 06-02 only
     expect(view.summary.totalR).toBe("1.5");
   });

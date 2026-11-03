@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Theme preview (module upgrade) — a miniature TRADE CARD rendered purely
+ * Theme preview (module upgrade) - a miniature TRADE CARD rendered purely
  * with semantic tokens. Because every color comes from CSS variables, the
  * preview follows the theme switch INSTANTLY: flip the theme in the card
  * above and this miniature re-tints live, exactly like the real ledger.
@@ -64,7 +64,7 @@ export function ThemePreviewMiniTradeCard() {
         </div>
       </div>
 
-      {/* Loss row — both P&L polarities visible at once */}
+      {/* Loss row - both P&L polarities visible at once */}
       <div className="mt-2 flex items-center justify-between rounded-lg border border-border bg-surface-raised px-2 py-1.5">
         <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
           <ArrowDownRight className="size-3 text-loss" aria-hidden="true" />

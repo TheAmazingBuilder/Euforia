@@ -1,7 +1,7 @@
 /**
- * Unit — Settings domain rules (Phase 15 §38): defaults, per-domain merge,
+ * Unit - Settings domain rules (Phase 15 §38): defaults, per-domain merge,
  * reset scoping, full-doc invariant, read-mirror resolution and the §33
- * audit triage. Pure functions — no framework, no database.
+ * audit triage. Pure functions - no framework, no database.
  */
 import { describe, expect, it } from "vitest";
 import {
@@ -36,7 +36,7 @@ describe("buildFreshPreferences", () => {
     expect(userPreferencesSchema.safeParse(doc).success).toBe(true);
   });
 
-  it("deep-clones — mutating the doc never leaks into the shared defaults", () => {
+  it("deep-clones - mutating the doc never leaks into the shared defaults", () => {
     const doc = freshDoc();
     doc.appearance.theme = "LIGHT";
     expect(DEFAULT_USER_PREFERENCES.appearance.theme).toBe("DARK_BLUE");
@@ -67,7 +67,7 @@ describe("mergeDomain", () => {
       density: "COMPACT",
       defaultDashboardLayout: "RISK_FIRST",
       pnlDisplay: "R_MULTIPLE",
-    });
+    }) as Record<string, unknown>;
     const next = mergeDomain(previous, "appearance", parsed, NOW);
     expect(next.appearance.theme).toBe("LIGHT");
     expect(next.appearance.density).toBe("COMPACT");
@@ -78,7 +78,7 @@ describe("mergeDomain", () => {
     expect(next.localization).toEqual(previous.localization);
   });
 
-  it("keeps the full-document invariant — a bad domain value cannot persist", () => {
+  it("keeps the full-document invariant - a bad domain value cannot persist", () => {
     expect(() => PREFERENCE_DOMAIN_SCHEMAS.risk.parse({ garbage: true })).toThrow();
   });
 });
@@ -114,7 +114,7 @@ describe("extractSensitiveChanges (§33 audit triage)", () => {
     const next = mergeDomain(previous, "privacy", PREFERENCE_DOMAIN_SCHEMAS.privacy.parse({
       ...previous.privacy,
       usageAnalytics: false,
-    }), NOW);
+    }) as Record<string, unknown>, NOW);
     expect(extractSensitiveChanges("privacy", previous, next)).toEqual([
       "Privacy preferences updated.",
     ]);
@@ -125,7 +125,7 @@ describe("extractSensitiveChanges (§33 audit triage)", () => {
     const withAccount = mergeDomain(previous, "trading", PREFERENCE_DOMAIN_SCHEMAS.trading.parse({
       ...previous.trading,
       defaultAccountId: "22222222-2222-4222-8222-222222222222",
-    }), NOW);
+    }) as Record<string, unknown>, NOW);
     expect(extractSensitiveChanges("trading", previous, withAccount)).toEqual([
       "Default trading account changed.",
     ]);
@@ -133,7 +133,7 @@ describe("extractSensitiveChanges (§33 audit triage)", () => {
     const cleared = mergeDomain(withAccount, "trading", PREFERENCE_DOMAIN_SCHEMAS.trading.parse({
       ...withAccount.trading,
       defaultAccountId: null,
-    }), NOW);
+    }) as Record<string, unknown>, NOW);
     expect(extractSensitiveChanges("trading", withAccount, cleared)).toEqual([
       "Default trading account cleared.",
     ]);

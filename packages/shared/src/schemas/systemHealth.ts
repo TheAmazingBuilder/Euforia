@@ -2,7 +2,7 @@ import { z } from "zod";
 import { isoDateTimeSchema } from "./primitives";
 
 /**
- * SystemHealth — the cockpit's self-check (Monitoring page). Honest by
+ * SystemHealth - the cockpit's self-check (Monitoring page). Honest by
  * design: this is a demo build, so every service reports what it actually
  * is (in-browser mock, synthetic feed, read-only broker link).
  */

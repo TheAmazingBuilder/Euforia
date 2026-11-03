@@ -9,14 +9,15 @@ import type { OryonAlert } from "@cosmoz/shared";
 import { useDict } from "@/i18n/i18n-provider";
 import { useFeedStatus } from "@/lib/realtime/market";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 import { useOryonAlerts } from "@/components/oryon/oryon-alerts-context";
 
 /**
- * Oryon price-alert management panel (Phase 5 spec §8) — lives in the
+ * Oryon price-alert management panel (Phase 5 spec §8) - lives in the
  * EXISTING utility rail as a third tab (no new top-level navigation).
  *
- * Honest states: empty list, evaluating (feed live), paused (feed offline —
+ * Honest states: empty list, evaluating (feed live), paused (feed offline -
  * the client cannot evaluate what it cannot see), plus the per-alert
  * lifecycle chips (Active / Triggered / Disabled). The scope note states the
  * integration boundary in plain copy: browser-local records, evaluated only
@@ -24,7 +25,7 @@ import { useOryonAlerts } from "@/components/oryon/oryon-alerts-context";
  *
  * Actions mirror what the actual boundary can safely perform: re-arm,
  * enable/disable, delete. There is NO edit control implying server-side
- * persistence, and a failed local operation is impossible to mis-present —
+ * persistence, and a failed local operation is impossible to mis-present -
  * the store only commits what it validated.
  */
 export function OryonAlertsPanel() {
@@ -78,7 +79,7 @@ export function OryonAlertsPanel() {
   );
 }
 
-/** Triggered first (recent first), then active, then disabled — stable. */
+/** Triggered first (recent first), then active, then disabled - stable. */
 function sortAlerts(alerts: readonly OryonAlert[]): OryonAlert[] {
   const rank = (alert: OryonAlert): number =>
     alert.status === "triggered" ? 0 : alert.status === "active" ? 1 : 2;
@@ -123,7 +124,7 @@ function AlertRow({ alert }: { alert: OryonAlert }) {
     >
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="font-mono text-xs font-semibold text-foreground">{alert.symbol}</span>
+          <span className="font-mono text-xs font-semibold text-foreground">{formatInstrumentSymbol(alert.symbol)}</span>
           <span aria-hidden className="font-mono text-[10px] text-muted-foreground">
             {arrow}
           </span>
@@ -197,9 +198,9 @@ function RowButton({
   );
 }
 
-/** Compact local time — the established app convention (formatOpenedAt). */
+/** Compact local time - the established app convention (formatOpenedAt). */
 function formatAlertTime(ts: number): string {
-  if (!Number.isFinite(ts)) return "—";
+  if (!Number.isFinite(ts)) return "-";
   return new Intl.DateTimeFormat(undefined, {
     month: "short",
     day: "2-digit",

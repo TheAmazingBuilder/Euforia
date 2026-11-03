@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Try vtracer COLOR mode on the aligned reference mark (composited over the
-flat gradient so edge blends stay plausible) — pure-vector shaded artwork.
+flat gradient so edge blends stay plausible) - pure-vector shaded artwork.
 
 Output: scripts/euforia-trace/color-traced.svg + color-render.png
 """

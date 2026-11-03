@@ -3,12 +3,12 @@
 Boundary discipline:
   - NO users, NO authnz decisions, NO trading state, NO persistence (§4):
     the sidecar is a STATELESS processing function over one image;
-  - service-to-service shared token (§27) — no public unauthenticated OCR;
+  - service-to-service shared token (§27) - no public unauthenticated OCR;
   - strict request schema; unknown fields stripped by pydantic;
   - per-image failures answer 200 with processingStatus
     UNPROCESSABLE/FAILED (the Nest side maps them, §34); request-level
     problems (auth, size, schema) are HTTP errors;
-  - no LLM (§28) — deterministic OCR (Tesseract ×2 passes with field-level
+  - no LLM (§28) - deterministic OCR (Tesseract ×2 passes with field-level
     arbitrage) + keyword classification + layout templates;
   - never logs image bytes or secrets (§36): request ids, sizes, durations.
 
@@ -68,7 +68,7 @@ app = FastAPI(title="Cosmoz OCR Service", version=PIPELINE_VERSION, docs_url=Non
 
 @app.middleware("http")
 async def internal_token_guard(request: Request, call_next):
-    """Service-to-service auth (§27) — every route except /healthz is guarded."""
+    """Service-to-service auth (§27) - every route except /healthz is guarded."""
     if request.url.path == "/healthz" or request.method == "HEAD":
         return await call_next(request)
     token = request.headers.get("x-internal-token", "")
@@ -82,7 +82,7 @@ async def internal_token_guard(request: Request, call_next):
 
 @app.get("/healthz")
 def healthz() -> dict:
-    """Liveness for orchestration — carries NO user data."""
+    """Liveness for orchestration - carries NO user data."""
     return {"status": "ok", "engine": ENGINE_NAME, "engineVersion": ENGINE_VERSION, "pipeline": PIPELINE_VERSION}
 
 
@@ -167,7 +167,7 @@ def _respond_document(
 
 def _intersect_region(region: SourceRegion, width: int, height: int) -> Optional[SourceRegion]:
     """Clip a requested region against the image bounds. Returns None when
-    the region lies ENTIRELY outside the image — a caller-side mistake that
+    the region lies ENTIRELY outside the image - a caller-side mistake that
     must surface as UNPROCESSABLE/RESOURCE_LIMIT (never silently clamped to
     a strip the user did not select)."""
     if region.x >= width or region.y >= height:
@@ -183,7 +183,7 @@ def _intersect_region(region: SourceRegion, width: int, height: int) -> Optional
 
 def _rescale_regions(fields: list, scale: int, offset_x: int = 0, offset_y: int = 0) -> None:
     """Map OCR word boxes from the UPSCALED working copy back to ORIGINAL
-    coordinates (÷ scale, + crop origin) — §18: the review UI highlight must
+    coordinates (÷ scale, + crop origin) - §18: the review UI highlight must
     point at the real asset pixels. Mutates the EngineField list in place."""
     if scale <= 1 and offset_x == 0 and offset_y == 0:
         return
@@ -208,7 +208,7 @@ def _rescale_result_regions(
     offset_y: int = 0,
 ) -> None:
     """Rescale every region of one recognition result (flat fields, candidate
-    groups, grouped trades) — one consistent coordinate story (§18)."""
+    groups, grouped trades) - one consistent coordinate story (§18)."""
     _rescale_regions(fields, scale, offset_x, offset_y)
     for group in candidates or []:
         _rescale_regions(group.fields, scale, offset_x, offset_y)
@@ -243,7 +243,7 @@ def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -
     result aggregates the pages: candidates concatenate (capped), the
     primary field set comes from the FIRST page that produced candidates
     (else page 1), classification reads the combined text. The soft deadline
-    is honored BETWEEN pages — an overrun stops further pages and carries an
+    is honored BETWEEN pages - an overrun stops further pages and carries an
     explicit partial warning (never a silent truncation).
     """
     request_id = request.requestId
@@ -325,7 +325,7 @@ def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -
     if request.extractionProfile != "TRADE_SUMMARY":
         warnings.append("PROFILE_PDF_TRADE_ONLY")
 
-    # Primary fields — the first page whose block pass yields fields, else
+    # Primary fields - the first page whose block pass yields fields, else
     # the first page (an honest default, never merged across pages: merging
     # would fabricate one trade out of many, §21).
     fields = []
@@ -338,7 +338,7 @@ def _recognize_pdf(request: EngineRequest, image_bytes: bytes, started: float) -
             fields = candidate_fields
             break
 
-    # Candidates concatenate across pages (each page grouped independently —
+    # Candidates concatenate across pages (each page grouped independently -
     # never cross-page merging: rows from different pages are not related).
     for lines, _sparse in page_field_sets:
         for group in extract_trade_candidates(lines, template):
@@ -385,7 +385,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
     def durations() -> dict:
         return {"totalMs": int((time.perf_counter() - started) * 1000)}
 
-    # Request-level size guard (§38) — before base64 decoding.
+    # Request-level size guard (§38) - before base64 decoding.
     if image_size > settings.max_bytes * 1.4:  # base64 inflation factor
         return JSONResponse(
             status_code=413,
@@ -403,7 +403,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
             content={"error": "ResourceLimit", "message": "decoded image exceeds the sidecar limit"},
         )
 
-    # Declared checksum verified for EVERY payload (V2 §20) — before the
+    # Declared checksum verified for EVERY payload (V2 §20) - before the
     # PDF branch: PDF statements ride the same integrity discipline.
     if hashlib.sha256(image_bytes).hexdigest() != request.metadata.checksumSha256.lower():
         return _respond(
@@ -419,7 +419,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
             durations=durations(),
         )
 
-    # PDF statements (ops §4.3) — multi-page documents take the dedicated
+    # PDF statements (ops §4.3) - multi-page documents take the dedicated
     # per-page pipeline (one code path per page, same extraction rules).
     if request.metadata.mime == PDF_MIME:
         return _recognize_pdf(request, image_bytes, started)
@@ -427,7 +427,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
     try:
         _mime, prepared = validate_and_prepare(image_bytes, request.metadata, settings.max_pixels)
     except ChecksumMismatch as exc:
-        # V2 §20 — a checksum mismatch means the bytes were corrupted in
+        # V2 §20 - a checksum mismatch means the bytes were corrupted in
         # transit: a caller-side validation failure, NOT a bad image.
         return _respond(
             request_id,
@@ -447,12 +447,12 @@ def recognize(request: EngineRequest) -> JSONResponse:
             warnings=[],
             failure=EngineFailure(category="SCREENSHOT_UNSUPPORTED", message=str(exc)),
             durations=durations(),
-        )  # mime is advisory — validation already reconciled it with the metadata
+        )  # mime is advisory - validation already reconciled it with the metadata
 
-    # Deadline honoring between heavy stages (soft — best effort, §26).
+    # Deadline honoring between heavy stages (soft - best effort, §26).
     deadline_seconds = request.deadlineMs / 1000.0
 
-    # V2 §24 — pixel-rect zone re-read on the main route: the pipeline runs
+    # V2 §24 - pixel-rect zone re-read on the main route: the pipeline runs
     # on the CROP (the Nest side validated the region against the asset
     # dims; the sidecar still rejects a fully-outside region instead of
     # silently reading something the user did not select). Reported regions
@@ -485,11 +485,11 @@ def recognize(request: EngineRequest) -> JSONResponse:
 
     ocr_started = time.perf_counter()
     try:
-        # Pass A — block segmentation over the full preprocessing chain.
+        # Pass A - block segmentation over the full preprocessing chain.
         lines = run_ocr(working.main, settings.tesseract_lang)
-        # Pass B — sparse segmentation over the Otsu-binarized variant
+        # Pass B - sparse segmentation over the Otsu-binarized variant
         # (arbitration challenger; failures degrade to single-pass, never
-        # fail the request — the primary pass is the contract).
+        # fail the request - the primary pass is the contract).
         try:
             sparse_lines = run_sparse_pass(working.alternate, settings.tesseract_lang)
             passes_ran = list(PASS_NAMES)
@@ -522,7 +522,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
 
     text_joined = " ".join(line.text for line in lines)
     if not lines or not text_joined.strip():
-        # No readable text at all — nothing usable for a trade review (§20:
+        # No readable text at all - nothing usable for a trade review (§20:
         # an explicit UNPROCESSABLE, never an empty pretend-result).
         return _respond(
             request_id,
@@ -546,7 +546,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
     # Profile routing (Account & Chart V1.1): the OCR passes are shared, the
     # FIELD GRAMMAR is profile-specific. Each branch arbitrates its own
     # fields with the same challenger pass (agreement boosts, disagreements
-    # recorded — identical semantics across profiles).
+    # recorded - identical semantics across profiles).
     profile = request.extractionProfile
     if profile == "ACCOUNT_POSITION":
         fields = extract_account_fields(lines)
@@ -556,7 +556,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
             warnings: list[str] = []
         else:
             warnings = ["SECOND_PASS_UNAVAILABLE"]
-        # Open positions reuse the trade-row grammar — each position is one
+        # Open positions reuse the trade-row grammar - each position is one
         # candidate draft for grouped confirmation (evidence, never a trade).
         candidates = extract_trade_candidates(lines, template)
         trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
@@ -574,7 +574,7 @@ def recognize(request: EngineRequest) -> JSONResponse:
     else:
         fields = extract_fields(lines, template)
 
-        # Field-level arbitrage with the challenger pass (§ engine quality —
+        # Field-level arbitrage with the challenger pass (§ engine quality -
         # agreement boosts, disagreements recorded, single-source kept honest).
         if sparse_lines:
             challenger_fields = extract_fields(sparse_lines, template)
@@ -583,16 +583,16 @@ def recognize(request: EngineRequest) -> JSONResponse:
         else:
             warnings = ["SECOND_PASS_UNAVAILABLE"]
 
-        # Multi-trade candidates — grouped evidence from account-history rows
+        # Multi-trade candidates - grouped evidence from account-history rows
         # (never merged into one fake trade; empty for the mono-trade path).
         candidates = extract_trade_candidates(lines, template)
         trade_candidates = [EngineTradeCandidate(fields=group) for group in candidates]
         # The response-level trade read: clustered trades when grouping found
-        # order rows, else the V1 flat extraction as one trade — the review
+        # order rows, else the V1 flat extraction as one trade - the review
         # card never disappears just because clustering found no row.
         trades = extract_trades(lines, template)
 
-    # Regions live in UPSCALED working-copy coordinates — map them back to
+    # Regions live in UPSCALED working-copy coordinates - map them back to
     # the ORIGINAL asset (÷ scale, + crop origin) for every member (§18).
     _rescale_result_regions(
         fields,
@@ -685,7 +685,7 @@ def recrop(request: EngineRequest) -> JSONResponse:
             durations=durations(),
         )
 
-    # Minimal preparation of the crop (no full re-validation — the source
+    # Minimal preparation of the crop (no full re-validation - the source
     # was already validated at upload; region coordinates were checked).
     gray = ImageOps.grayscale(cropped)
     zone = prepare_gray(gray, settings.max_pixels)
@@ -729,7 +729,7 @@ def recrop(request: EngineRequest) -> JSONResponse:
 
     # Same profile routing as the main route (Account & Chart V1.1): a
     # region re-scan on an account snapshot re-reads the ACCOUNT grammar,
-    # on a chart the CHART grammar — never trade-only.
+    # on a chart the CHART grammar - never trade-only.
     profile = request.extractionProfile
     if profile == "ACCOUNT_POSITION":
         fields = extract_account_fields(lines)
@@ -751,7 +751,7 @@ def recrop(request: EngineRequest) -> JSONResponse:
         # path used to fail the whole request when the sparse pass failed).
         recrop_warnings = ["SECOND_PASS_UNAVAILABLE"]
 
-    # Region coordinates are zone-local and upscaled — report them in the
+    # Region coordinates are zone-local and upscaled - report them in the
     # zone's ORIGINAL pixel space (÷ scale; no offset: recrop answers are
     # zone-scoped by contract, the Nest side knows the region).
     _rescale_regions(fields, zone.scale)
@@ -788,13 +788,13 @@ def recognize_document(request: EngineDocumentRequest) -> JSONResponse:
     Mirrors EngineDocumentRecognizeRequest/Response on the Nest side: the
     sidecar answers PAGE-WISE (per-page classification, fields, grouped
     trades) and the Nest side owns the cross-page merge. The checksum member
-    is accepted for wire parity but not verified here — the render pipeline
+    is accepted for wire parity but not verified here - the render pipeline
     IS the integrity check (undecodable/corrupt documents are rejected as
     UNPROCESSABLE, never guessed through).
 
     Per-page pipeline = the SAME chain as a screenshot (prepare_gray → two
     OCR passes → arbitrage → profile grammar → clustered trades); the soft
-    deadline is honored BETWEEN pages — an overrun stops further pages and
+    deadline is honored BETWEEN pages - an overrun stops further pages and
     carries an explicit PDF_DEADLINE_PARTIAL warning (never a silent
     truncation). Region coordinates are reported in the page's rendered
     pixel space (÷ upscale scale, §18).
@@ -915,7 +915,7 @@ def recognize_document(request: EngineDocumentRequest) -> JSONResponse:
                 for trade in page_trades:
                     trade.pageIndex = index
 
-            # Regions live in the UPSCALED working copy — map them back to
+            # Regions live in the UPSCALED working copy - map them back to
             # the rendered page pixels (÷ scale, §18).
             _rescale_regions(page_fields, prep.scale)
             for trade in page_trades:
@@ -932,7 +932,7 @@ def recognize_document(request: EngineDocumentRequest) -> JSONResponse:
         )
         processed_pages += 1
 
-    # Nothing readable on ANY page — an explicit UNPROCESSABLE, never an
+    # Nothing readable on ANY page - an explicit UNPROCESSABLE, never an
     # empty pretend-result (§20/§21).
     if not page_results or all(
         not page.fields and not page.trades and page.classification is None

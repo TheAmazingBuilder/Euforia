@@ -18,7 +18,7 @@ const OPTIONS: readonly Direction[] = ["BUY", "SELL"];
 /**
  * Direction segmented control (spec §4): BUY / SELL, pre-selected by the
  * caller from the last trade. ←/→ arrow-key support with roving focus.
- * Direction is NOT P&L — accent styling only (golden rule: no green/red UI).
+ * Direction communicates trade intent: BUY uses the bullish ink and SELL the bearish ink.
  */
 export function DirectionSegmented({ value, onChange, id }: DirectionSegmentedProps) {
   const { dict } = useI18n();
@@ -54,10 +54,12 @@ export function DirectionSegmented({ value, onChange, id }: DirectionSegmentedPr
             tabIndex={selected ? 0 : -1}
             onClick={() => onChange(option)}
             className={cn(
-              "flex h-9 items-center justify-center gap-1.5 rounded-sm text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
+              "flex h-9 items-center justify-center gap-1.5 rounded-sm border text-sm font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
               selected
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                ? option === "BUY"
+                  ? "border border-direction-buy/40 bg-direction-buy/10 text-direction-buy"
+                  : "border border-direction-sell/40 bg-direction-sell/10 text-direction-sell"
+                : "border border-transparent text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
             <Icon className="size-4" aria-hidden="true" />

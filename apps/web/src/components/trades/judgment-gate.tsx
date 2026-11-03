@@ -17,8 +17,8 @@ import { closeJudgmentFlow, type GateDecision } from "@/lib/hooks/use-judgment-f
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * ACT 2 — The Judgment Gate (trade-entry-ux.md §5, the signature moment).
- * The user grades the DECISION — based only on what was known at entry —
+ * ACT 2 - The Judgment Gate (trade-entry-ux.md §5, the signature moment).
+ * The user grades the DECISION - based only on what was known at entry -
  * before any result exists in the UI. The component receives a tradeId and
  * fetches context only: it structurally CANNOT show P&L, because the create
  * response never carried it and the reveal payload only arrives after this
@@ -96,7 +96,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
       { tradeId, input: { grade: chosen.grade, followedPlan: chosen.followedPlan } },
       {
         onSuccess: (reveal) => {
-          // The response IS the reveal payload — the only P&L carrier in the
+          // The response IS the reveal payload - the only P&L carrier in the
           // app (§13). Hand it up; the host advances to the Reveal stage.
           onGraded(reveal, chosen);
         },
@@ -104,7 +104,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
     );
   };
 
-  // Keep the hotkey handler's ref pointed at the latest submit — assigned
+  // Keep the hotkey handler's ref pointed at the latest submit - assigned
   // post-commit (effects), never during render.
   React.useEffect(() => {
     submitRef.current = submit;
@@ -112,12 +112,12 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
 
   return (
     <div className="space-y-5" data-testid="judgment-gate">
-      {/* Context strip — entry-time facts ONLY. No exit reason, no P&L. */}
+      {/* Context strip - entry-time facts ONLY. No exit reason, no P&L. */}
       <div
         className="flex flex-wrap items-center gap-x-2.5 gap-y-1 rounded-lg border border-border bg-surface px-3 py-2.5 font-mono text-xs text-muted-foreground"
         data-testid="gate-context"
       >
-        <span className="font-semibold text-foreground">{instrument?.symbol ?? "—"}</span>
+        <span className="font-semibold text-foreground">{instrument?.symbol ?? "-"}</span>
         <span
           className="inline-flex items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 font-semibold text-foreground"
         >
@@ -126,7 +126,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
           ) : (
             <ArrowUpRight className="size-3" aria-hidden="true" />
           )}
-          {trade?.direction ?? "—"}
+          {trade?.direction ?? "-"}
         </span>
         <span aria-hidden="true">·</span>
         <span>{strategy?.name ?? T.shared.outOfPlaybook}</span>
@@ -144,7 +144,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
         ) : null}
       </div>
 
-      {/* Step 1 — plan adherence */}
+      {/* Step 1 - plan adherence */}
       <section className="space-y-2.5" aria-labelledby="gate-plan-question">
         <div className="flex items-baseline justify-between gap-2">
           <h3 id="gate-plan-question" className="font-heading text-base font-semibold text-foreground">
@@ -171,7 +171,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
         </div>
       </section>
 
-      {/* Step 2 — decision grade, blind to the result */}
+      {/* Step 2 - decision grade, blind to the result */}
       <section className="space-y-2.5" aria-labelledby="gate-grade-question">
         <div className="flex items-baseline justify-between gap-2">
           <h3 id="gate-grade-question" className="font-heading text-base font-semibold text-foreground">
@@ -192,7 +192,7 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
                 type="button"
                 role="radio"
                 aria-checked={selected}
-                aria-label={`${T.shared.gradeWord} ${option} — ${T.reveal.gradeTag[option]}`}
+                aria-label={`${T.shared.gradeWord} ${option} - ${T.reveal.gradeTag[option]}`}
                 onClick={() => setGrade(option)}
                 className={cn(
                   "flex flex-col items-center gap-0.5 rounded-lg border py-3 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
@@ -211,14 +211,14 @@ export function JudgmentGate({ tradeId, onGraded }: JudgmentGateProps) {
         </div>
       </section>
 
-      {/* Submit — the grade locks BEFORE the outcome exists */}
+      {/* Submit - the grade locks BEFORE the outcome exists */}
       <Button type="button" onClick={submit} disabled={!ready || pending} className="h-11 w-full text-sm font-semibold">
         <Lock className="size-4" aria-hidden="true" />
         {pending ? T.judgment.sealing : T.judgment.lockGrade}
         <kbd className="ml-1.5 rounded-sm bg-accent-foreground/10 px-1 font-mono text-[10px]">⏎</kbd>
       </Button>
 
-      {/* Discreet skip — one click, but it must be sought (§5) */}
+      {/* Discreet skip - one click, but it must be sought (§5) */}
       <div className="text-center">
         <button
           type="button"

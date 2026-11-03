@@ -1,14 +1,14 @@
 import type { IndicatorCalculation, IndicatorOutputId } from "./calculate";
 
 /**
- * Indicator value lookups — PURE (Phase 5 crosshair §5).
+ * Indicator value lookups - PURE (Phase 5 crosshair §5).
  *
  * Lives in the indicators DOMAIN (not the charting layer) so it is
  * testable without Lightweight Charts: a calculation is plain data
  * ({ times, outputs }) and the lookups are exact-time reads over it.
  *
  * Honesty contract: the crosshair always reports a loaded bar's open time,
- * so an EXACT match is the honest contract — anything else (uncomputed bar,
+ * so an EXACT match is the honest contract - anything else (uncomputed bar,
  * warm-up nulls, gap in coverage) yields NO value rather than an
  * interpolation or a stale neighbor.
  */

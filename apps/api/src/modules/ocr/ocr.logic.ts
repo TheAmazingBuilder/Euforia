@@ -1,14 +1,14 @@
 /**
- * OCR recognition domain logic (Phase 19) — PURE functions, no I/O, no Nest.
+ * OCR recognition domain logic (Phase 19) - PURE functions, no I/O, no Nest.
  *
  * This file implements the raw → normalized → validated pipeline (§13) and
  * the human-in-the-loop correction semantics (§21) with the house discipline
  * established in Phase 18's calculators logic:
  *
- *   - Financial values use exact decimal semantics (§14) — Prisma.Decimal
+ *   - Financial values use exact decimal semantics (§14) - Prisma.Decimal
  *     for every money/price/volume operation, decimal STRINGS on the wire.
  *   - Ambiguous input STAYS ambiguous (§14/§20): "1.234" is never silently
- *     interpreted as 1234 — it is flagged AMBIGUOUS and left for review.
+ *     interpreted as 1234 - it is flagged AMBIGUOUS and left for review.
  *   - Timestamps never get a silently assumed timezone (§16): wall-clock
  *     times are preserved without an offset and carry an explicit warning.
  *   - Symbols are preserved raw + normalized; no broker mapping is invented
@@ -43,7 +43,7 @@ export const TIMESTAMP_ORDER_WARNING = "TIMESTAMP_ORDER_INCONSISTENCY";
 
 /**
  * Heuristic, explainable bands. The numeric confidence is an OCR-engine
- * signal — never mathematical certainty (§17); the band exists for review
+ * signal - never mathematical certainty (§17); the band exists for review
  * UX triage, not for automated decisions.
  */
 export function confidenceBand(confidence: number): "HIGH" | "MEDIUM" | "LOW" | "UNKNOWN" {
@@ -70,7 +70,7 @@ const DECIMAL_ALLOWED = /^[-+]?[\d.,]+$/;
  * Separators: when both '.' and ',' appear, the LAST one is the decimal
  * separator and the other is thousands. When a separator repeats, it is a
  * thousands separator. A SINGLE separator followed by exactly three digits
- * is genuinely ambiguous ("1.234", "2,345") and is returned AMBIGUOUS —
+ * is genuinely ambiguous ("1.234", "2,345") and is returned AMBIGUOUS -
  * never silently resolved (§14: "ambiguous input must remain ambiguous").
  * Currency symbols/letters are stripped with a warning before parsing.
  */
@@ -84,7 +84,7 @@ interface ResolvedDecimalText {
 
 /**
  * Resolve separators/currency text of a decimal fragment WITHOUT touching
- * its digits — shared by the machine normalization (toFixed) and the user
+ * its digits - shared by the machine normalization (toFixed) and the user
  * correction paths (which may preserve the declared precision).
  */
 function resolveDecimalText(raw: string): ResolvedDecimalText {
@@ -92,7 +92,7 @@ function resolveDecimalText(raw: string): ResolvedDecimalText {
   let text = raw.trim();
 
   // Strip leading/trailing currency/unit text with an explicit warning (§14).
-  // INTERIOR letters are garbage, not units — they must invalidate rather
+  // INTERIOR letters are garbage, not units - they must invalidate rather
   // than be silently collapsed ("12abc34" → 1234 would invent data).
   const stripped = text.replace(/^[^0-9.,+-]+/, "").replace(/[^0-9.,+-]+$/, "");
   if (stripped !== text) {
@@ -107,7 +107,7 @@ function resolveDecimalText(raw: string): ResolvedDecimalText {
   const lastComma = text.lastIndexOf(",");
 
   if (lastDot >= 0 && lastComma >= 0) {
-    // Both separators present — the later one is decimal, the other thousands.
+    // Both separators present - the later one is decimal, the other thousands.
     const decimalSep = lastDot > lastComma ? "." : ",";
     const thousandSep = decimalSep === "." ? "," : ".";
     const cleaned = text.split(thousandSep).join("").split(decimalSep).join(".");
@@ -118,12 +118,12 @@ function resolveDecimalText(raw: string): ResolvedDecimalText {
   if (sep !== null) {
     const occurrences = text.split(sep).length - 1;
     if (occurrences > 1) {
-      // Repeated single separator — thousands grouping, unambiguous.
+      // Repeated single separator - thousands grouping, unambiguous.
       return { cleaned: text.split(sep).join(""), status: "VALID", warnings };
     }
     const [, fraction = ""] = text.split(sep);
     if (fraction.length === 3) {
-      // Exactly one separator + 3-digit group — genuinely ambiguous (§14).
+      // Exactly one separator + 3-digit group - genuinely ambiguous (§14).
       warnings.push(AMBIGUOUS_SEPARATOR_WARNING);
       return { cleaned: null, status: "AMBIGUOUS", warnings };
     }
@@ -158,7 +158,7 @@ function finish(cleaned: string, warnings: string[]): DecimalNormalization {
 
 /**
  * A SINGLE separator followed by EXACTLY three fraction digits is the
- * ambiguous case ("1.234" could be 1.234 or 1234) — rejected for USER-typed
+ * ambiguous case ("1.234" could be 1.234 or 1234) - rejected for USER-typed
  * corrections even when the text is otherwise canonical wire form (§14: the
  * user can retype it clearly, "1.2340"). Machine values keep the AMBIGUOUS
  * status instead (normalizeDecimal).
@@ -169,7 +169,7 @@ const AMBIGUOUS_CORRECTION_PATTERN = /^-?\d+[.,]\d{3}$/;
  * Decimal-string parsing for USER-typed corrections (§21): the SAME
  * separator semantics as machine values, but ambiguous input is a hard
  * failure because the user can retype it clearly. Returns the NORMALIZED
- * wire form (toFixed — "2345.60" → "2345.6"); the user's declared precision
+ * wire form (toFixed - "2345.60" → "2345.6"); the user's declared precision
  * lives in the corrections record via parseCorrectedStoredDecimal. Negative
  * values are allowed only for signed fields (profit).
  */
@@ -190,7 +190,7 @@ export function parseCorrectedDecimal(raw: string, signed: boolean): string | nu
 
 /**
  * The STORED form of a user correction (§21): validated with the SAME rules,
- * but the user's declared precision is preserved — separators are
+ * but the user's declared precision is preserved - separators are
  * canonicalized to plain-dot form ("1,0850" → "1.0850") WITHOUT toFixed,
  * so a confirmation replay stays idempotent against the exact declaration
  * the user confirmed. Machine-merged fields never consume this form; they
@@ -213,7 +213,7 @@ export function parseCorrectedStoredDecimal(raw: string, signed: boolean): strin
 
 // ── Field-specific normalization (§12/§15/§16) ──────────────────────────────
 
-/** Symbols are uppercased with non-alphanumerics removed — no broker merge (§15). */
+/** Symbols are uppercased with non-alphanumerics removed - no broker merge (§15). */
 export function normalizeSymbol(raw: string): string | null {
   const cleaned = raw.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
   // Practical floor: a symbol is at least 3 characters (US30, EURUSD…).
@@ -223,7 +223,7 @@ export function normalizeSymbol(raw: string): string | null {
 /**
  * Timestamp normalization (§16). Supported shapes:
  *   "2026.01.05 09:30:00" / "2026-01-05 09:30" / ISO with explicit Z or offset.
- * Wall-clock results keep NO offset — the timezone is unknown and stays
+ * Wall-clock results keep NO offset - the timezone is unknown and stays
  * unknown (warning TIMEZONE_UNKNOWN). Only an explicit offset converts to UTC.
  */
 export function normalizeTimestamp(raw: string): { normalized: string | null; warnings: string[] } {
@@ -249,20 +249,20 @@ export function normalizeTimestamp(raw: string): { normalized: string | null; wa
     ) {
       return { normalized: null, warnings };
     }
-    // Calendar-valid wall clock — no timezone conversion, explicit warning.
+    // Calendar-valid wall clock - no timezone conversion, explicit warning.
     warnings.push(TIMEZONE_UNKNOWN_WARNING);
     return { normalized: `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6] ?? "00"}`, warnings };
   }
 
   const parsed = new Date(text);
   if (!Number.isNaN(parsed.getTime()) && /(Z|[+-]\d{2}:?\d{2})$/.test(text)) {
-    // Explicit offset — converting to UTC is evidence-based, not a guess (§16).
+    // Explicit offset - converting to UTC is evidence-based, not a guess (§16).
     return { normalized: parsed.toISOString().replace(/\.\d{3}Z$/, "Z"), warnings };
   }
   return { normalized: null, warnings };
 }
 
-/** Direction normalization — BUY/SELL vocabulary (shared directionSchema). */
+/** Direction normalization - BUY/SELL vocabulary (shared directionSchema). */
 export function normalizeDirection(raw: string): "BUY" | "SELL" | null {
   const text = raw.trim().toLowerCase();
   if (text === "buy" || text === "b" || text === "long") return "BUY";
@@ -273,7 +273,7 @@ export function normalizeDirection(raw: string): "BUY" | "SELL" | null {
 const SIGNED_DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set([
   "profit",
   // Account snapshots: balances/equity CAN legitimately be negative (a
-  // blown account is still a truthful snapshot — never "validated away").
+  // blown account is still a truthful snapshot - never "validated away").
   "accountBalance",
   "accountEquity",
   "accountMargin",
@@ -289,17 +289,17 @@ const DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set([
   "chartOpen", "chartHigh", "chartLow", "chartClose", "chartPrice", "chartChangePct",
   "chartRsi", "chartMacd", "chartAtr", "chartStoch", "chartAdx", "chartMa",
 ]);
-/** Non-negative chart prices — an OHLC quote is never negative. */
+/** Non-negative chart prices - an OHLC quote is never negative. */
 const POSITIVE_DECIMAL_KEYS: ReadonlySet<OcrFieldKey> = new Set([
   "chartOpen", "chartHigh", "chartLow", "chartClose", "chartPrice",
 ]);
 
-// ── Domain validation (§19) — applied to normalized values ──────────────────
+// ── Domain validation (§19) - applied to normalized values ──────────────────
 
 /**
  * Domain rules over EXTRACTED fields. Only fires when both operands are
  * present (§19): a missing SL never invalidates an entry. Violations mark
- * the offending field INVALID (kept for review) — they never reject the
+ * the offending field INVALID (kept for review) - they never reject the
  * whole recognition (§19: "do not reject potentially valid screenshots
  * merely because optional fields are missing").
  */
@@ -317,7 +317,7 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
   };
 
   // Positivity rules (§19): volume and prices must be > 0. Decimal#isPositive
-  // treats zero as positive — use a strict comparison against 0 instead.
+  // treats zero as positive - use a strict comparison against 0 instead.
   // Account balances are EXCLUDED on purpose: a negative balance is a
   // truthful snapshot, never invalidated (Account profile honesty rule).
   for (const key of ["volume", "entryPrice", "exitPrice", "stopLoss", "takeProfit"] as const) {
@@ -328,7 +328,7 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
     }
   }
   // Chart quote geometry (Account & Chart expansion): H >= max(O, C),
-  // L <= min(O, C), price inside [L, H] — each rule only fires when BOTH
+  // L <= min(O, C), price inside [L, H] - each rule only fires when BOTH
   // operands are present (§19: a missing operand never invalidates).
   const chartOpen = decimal("chartOpen");
   const chartHigh = decimal("chartHigh");
@@ -366,7 +366,7 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
       byKey.set(key, invalidate(field, key, "must be positive"));
     }
   }
-  // Profit must be a finite number — any sign is legitimate.
+  // Profit must be a finite number - any sign is legitimate.
   const profitField = byKey.get("profit");
   if (profitField && profitField.normalizedValue !== null && decimal("profit") === null) {
     byKey.set("profit", invalidate(profitField, "profit", "must be a finite number"));
@@ -374,7 +374,7 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
 
   // Timestamp order (V2 §17): close must not precede open. Only fires when
   // both are present; each side carries the timezone-unknown wall clock
-  // (§16) so the comparison is calendar-and-clock honest — no tz inference.
+  // (§16) so the comparison is calendar-and-clock honest - no tz inference.
   const openTime = byKey.get("openTime");
   const closeTime = byKey.get("closeTime");
   if (openTime?.normalizedValue && closeTime?.normalizedValue) {
@@ -385,7 +385,7 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
     }
   }
 
-  // Directional coherence (§19) — only with all three values present.
+  // Directional coherence (§19) - only with all three values present.
   const direction = byKey.get("direction");
   const dir = direction?.normalizedValue === "BUY" ? "BUY" : direction?.normalizedValue === "SELL" ? "SELL" : null;
   const entry = decimal("entryPrice");
@@ -405,10 +405,10 @@ export function applyDomainValidation(fields: OcrExtractedField[]): OcrExtracted
   return [...byKey.values()];
 }
 
-/** Stable per-rule warning tokens — the reason is not free user text. */
+/** Stable per-rule warning tokens - the reason is not free user text. */
 function invalidate(field: OcrExtractedField, key: OcrFieldKey, reason: string): OcrExtractedField {
   void key;
-  void reason; // kept out of user-visible data — the status token is the contract
+  void reason; // kept out of user-visible data - the status token is the contract
   const token = DIRECTIONAL_INCONSISTENCY_WARNING;
   const warnings = [...field.warnings];
   if (!warnings.includes(token)) warnings.push(token);
@@ -422,7 +422,7 @@ function invalidateTimestamp(field: OcrExtractedField): OcrExtractedField {
   return { ...field, validationStatus: "INVALID", warnings: warnings.slice(0, 8) as typeof field.warnings };
 }
 
-// ── Corrections — the authoritative human values (§21) ──────────────────────
+// ── Corrections - the authoritative human values (§21) ──────────────────────
 
 export class CorrectionError extends Error {
   constructor(readonly issues: ReadonlyArray<{ path: string; message: string }>) {
@@ -433,7 +433,7 @@ export class CorrectionError extends Error {
 
 /**
  * Validate + normalize one user correction. User input is RE-normalized with
- * the same rules as machine values — the user cannot smuggle ambiguous or
+ * the same rules as machine values - the user cannot smuggle ambiguous or
  * invalid values into the confirmed record. `null` explicitly clears a value.
  * Returns the canonical stored value (decimal string / BUY-SELL / symbol /
  * wall-clock ISO / null).
@@ -479,7 +479,7 @@ export function validateCorrection(fieldKey: OcrFieldKey, value: string | null):
  * user's declared precision (separators canonicalized to plain dot form,
  * trailing zeros preserved) so the confirmed record is an idempotent replay
  * handle of the exact declaration. Non-decimal fields have a single
- * canonical form — the stored declaration IS the normalized value.
+ * canonical form - the stored declaration IS the normalized value.
  */
 export function validateCorrectionStored(fieldKey: OcrFieldKey, value: string | null): string | null {
   if (value === null) return null;
@@ -500,7 +500,7 @@ export function validateCorrectionStored(fieldKey: OcrFieldKey, value: string | 
  * Merge user corrections into the machine field list (§21): corrected fields
  * become authoritative (confidence 1, VALID, USER_CORRECTED warning, source
  * region kept for provenance), missing fields may be ADDED, and values may
- * be cleared with null. Machine values NEVER overwrite confirmed ones later —
+ * be cleared with null. Machine values NEVER overwrite confirmed ones later -
  * this merge happens once, inside the confirmation transaction (§50).
  */
 export function applyCorrections(
@@ -516,7 +516,7 @@ export function applyCorrections(
     const existing = byKey.get(fieldKey);
     count += 1;
     if (canonical === null) {
-      // Explicit clear — keep the field visible but valueless (§20).
+      // Explicit clear - keep the field visible but valueless (§20).
       byKey.set(fieldKey, {
         field: fieldKey,
         rawValue: existing?.rawValue ?? null,
@@ -550,7 +550,7 @@ function applyCorrectionsSorted(byKey: Map<OcrFieldKey, OcrExtractedField>): Ocr
 
 // ── Idempotency (§32) ────────────────────────────────────────────────────────
 
-/** FNV-1a 32-bit — same primitive as the Accounts mock (house standard). */
+/** FNV-1a 32-bit - same primitive as the Accounts mock (house standard). */
 export function fnv1a32(input: string): number {
   let hash = 0x811c9dc5;
   for (let i = 0; i < input.length; i += 1) {
@@ -562,7 +562,7 @@ export function fnv1a32(input: string): number {
 
 /**
  * Deterministic idempotency key: one recognition per (user, image, profile,
- * pipeline version) — §32. The checksum is already hex; the sha256 here is
+ * pipeline version) - §32. The checksum is already hex; the sha256 here is
  * over server-controlled values only (no user text).
  */
 export function deriveIdempotencyKey(
@@ -576,20 +576,20 @@ export function deriveIdempotencyKey(
     .digest("hex");
 }
 
-/** V2 §68 — job-scoped idempotency-key input (the V1 key + mode + job index). */
+/** V2 §68 - job-scoped idempotency-key input (the V1 key + mode + job index). */
 export interface JobIdempotencyInput {
   userId: string;
   checksumSha256: string;
   profile: string;
   pipelineVersion: string;
-  /** Requested recognition mode — null normalizes to the pipeline default. */
+  /** Requested recognition mode - null normalizes to the pipeline default. */
   mode: string | null;
   /** 0 for the first job of an image; retries/reprocesses derive fresh keys. */
   jobIndex: number;
 }
 
 /**
- * V2 §68 — deterministic JOB idempotency key: the V1 key (§32) extended with
+ * V2 §68 - deterministic JOB idempotency key: the V1 key (§32) extended with
  * the requested mode and the job index, so the FIRST job of an image owns
  * the base key (jobIndex 0) while retries and reprocesses deliberately
  * derive fresh keys (accidental duplicates stay impossible; intentional
@@ -606,17 +606,17 @@ export function deriveJobIdempotencyKey(input: JobIdempotencyInput): string {
 
 // ── Perceptual duplicate detection (engine quality §2.1, V2 contract) ───────
 
-/** Popcount per hex nibble — table lookup keeps the hot loop branch-free. */
+/** Popcount per hex nibble - table lookup keeps the hot loop branch-free. */
 const NIBBLE_POPCOUNT = [0, 1, 1, 2, 1, 2, 2, 3, 1, 2, 2, 3, 2, 3, 3, 4];
 
-/** A malformed anchor is treated as MAXIMALLY distant (64) — it can never
+/** A malformed anchor is treated as MAXIMALLY distant (64) - it can never
  * match, and callers never need a null branch (V2 decision-layer contract). */
 export const HAMMING_MAX_DISTANCE = 64;
 
 /**
  * Hamming distance between two 64-bit dHash fingerprints given as 16-char
  * lowercase hex strings. Malformed input (wrong shape, uppercase, empty)
- * returns the maximal distance — the comparison is an advisory signal and a
+ * returns the maximal distance - the comparison is an advisory signal and a
  * malformed anchor is simply never a near-duplicate of anything.
  */
 export function hammingDistance64(a: string, b: string): number {
@@ -632,7 +632,7 @@ export function hammingDistance64(a: string, b: string): number {
 /**
  * Near-duplicate threshold (of 64 bits): dHash of the SAME panel reshot or
  * recompressed differs by a handful of bits; a different panel differs by
- * far more. 6 is the V2 decision-layer value — tight enough that a visually
+ * far more. 6 is the V2 decision-layer value - tight enough that a visually
  * different panel never flags, loose enough for recompression noise.
  */
 export const DUPLICATE_HAMMING_THRESHOLD = 6;
@@ -652,7 +652,7 @@ export interface PerceptualMatch {
 
 /**
  * Closest-match duplicate probe (V2 §2.1): scan the user's recent hashed
- * assets and return the CLOSEST anchor within the threshold — not the first
+ * assets and return the CLOSEST anchor within the threshold - not the first
  * one that happens to be inside it. Ties keep the earlier candidate.
  */
 export function findPerceptualMatch(
@@ -704,14 +704,14 @@ export function collectCorrectionPatterns(
   return entries;
 }
 
-/** Playbook tag suggestions (engine quality §3.3) — deterministic hints. */
+/** Playbook tag suggestions (engine quality §3.3) - deterministic hints. */
 export function suggestedTagsForImport(values: {
   symbol: string | null;
   openTime: string | null;
   instrumentAssetClass?: string | null;
 }): string[] {
   const tags: string[] = ["Import"];
-  // Session from the confirmed open time (UTC wall clock, §16 — no tz guess
+  // Session from the confirmed open time (UTC wall clock, §16 - no tz guess
   // beyond the coarse session buckets the trader already reasons with).
   const hour = values.openTime ? Number.parseInt(values.openTime.slice(11, 13), 10) : NaN;
   if (!Number.isNaN(hour)) {
@@ -728,13 +728,13 @@ export function suggestedTagsForImport(values: {
   return tags.slice(0, 8);
 }
 
-// ── V2 §16 — structured recognition issues (derived, never persisted) ───────
+// ── V2 §16 - structured recognition issues (derived, never persisted) ───────
 
 /** Confidence below this band is report-worthy (V2 §16 LOW_OCR_CONFIDENCE). */
 export const LOW_OCR_CONFIDENCE_THRESHOLD = 0.7;
 
 /**
- * The import-critical floor per profile — shared OCR_PROFILE_REQUIRED_FIELD_KEYS.
+ * The import-critical floor per profile - shared OCR_PROFILE_REQUIRED_FIELD_KEYS.
  * Kept as the TRADE default for callers that do not know a profile (fusion
  * of sets is a TRADE-only feature, so the default is honest there).
  */
@@ -747,14 +747,14 @@ export interface RecognitionIssueInput {
   possibleTradeDuplicate: { tradeId: string; matchedOn: readonly string[] } | null;
   /** The symbol resolved against the instrument catalog (null = unknown). */
   symbolInCatalog: boolean;
-  /** Extraction profile — scopes the required-field floor (defaults TRADE). */
+  /** Extraction profile - scopes the required-field floor (defaults TRADE). */
   profile?: OcrExtractionProfile;
 }
 
 /**
  * Derive the structured issue list from the STORED recognition evidence
  * (V2 §16). Pure + deterministic: the same recognition always yields the
- * same issues (V2 §77). Issues are READ-TIME derivations — confirmed rows
+ * same issues (V2 §77). Issues are READ-TIME derivations - confirmed rows
  * never mutate (V2 §33) and improved logic retroactively explains old rows.
  */
 export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[] {
@@ -791,7 +791,7 @@ export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[
     }
   }
 
-  // Account & Chart headers are flat label-driven lists — a required value
+  // Account & Chart headers are flat label-driven lists - a required value
   // the engine NEVER PRODUCED is meaningful absence (the review must say
   // "enter it manually"). Trade rows keep the legacy semantics: candidate
   // grouping makes empty MAIN fields normal, so absence stays un-flagged
@@ -805,7 +805,7 @@ export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[
   }
 
   // A chart legend on an ACCOUNT run (or an account header on a CHART run)
-  // is honest evidence of a profile mismatch — the review must know the
+  // is honest evidence of a profile mismatch - the review must know the
   // extraction ran against the wrong vocabulary.
   if (input.profile !== undefined && input.classification !== null) {
     const type = input.classification.type;
@@ -842,9 +842,9 @@ export function deriveRecognitionIssues(input: RecognitionIssueInput): OcrIssue[
   return issues;
 }
 
-// ── V2 §15 — deterministic quality score ─────────────────────────────────────
+// ── V2 §15 - deterministic quality score ─────────────────────────────────────
 
-/** Documented weights — the score is explainable, not adjustable (V2 §15). */
+/** Documented weights - the score is explainable, not adjustable (V2 §15). */
 export const QUALITY_SCORE_WEIGHTS = {
   fieldConfidence: 0.4,
   completeness: 0.25,
@@ -862,7 +862,7 @@ export interface QualityScoreInput {
   fields: readonly OcrExtractedField[];
   classification: OcrClassification | null;
   duplicateOf: { recognitionId: string } | null;
-  /** Extraction profile — scopes the completeness component (defaults TRADE). */
+  /** Extraction profile - scopes the completeness component (defaults TRADE). */
   profile?: OcrExtractionProfile;
 }
 
@@ -914,7 +914,7 @@ function round3(value: number): number {
   return Math.round(value * 1000) / 1000;
 }
 
-// ── V2 §23 — trade timeline (derived chronology) ─────────────────────────────
+// ── V2 §23 - trade timeline (derived chronology) ─────────────────────────────
 
 export interface TimelineInput {
   fields: readonly OcrExtractedField[];
@@ -924,7 +924,7 @@ export interface TimelineInput {
 
 /**
  * Deterministic chronology from recognized timestamps + lifecycle facts
- * (V2 §23). Entries without evidence are OMITTED — a missing timestamp is
+ * (V2 §23). Entries without evidence are OMITTED - a missing timestamp is
  * never invented (§20/§23). Wall-clock stamps keep their canonical form
  * (no timezone conversion, §16).
  */
@@ -948,13 +948,13 @@ export function buildRecognitionTimeline(input: TimelineInput): OcrTimelineEntry
   return timeline.slice(0, 16);
 }
 
-// ── V2 §4 — trade duplicate evidence (pure decision, DB lookup is the caller's) ─
+// ── V2 §4 - trade duplicate evidence (pure decision, DB lookup is the caller's) ─
 
 export interface TradeDuplicateCandidateValues {
   symbol: string;
   direction: "BUY" | "SELL";
   entryPrice: string | null;
-  /** Timezone-unknown wall clock (canonical) or null — §16. */
+  /** Timezone-unknown wall clock (canonical) or null - §16. */
   openTime: string | null;
 }
 
@@ -964,12 +964,12 @@ export interface TradeDuplicateExistingValues {
   entryAt: string | null;
 }
 
-/** ±48h window — tolerant to the ≤14h timezone spread of wall-clock stamps. */
+/** ±48h window - tolerant to the ≤14h timezone spread of wall-clock stamps. */
 export const TRADE_DUPLICATE_TIME_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 /**
  * Evidence comparison (pure): symbol + direction are the PREREQUISITES
- * (both must match — compared by the caller before calling); each further
+ * (both must match - compared by the caller before calling); each further
  * agreement adds an evidence token. The caller flags a duplicate when at
  * least ONE further evidence matches (V2 §4: "different screenshots
  * representing the same trade").
@@ -987,7 +987,7 @@ export function tradeDuplicateEvidence(
     evidence.push("ENTRY_PRICE");
   }
   if (candidate.openTime !== null && existing.entryAt !== null) {
-    // Wall clock vs instant: parse the wall clock as if UTC (§16 — an
+    // Wall clock vs instant: parse the wall clock as if UTC (§16 - an
     // assumption ONLY inside a ±48h window, never a persisted conversion).
     const candidateMs = Date.parse(`${candidate.openTime}Z`);
     const existingMs = Date.parse(existing.entryAt);
@@ -1002,7 +1002,7 @@ export function tradeDuplicateEvidence(
   return evidence;
 }
 
-// ── V2 — corrections memory, recrop merge, suggestions, wire drafts ─────────
+// ── V2 - corrections memory, recrop merge, suggestions, wire drafts ─────────
 
 import type {
   RecognitionFieldKey,
@@ -1049,7 +1049,7 @@ export interface CorrectionObservation {
  *   - both agree on missing → skipped;
  *   - non-tracked keys (platform) are never observed.
  */
-/** Structural minimum correctionDiff reads — full RecognizedField records fit. */
+/** Structural minimum correctionDiff reads - full RecognizedField records fit. */
 export type CorrectionMachineRead = Partial<
   Record<RecognitionFieldKey, Pick<RecognizedField, "value" | "state">>
 >;
@@ -1085,7 +1085,7 @@ export interface RecropMergeableField {
 /**
  * Merge recrop zone reads into the machine fields (V2 §24). Zone fields with
  * a usable value REPLACE the same-key field (or append) and carry a "RECROP"
- * warning; zone reads with no usable value are ignored entirely — a zoomed
+ * warning; zone reads with no usable value are ignored entirely - a zoomed
  * miss must never erase an existing read.
  */
 export function mergeRecropFields(
@@ -1114,7 +1114,7 @@ export function mergeRecropFields(
   return { fields, replacedKeys, addedKeys };
 }
 
-/** A ranked suggestion value (memory rows only — never invented). */
+/** A ranked suggestion value (memory rows only - never invented). */
 export interface RankedSuggestion {
   value: string;
   count: number;
@@ -1129,7 +1129,7 @@ export interface FieldSuggestion {
 /**
  * Rank the user's corrections memory into per-field suggestions (V2 §27):
  * useCount DESC, capped at 3 values per field. `source` is the constant
- * "MEMORY" — these come solely from past user corrections.
+ * "MEMORY" - these come solely from past user corrections.
  */
 export function rankSuggestions(
   rows: readonly { field: string; correctedValue: string; useCount: number }[],
@@ -1153,7 +1153,7 @@ export function rankSuggestions(
 }
 
 /**
- * Build a draft-shaped record from the machine's wire field record — the
+ * Build a draft-shaped record from the machine's wire field record - the
  * straight overlay of recognized values (no normalization, no invention),
  * used by the quality engine so coherence rules run on exactly what was read.
  */

@@ -1,5 +1,5 @@
 /**
- * Verify — Final module batch (7 modules × 4 features):
+ * Verify - Final module batch (7 modules × 4 features):
  *  Analytics    : unified presets, A/B comparator, quarterly PDF, server anomalies
  *  Calendar     : P&L+discipline overlay, day-off exclusion, eco blockers, semester
  *  Notifications: goal deep-link, group-by-type, archive, (quiet hours in settings)
@@ -9,7 +9,7 @@
  *  Settings     : ⌘K finder, preferences backup, theme preview, modified badges
  * Plus light theme, mobile 390 and console health.
  *
- * IMPORTANT: the MSW store lives in the browser tab — the script navigates
+ * IMPORTANT: the MSW store lives in the browser tab - the script navigates
  * with SPA link clicks ONLY (one initial goto), so state persists across pages.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script (CommonJS, never bundled) */
@@ -29,7 +29,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   const nav = async (href) => {
     // Dismiss any open dialog overlay (palette/report) before navigating.
     await page.keyboard.press("Escape").catch(() => {});
@@ -38,12 +38,12 @@ const BASE = "http://localhost:3000";
     await page.waitForTimeout(1400);
   };
 
-  // ── 0. Load the app (single goto — SPA navigation afterwards) ─────────────
+  // ── 0. Load the app (single goto - SPA navigation afterwards) ─────────────
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
 
   // ══ NOTIFICATIONS (inbox upgrades) ═════════════════════════════════════════
-  // The 2FA-off reminder is part of the security bridge — asserted here while
+  // The 2FA-off reminder is part of the security bridge - asserted here while
   // the bell is open.
   await page.locator('[data-testid="notification-bell"]').click();
   await page.waitForTimeout(700);
@@ -94,7 +94,7 @@ const BASE = "http://localhost:3000";
     await page.click('a[href="/"]');
     await page.waitForTimeout(1200);
   } else {
-    check("Goal alert deep-link (no goal alert live — skipped)", true);
+    check("Goal alert deep-link (no goal alert live - skipped)", true);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
   }
@@ -103,7 +103,7 @@ const BASE = "http://localhost:3000";
   await nav("/analytics");
   await page.waitForTimeout(1600);
 
-  // 1. Unified presets — the seed ANALYTICS preset from the shared library.
+  // 1. Unified presets - the seed ANALYTICS preset from the shared library.
   const presetSelect = page.locator('[data-testid="analytics-preset-select"]');
   check("Unified preset select rendered", await presetSelect.isVisible());
   await presetSelect.click();
@@ -134,7 +134,7 @@ const BASE = "http://localhost:3000";
     anomalyText.includes("TAIL_LOSS") || anomalyText.includes("OVERTRADING") || anomalyText.includes("LOSS_STREAK") ? "anomaly present" : "no anomaly in seed",
   );
 
-  // 3. A/B comparator on the Strategy tab — reset the preset filters first so
+  // 3. A/B comparator on the Strategy tab - reset the preset filters first so
   // the dataset carries every strategy row again.
   await page.locator('[data-testid="analytics-reset"]').click();
   await page.waitForTimeout(1400);
@@ -241,7 +241,7 @@ const BASE = "http://localhost:3000";
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
-  // Custom thresholds — edit the p95 knob in Audit/Events tab.
+  // Custom thresholds - edit the p95 knob in Audit/Events tab.
   await page.locator('[data-testid="monitoring-tab-events"]').click();
   await page.waitForTimeout(1000);
   const p95Input = page.locator('[data-testid="rule-input-API_LATENCY"]');
@@ -281,7 +281,7 @@ const BASE = "http://localhost:3000";
     ((await journal.textContent()) ?? "").includes("rejected"),
   );
 
-  // Health check with persistent result — click the first "Test now".
+  // Health check with persistent result - click the first "Test now".
   const testButtons = page.locator('[data-testid^="provider-test-"]');
   if ((await testButtons.count()) > 0) {
     const providerId = (await testButtons.first().getAttribute("data-testid"))?.replace("provider-test-", "");
@@ -292,10 +292,10 @@ const BASE = "http://localhost:3000";
       (await page.locator(`[data-testid="provider-lasttest-${providerId}"]`).count()) === 1,
     );
   } else {
-    check("Manual health check (no connected provider — skipped)", true);
+    check("Manual health check (no connected provider - skipped)", true);
   }
 
-  // 1-click reconnect — only meaningful on ERROR/AUTH_REQUIRED providers.
+  // 1-click reconnect - only meaningful on ERROR/AUTH_REQUIRED providers.
   const reconnectButtons = page.locator('[data-testid^="provider-reconnect-"]');
   check(
     "Reconnect button present on failing providers (or none failing)",
@@ -348,7 +348,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(1200);
   const previewCard = page.locator('[data-testid="theme-preview-card"]');
   check("Live theme preview mini trade card rendered", await previewCard.isVisible());
-  // Switch to light theme — the preview must re-tint (bg token changes).
+  // Switch to light theme - the preview must re-tint (bg token changes).
   await page.evaluate(() => {
     document.documentElement.setAttribute("data-theme", "light");
   });
@@ -372,7 +372,7 @@ const BASE = "http://localhost:3000";
   const download = await downloadPromise;
   check("Preferences export downloads a JSON profile", download !== null, download ? download.suggestedFilename() : "no file");
 
-  // Modified badges — change P&L display (appearance) → save → badge lights.
+  // Modified badges - change P&L display (appearance) → save → badge lights.
   await page.locator('[data-testid="settings-nav-appearance"]').click();
   await page.waitForTimeout(1100);
   await page.locator('[data-testid="settings-appearance-pnl"]').selectOption("R_MULTIPLE");
@@ -393,7 +393,7 @@ const BASE = "http://localhost:3000";
   if (paletteOpen) {
     await paletteInput.fill("Risk");
     await page.waitForTimeout(600);
-    const riskEntry = page.locator("button", { hasText: "Settings — Risk" }).first();
+    const riskEntry = page.locator("button", { hasText: "Settings - Risk" }).first();
     if ((await riskEntry.isVisible().catch(() => false))) {
       await riskEntry.click();
       await page.waitForTimeout(1600);

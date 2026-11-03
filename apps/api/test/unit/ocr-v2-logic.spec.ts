@@ -1,5 +1,5 @@
 /**
- * OCR V2 pure-logic unit tests — arbitration, duplicate distance, corrections
+ * OCR V2 pure-logic unit tests - arbitration, duplicate distance, corrections
  * memory diff, recrop merge, suggestions ranking. No I/O, no Nest, no DB.
  */
 import { describe, expect, it } from "vitest";

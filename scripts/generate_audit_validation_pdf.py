@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""EUFORIA — Rapport de validation d'audit ultra-complet (corps ReportLab).
-Route: Report (brief report.md) — Template 07 Crystal Blue (palette fixe corps).
+"""EUFORIA - Rapport de validation d'audit ultra-complet (corps ReportLab).
+Route: Report (brief report.md) - Template 07 Crystal Blue (palette fixe corps).
 Pas de TOC (rapport court, sections A-H) -> SimpleDocTemplate + build().
 Cover généré séparément via html2poster.js puis fusionné via pypdf.
 """
@@ -23,7 +23,7 @@ from reportlab.platypus import (SimpleDocTemplate, Paragraph, Spacer, Table,
                                 TableStyle, KeepTogether, CondPageBreak,
                                 HRFlowable)
 
-# ─── Fonts (report.md template — Linux paths) ───
+# ─── Fonts (report.md template - Linux paths) ───
 FONT_DIR = '/usr/share/fonts'
 pdfmetrics.registerFont(TTFont('NotoSerifSC', f'{FONT_DIR}/truetype/noto-serif-sc/NotoSerifSC-Regular.ttf'))
 pdfmetrics.registerFont(TTFont('NotoSerifSC-Bold', f'{FONT_DIR}/truetype/noto-serif-sc/NotoSerifSC-Bold.ttf'))
@@ -40,7 +40,7 @@ registerFontFamily('DejaVuSans', normal='DejaVuSans', bold='DejaVuSans')
 from pdf import install_font_fallback  # noqa: E402
 install_font_fallback()
 
-# ─── Palette corps — Template 07 Crystal Blue (fixe, fournie par cover.md) ───
+# ─── Palette corps - Template 07 Crystal Blue (fixe, fournie par cover.md) ───
 PAGE_BG      = colors.HexColor('#f5f8fc')   # XL
 SECTION_BG   = colors.HexColor('#edf2f9')   # XL
 CARD_BG      = colors.HexColor('#e4ecf5')   # L
@@ -56,7 +56,7 @@ TABLE_HEADER_TEXT  = colors.white
 TABLE_ROW_EVEN     = colors.white
 TABLE_ROW_ODD      = TABLE_STRIPE
 
-# ─── Page geometry (marges symétriques — overflow.md §1.5) ───
+# ─── Page geometry (marges symétriques - overflow.md §1.5) ───
 MARGIN = 0.9 * inch
 TOP_MARGIN = 1.02 * inch
 BOTTOM_MARGIN = 0.88 * inch
@@ -66,7 +66,7 @@ AVAIL_H = PAGE_H - TOP_MARGIN - BOTTOM_MARGIN
 H1_ORPHAN = AVAIL_H * 0.25
 
 OUT = '/home/z/my-project/scripts/audit-validation-body.pdf'
-DOC_TITLE = 'EUFORIA — Rapport de validation de l’audit ultra-complet'
+DOC_TITLE = 'EUFORIA - Rapport de validation de l’audit ultra-complet'
 
 
 def on_page(canvas, doc):
@@ -77,7 +77,7 @@ def on_page(canvas, doc):
     canvas.setFont('FreeSerif', 7.5)
     canvas.setFillColor(TEXT_MUTED)
     canvas.drawString(MARGIN, PAGE_H - 0.62 * inch,
-                      'EUFORIA — Rapport de validation de l’audit ultra-complet')
+                      'EUFORIA - Rapport de validation de l’audit ultra-complet')
     canvas.setStrokeColor(ACCENT)
     canvas.setLineWidth(1.5)
     canvas.line(MARGIN, PAGE_H - 0.70 * inch, PAGE_W - MARGIN, PAGE_H - 0.70 * inch)
@@ -204,7 +204,7 @@ story += h1('A. Objet et méthode de la validation')
 story.append(para(
     "L’exploitant a demandé un « audit ultra complet du projet » en précisant que si l’audit "
     "était déjà fait, il fallait simplement le valider. Le constat préalable, vérifié dans git, "
-    "est le suivant : l’audit MASTER full-stack (spécification « EUFORIA — MASTER FULL-STACK "
+    "est le suivant : l’audit MASTER full-stack (spécification « EUFORIA - MASTER FULL-STACK "
     "AUDIT, SECURITY ASSESSMENT, INTEGRATION VALIDATION & PRODUCTION READINESS ») a été "
     "exécuté et commité sous le commit <font name='DejaVuSans' size='8.8'>fc24210</font> avec "
     "son rapport A–P ; l’audit final Phase 12 (FINAL AUDIT, TESTING & PRODUCTION "
@@ -230,15 +230,15 @@ story.append(make_table(
         ['MASTER FULL-STACK AUDIT (sécurité, intégration, production readiness)',
          'fc24210', 'docs/audits/MASTER-FULLSTACK-AUDIT-REPORT.md (A–P)',
          'READY FOR STAGING VALIDATION'],
-        ['PHASE 12 — FINAL AUDIT, TESTING & PRODUCTION READINESS',
+        ['PHASE 12 - FINAL AUDIT, TESTING & PRODUCTION READINESS',
          '2e74af4', 'docs/audits/PHASE-12-FINAL-AUDIT-REPORT.md (A–K)',
          'READY FOR STAGING'],
-        ['Onboarding GSAP — expérience de première utilisation',
+        ['Onboarding GSAP - expérience de première utilisation',
          '67e1d72', 'docs/audits/ONBOARDING-GSAP-REPORT.md (A–J)',
          'COMPLETE'],
     ],
     [0.34, 0.11, 0.33, 0.22]))
-story.append(Paragraph('Tableau 1 — Les trois audits antérieurs couvrant le prompt MASTER en douze stages.',
+story.append(Paragraph('Tableau 1 - Les trois audits antérieurs couvrant le prompt MASTER en douze stages.',
                        caption_style))
 story.append(para(
     "Ces trois livrables couvrent ensemble l’intégralité des douze stages du prompt MASTER : "
@@ -247,11 +247,11 @@ story.append(para(
     "intégration transversale des fonctionnalités, temps réel et services externes, tests et "
     "automatisation, performance et observabilité, puis remédiation et rapport final. La "
     "section D établit la correspondance preuve par preuve. La question posée aujourd’hui "
-    "n’est donc pas de savoir si l’audit a eu lieu — il a eu lieu et ses rapports sont dans le "
-    "dépôt — mais si ses conclusions tiennent encore sur l’arbre actuel."))
+    "n’est donc pas de savoir si l’audit a eu lieu - il a eu lieu et ses rapports sont dans le "
+    "dépôt - mais si ses conclusions tiennent encore sur l’arbre actuel."))
 
 # ══ C. Batterie ══
-story += h1('C. Batterie de re-validation — résultats réels du 19 octobre 2026')
+story += h1('C. Batterie de re-validation - résultats réels du 19 octobre 2026')
 story.append(para(
     "Chaque ligne ci-dessous a été exécutée le jour de la validation, avec code de sortie "
     "relevé. Aucun résultat n’est déduit d’un rapport antérieur. Les éléments "
@@ -278,11 +278,11 @@ story.append(make_table(
         ['9', 'Build production web', 'npx next build', 'exit 0, 34 pages statiques, zéro warning', 'OK'],
         ['10', 'Build api', 'npx tsc -p tsconfig.build.json', 'exit 0', 'OK'],
         ['11', 'Garde mock-leakage', 'node scripts/check-prod-mock-leakage.mjs (cwd apps/web)',
-         'PASS — la production ne peut pas activer la couche démo', 'OK'],
+         'PASS - la production ne peut pas activer la couche démo', 'OK'],
         ['12', 'Audit dépendances', 'pnpm audit / pnpm audit --prod',
          '9 advisories totales ; prod : 3 HIGH après correction (voir E-2)', 'Nuance corrigée'],
         ['13', 'Migrations Prisma', 'npx prisma migrate status (URL correcte, voir F-2)',
-         '41 migrations — schéma à jour sur Postgres 127.0.0.1:5433', 'OK'],
+         '41 migrations - schéma à jour sur Postgres 127.0.0.1:5433', 'OK'],
         ['14', 'Fix CSV injection (Phase 12)', 'inspection csv.ts + spécification de régression',
          'csvCell() en place (préfixe OWASP, nombres purs exemptés), 10 tests dans la batterie', 'OK'],
         ['15', 'Fix CI mock-leakage (Phase 12)', 'inspection .github/workflows/ci.yml',
@@ -294,7 +294,7 @@ story.append(make_table(
     ],
     [0.045, 0.155, 0.315, 0.335, 0.15],
     code_cols={2}, center_cols={0, 4}))
-story.append(Paragraph('Tableau 2 — Batterie complète ré-exécutée ; 17/17 conformes, une nuance de classification corrigée (E-2).',
+story.append(Paragraph('Tableau 2 - Batterie complète ré-exécutée ; 17/17 conformes, une nuance de classification corrigée (E-2).',
                        caption_style))
 story.append(para(
     "Le bilan est net : la baseline publiée par l’audit Phase 12 est reproductible à "
@@ -305,7 +305,7 @@ story.append(para(
     "portée n’a été pratiqué."))
 
 # ══ D. Couverture 12 stages ══
-story += h1('D. Couverture des douze stages du prompt MASTER — où se trouve la preuve')
+story += h1('D. Couverture des douze stages du prompt MASTER - où se trouve la preuve')
 story.append(para(
     "Le tableau suivant fait correspondre chaque stage du prompt MASTER de l’exploitant à sa "
     "preuve principale dans les rapports existants et à son état de re-confirmation du jour. "
@@ -352,11 +352,11 @@ story.append(make_table(
          'Étendu'],
     ],
     [0.24, 0.58, 0.18], center_cols={2}))
-story.append(Paragraph('Tableau 3 — Correspondance stage du prompt MASTER vers preuve documentée.',
+story.append(Paragraph('Tableau 3 - Correspondance stage du prompt MASTER vers preuve documentée.',
                        caption_style))
 story.append(para(
     "Les zones jamais validables dans cet environnement restent explicitement classées : la CI "
-    "GitHub n’a jamais pu s’exécuter (aucun remote configuré — le correctif ci.yml n’est validé "
+    "GitHub n’a jamais pu s’exécuter (aucun remote configuré - le correctif ci.yml n’est validé "
     "que par simulation locale à sémantique CI exacte), Docker n’a jamais été exécuté ici, les "
     "brokers et le flux de marché réels ne sont pas validés, et le runbook de rollback staging "
     "n’est pas documenté. Aucune affirmation de production-readiness n’est faite à leur sujet : "
@@ -365,15 +365,15 @@ story.append(para(
 # ══ E. Défets ══
 story += h1('E. Défets découverts par la validation et corrigés')
 
-story.append(Paragraph('<b>E-1. Hygiène des secrets — artefacts d’audit trackés dans git (règle 11 violée) — corrigé d9c0dc8</b>', h2_style))
+story.append(Paragraph('<b>E-1. Hygiène des secrets - artefacts d’audit trackés dans git (règle 11 violée) - corrigé d9c0dc8</b>', h2_style))
 story.append(para(
     "Le commit sandbox auto-généré <font name='DejaVuSans' size='8.8'>81b1d49</font> (postérieur "
     "à la session Phase 12, auteur « Z User ») a versionné trois fichiers d’artefacts d’audit : "
     "logs/phase12/test-token.txt contenant un JWT d’accès (préfixe eyJ vérifié sans reproduction "
     "de la valeur), logs/phase12/cookies.txt contenant le refresh token de session de test, et "
     "logs/phase12/test-account.txt contenant les identifiants du compte de test éphémère. "
-    "L’impact réel est nul en production — le compte est éphémère et local, la base est un "
-    "Postgres embarqué, rien n’a jamais été déployé\u00a0— mais cela violait directement la règle 11 "
+    "L’impact réel est nul en production - le compte est éphémère et local, la base est un "
+    "Postgres embarqué, rien n’a jamais été déployé\u00a0- mais cela violait directement la règle 11 "
     "de l’audit (ne jamais exposer JWT, tokens ou identifiants dans les fichiers versionnés) et "
     "créait un mauvais précédent pour un futur push public."))
 story.append(para(
@@ -384,7 +384,7 @@ story.append(para(
     "recommandé ; aucune rotation n’est nécessaire puisque le compte concerné est un "
     "utilisateur de test local éphémère sur base embarquée, jamais exposé."))
 
-story.append(Paragraph('<b>E-2. Classification des dépendances — shadcn CLI en dependencies runtime — corrigé 7ca90c7</b>', h2_style))
+story.append(Paragraph('<b>E-2. Classification des dépendances - shadcn CLI en dependencies runtime - corrigé 7ca90c7</b>', h2_style))
 story.append(para(
     "L’audit Phase 12 affirmait que les 9 advisories de pnpm audit étaient « toutes dev-only ». "
     "La ré-exécution de pnpm audit --prod a révélé 5 HIGH dans la sphère des dépendances de "
@@ -394,7 +394,7 @@ story.append(para(
     "de code déclaré par erreur dans les dependencies runtime de apps/web ; deepmerge-ts arrive "
     "via la chaîne prisma (aucun usage direct dans apps/api/src, vérifié par recherche) ; "
     "source-map-js via next vers postcss (chaîne de build) ; sharp via next, dont la CVE librsvg "
-    "n’est atteignable que si l’optimisation SVG est activée — dangerouslyAllowSVG est absent de "
+    "n’est atteignable que si l’optimisation SVG est activée - dangerouslyAllowSVG est absent de "
     "next.config, donc désactivé par défaut ; braces via les chaînes eslint et ts-morph."))
 story.append(para(
     "La correction minimale a consisté à reclasser shadcn en devDependencies, après vérification "
@@ -409,7 +409,7 @@ story.append(para(
 
 story.append(Paragraph('<b>E-3. Ce qui n’a volontairement pas été changé</b>', h2_style))
 story.append(bullet("Aucune formule financière, aucune migration, aucune route, aucun composant : la validation n’a touché aucun comportement applicatif."))
-story.append(bullet("Aucune version de dépendance modifiée — uniquement le groupe (flag dev) de shadcn, à version identique."))
+story.append(bullet("Aucune version de dépendance modifiée - uniquement le groupe (flag dev) de shadcn, à version identique."))
 story.append(bullet("Les 92 warnings de lint web pré-existants sont conservés tels quels, conformément à la portée."))
 story.append(bullet("Aucun fichier API touché (le diff git le prouve), aucune nouvelle dépendance ajoutée, aucun endroit où masquer un échec."))
 
@@ -418,7 +418,7 @@ story += h1('F. Limites environnementales rencontrées (non imputables à l’ap
 story.append(Paragraph('<b>F-1. pnpm absent après le redémarrage du sandbox</b>', h2_style))
 story.append(para(
     "Le redémarrage du sandbox a réinitialisé le PATH : pnpm n’y figurait plus. L’outillage a "
-    "été restauré via corepack enable, donnant pnpm 12.4.2 — exactement la version déclarée "
+    "été restauré via corepack enable, donnant pnpm 12.4.2 - exactement la version déclarée "
     "dans le champ packageManager du package.json racine. L’impact sur le code est nul : "
     "node_modules était intact et aucune installation n’a modifié le lockfile hors le "
     "déplacement de flag documenté en E-2."))
@@ -428,8 +428,8 @@ story.append(para(
     "modèle d’environnement, qui écrase le .env de l’api pour le CLI Prisma et provoque une "
     "erreur P1012 trompeuse (« the URL must start with the protocol postgresql:// »). La preuve "
     "que ce n’est pas un défaut applicatif est double : les scripts de l’application (dev-db.mjs "
-    "et les préparateurs de test) construisent leurs propres URLs\u00a0— d’où 1 336 tests verts et "
-    "41 migrations à jour — et l’injection de l’URL correcte du .env en ligne de commande fait "
+    "et les préparateurs de test) construisent leurs propres URLs\u00a0- d’où 1 336 tests verts et "
+    "41 migrations à jour - et l’injection de l’URL correcte du .env en ligne de commande fait "
     "immédiatement réussir prisma migrate status. Action opérateur recommandée : ne pas "
     "exporter DATABASE_URL globalement dans ce sandbox, ou lancer le CLI Prisma avec l’URL du "
     ".env injectée explicitement."))
@@ -445,7 +445,7 @@ story.append(para(
 # ══ G. Verdict ══
 story += h1('G. Verdict')
 story.append(KeepTogether([
-    Table([[Paragraph('<b>VERDICT CONFIRMÉ : READY FOR STAGING — PAS production-ready</b>',
+    Table([[Paragraph('<b>VERDICT CONFIRMÉ : READY FOR STAGING - PAS production-ready</b>',
                       ParagraphStyle('V', fontName='FreeSerif', fontSize=12.5, leading=17,
                                      textColor=HEADER_FILL, alignment=TA_CENTER))]],
            colWidths=[AVAIL_W * 0.92], hAlign='CENTER',
@@ -460,8 +460,8 @@ story.append(para(
     "Le verdict des audits existants est confirmé et reproductible. La baseline complète "
     "(typecheck triple, lint, 1 635 tests, builds, garde mock-leakage, migrations) se rejoue à "
     "l’identique le jour de la validation sur l’arbre courant. Les deux défets corrigés en "
-    "Phase 12 sont vérifiés en place. La validation a ajouté deux corrections d’hygiène — "
-    "retrait d’artefacts de secrets versionnés et reclassification d’une dépendance CLI — sans "
+    "Phase 12 sont vérifiés en place. La validation a ajouté deux corrections d’hygiène - "
+    "retrait d’artefacts de secrets versionnés et reclassification d’une dépendance CLI - sans "
     "toucher au comportement applicatif. Les quatre bloquants inchangés (CI GitHub, Docker, "
     "brokers et flux réels, runbook de rollback) demeurent les conditions du passage staging "
     "vers production. Conformément à la règle finale du programme : le programme de douze "
@@ -476,12 +476,12 @@ story.append(make_table(
     [
         ['7ca90c7', 'audit-validation : reclassification de shadcn CLI en devDependencies (audit --prod 5 vers 3 HIGH)'],
         ['d9c0dc8', 'security-hygiene : dé-versionnage des artefacts d’audit (JWT, cookies, identifiants de test) + gitignore logs/'],
-        ['81b1d49', 'auto-commit sandbox (logs Phase 12) — artefacts désormais dé-versionnés'],
-        ['2e74af4', 'phase-12 : FINAL AUDIT complete — READY FOR STAGING (2 défets corrigés avec régressions)'],
+        ['81b1d49', 'auto-commit sandbox (logs Phase 12) - artefacts désormais dé-versionnés'],
+        ['2e74af4', 'phase-12 : FINAL AUDIT complete - READY FOR STAGING (2 défets corrigés avec régressions)'],
         ['67e1d72', 'onboarding : expérience de première utilisation GSAP complète (6 étapes, sonde 26/26)'],
     ],
     [0.14, 0.86], center_cols={0}))
-story.append(Paragraph('Tableau 4 — État git au terme de la validation ; arbre propre, logs/ ignoré.',
+story.append(Paragraph('Tableau 4 - État git au terme de la validation ; arbre propre, logs/ ignoré.',
                        caption_style))
 story.append(Paragraph('<b>H-2. Prochaines actions exploitant (priorisées, inchangées)</b>', h2_style))
 story.append(para(
@@ -489,7 +489,7 @@ story.append(para(
     "exécution réelle de la CI : c’est la seule façon de valider ci.yml en conditions réelles, "
     "et l’historique doit être écrasé ou filtré avant tout push public en raison du token local "
     "présent dans 81b1d49. Deuxièmement, provisionner l’environnement de staging et rédiger le "
-    "runbook de rollback — le livrable K de la Phase 12 contient les étapes de migration et de "
+    "runbook de rollback - le livrable K de la Phase 12 contient les étapes de migration et de "
     "configuration. Troisièmement, formaliser par écrit l’acceptation des advisories de "
     "sécurité restantes après reclassification (8 dev-only et 3 prod classées build-time ou "
     "conditionnelles). Quatrièmement, trancher les décisions produit restantes : export PDF "
@@ -507,6 +507,6 @@ doc = SimpleDocTemplate(
     leftMargin=MARGIN, rightMargin=MARGIN,
     topMargin=TOP_MARGIN, bottomMargin=BOTTOM_MARGIN,
     title=DOC_TITLE, author='Z.ai', creator='Z.ai',
-    subject='Validation de l’audit final Euforia — Phase 12 + MASTER full-stack')
+    subject='Validation de l’audit final Euforia - Phase 12 + MASTER full-stack')
 doc.build(story, onFirstPage=on_page, onLaterPages=on_page)
 print('BODY OK:', OUT)

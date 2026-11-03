@@ -191,7 +191,7 @@ function monthlyGoals(): MonthlyGoalsResponse {
       target: goalSettingsState.monthlyPnlTarget,
       current: toDecimalString(round2(netPnl)),
       progress: toDecimalString(round2(target > 0 ? Math.max(0, netPnl) / target : 0)),
-      note: netPnl >= target ? "Target reached — protect it." : `${round2(Math.max(0, target - netPnl))} to go this month.`,
+      note: netPnl >= target ? "Target reached - protect it." : `${round2(Math.max(0, target - netPnl))} to go this month.`,
     },
     {
       key: "winRate",
@@ -241,7 +241,7 @@ function monthlyGoals(): MonthlyGoalsResponse {
       target: toDecimalString(goalSettingsState.maxTradesPerDay),
       current: toDecimalString(worstDayTrades),
       progress: toDecimalString(round2(goalSettingsState.maxTradesPerDay > 0 ? Math.min(1, worstDayTrades / goalSettingsState.maxTradesPerDay) : 0)),
-      note: worstDayTrades > goalSettingsState.maxTradesPerDay ? "Ceiling breached — review the day." : "Within the ceiling.",
+      note: worstDayTrades > goalSettingsState.maxTradesPerDay ? "Ceiling breached - review the day." : "Within the ceiling.",
     },
   ];
 
@@ -329,10 +329,10 @@ function weeklyReport(start?: string): WeeklyReportResponse {
 
   const insights: WeekInsight[] = [];
   if (inWeek.length === 0) {
-    insights.push({ tone: "neutral", text: "No closed trades this week — the ledger stays honest at zero." });
+    insights.push({ tone: "neutral", text: "No closed trades this week - the ledger stays honest at zero." });
   } else {
     if (netPnl >= 0) insights.push({ tone: "positive", text: `Net ${round2(netPnl)} over ${inWeek.length} closed trades.` });
-    else insights.push({ tone: "negative", text: `Net ${round2(netPnl)} over ${inWeek.length} closed trades — review the worst decision below.` });
+    else insights.push({ tone: "negative", text: `Net ${round2(netPnl)} over ${inWeek.length} closed trades - review the worst decision below.` });
     if (disciplineAvg !== null) {
       insights.push({
         tone: num(String(disciplineAvg)) >= 70 ? "positive" : "negative",

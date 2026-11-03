@@ -1,10 +1,10 @@
 /**
- * Unit — Phase 05 deterministic insights engine (@cosmoz/shared
+ * Unit - Phase 05 deterministic insights engine (@cosmoz/shared
  * analytics/insights). Every assertion pins ONE documented rule from the
  * owner spec (§3 analytics principles, §4 duration dimension, §5 directional
  * exclusion, §7 behavioral rules, §8 insight engine): sample suppression,
  * reliability bands, breakeven streak transparency, multi-currency money
- * nulls, determinism and dedupe. The engine is shared with the MSW mirror —
+ * nulls, determinism and dedupe. The engine is shared with the MSW mirror -
  * these rules therefore hold for the mock too.
  */
 import { describe, expect, it } from "vitest";
@@ -85,7 +85,7 @@ describe("computeStreakProfile (§7D)", () => {
   it("breakeven trades neither extend nor break a loss streak (documented rule)", () => {
     const rows = [
       row({ pnlNet: -100, rMultiple: -1 }),
-      row({ pnlNet: 0, rMultiple: 0 }), // breakeven — transparent
+      row({ pnlNet: 0, rMultiple: 0 }), // breakeven - transparent
       row({ pnlNet: -50, rMultiple: -0.5 }),
     ];
     const profile = computeStreakProfile(rows);
@@ -110,7 +110,7 @@ describe("computeStreakProfile (§7D)", () => {
   it("follow-window performance after ≥3-loss streaks dedupes overlapping windows", () => {
     const rows: InsightsEngineRow[] = [];
     // Streak of 3 losses, then 3 followers, then another 3-loss streak ending
-    // one trade later — overlapping windows must count each trade once.
+    // one trade later - overlapping windows must count each trade once.
     rows.push(row({ pnlNet: -100, rMultiple: -1 }));
     rows.push(row({ pnlNet: -100, rMultiple: -1 }));
     rows.push(row({ pnlNet: -100, rMultiple: -1 }));
@@ -272,7 +272,7 @@ describe("deriveInsights (§7/§8)", () => {
     ];
     const streak = deriveInsights(rows, { singleCurrency: true }).insights.find((i) => i.category === "STREAK");
     expect(streak).toBeDefined();
-    // f2 (−0.3R) is itself a loss — trailing streak = f2..t4 = 5 consecutive.
+    // f2 (−0.3R) is itself a loss - trailing streak = f2..t4 = 5 consecutive.
     expect(streak!.title).toContain("5 trades");
     expect(streak!.metrics.some((m) => m.label.includes("after"))).toBe(true);
   });

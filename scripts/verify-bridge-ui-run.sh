@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# verify-bridge-ui-run.sh — REBUILD the web app (the Phase 08 bridge UI must
+# verify-bridge-ui-run.sh - REBUILD the web app (the Phase 08 bridge UI must
 # be verified on the production build, not a stale next-server), restart
 # :3000 with next start, then run the probe in the SAME shell session so the
 # server survives the whole run (sandbox: processes die between commands).
-# Lesson from the worklog: kill -9 any next-server zombie BEFORE the build —
+# Lesson from the worklog: kill -9 any next-server zombie BEFORE the build -
 # an old server silently serves the stale bundle (ChunkLoadError 500s).
 set -u
 cd /home/z/my-project

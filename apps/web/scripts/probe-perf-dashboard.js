@@ -1,9 +1,9 @@
 /**
- * Phase 09 performance probe — baseline & re-measure (BEFORE/AFTER).
+ * Phase 09 performance probe - baseline & re-measure (BEFORE/AFTER).
  * Run against the ZERO-ENV mock preview (MSW on, default `next dev` :3000).
  *
  * ONE document load (login → dismiss onboarding), then everything else is
- * SPA navigation — the in-memory mock store never reseeds mid-run and the
+ * SPA navigation - the in-memory mock store never reseeds mid-run and the
  * QueryClient cache behavior is what we actually measure.
  *
  * Measures:
@@ -13,7 +13,7 @@
  *   4. ONE period filter change: requests triggered by a single change.
  *   5. Integrity: zero page errors.
  *
- * No timing thresholds (no flaky assertions per spec §11) — numbers are
+ * No timing thresholds (no flaky assertions per spec §11) - numbers are
  * printed for the Phase 09 report; assertions are structural only.
  */
 const { chromium } = require("playwright");
@@ -27,7 +27,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 function startCapture(page) {
@@ -96,7 +96,7 @@ async function dismissOnboarding(page, label) {
         return;
       }
     } catch {
-      // Retry — the overlay may still be animating in.
+      // Retry - the overlay may still be animating in.
     }
   }
   check(`onboarding dismiss attempts exhausted (${label})`, false);

@@ -8,7 +8,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Playbook strategy chips (spec §4): colored chips with grade badges;
- * "Out of playbook" is a first-class 1-tap choice — never an ambiguous
+ * "Out of playbook" is a first-class 1-tap choice - never an ambiguous
  * empty field. Exactly one of: a strategy OR the off-playbook chip.
  */
 

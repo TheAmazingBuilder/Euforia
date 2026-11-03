@@ -1,5 +1,5 @@
 /**
- * diag-oryon-visual.js — step-by-step screenshots + geometry dump to find
+ * diag-oryon-visual.js - step-by-step screenshots + geometry dump to find
  * where the candlestick viewport collapses (fit/zoom corruption hunt).
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node diagnostic helper */

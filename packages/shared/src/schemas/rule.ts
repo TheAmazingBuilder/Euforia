@@ -3,7 +3,7 @@ import { ruleTypeSchema, severitySchema } from "../enums";
 import { isoDateTimeSchema, jsonObjectSchema, jsonValueSchema, uuidSchema } from "./primitives";
 
 /**
- * Rule — data-model.md "Domaine 7" (Discipline Engine).
+ * Rule - data-model.md "Domaine 7" (Discipline Engine).
  * `params` is deliberately generic JSON to stay extensible, e.g.
  * `{ "limit": 3 }` for MAX_TRADES_PER_DAY, `{ "minutes": 30 }` for
  * COOLDOWN_AFTER_LOSSES, `{ "start": "08:00", "end": "17:00" }` for
@@ -24,7 +24,7 @@ export const ruleSchema = z.object({
 export type Rule = z.infer<typeof ruleSchema>;
 
 /**
- * RuleViolation — one rule breach. `context` freezes the values at time T
+ * RuleViolation - one rule breach. `context` freezes the values at time T
  * (e.g. `{ "tradesToday": 4, "limit": 3 }`) so the "why" never changes.
  */
 export const ruleViolationSchema = z.object({
@@ -43,10 +43,10 @@ export type RuleViolation = z.infer<typeof ruleViolationSchema>;
 
 // ── Rule CRUD + violation log (discipline screen) ────────────────────────────
 
-/** POST /rules — create a discipline rule. */
+/** POST /rules - create a discipline rule. */
 export const createRuleInputSchema = z.object({
   type: ruleTypeSchema,
-  /** Per-type object, e.g. `{ "limit": 3 }` — see ruleParamFields(). */
+  /** Per-type object, e.g. `{ "limit": 3 }` - see ruleParamFields(). */
   params: jsonObjectSchema,
   severity: severitySchema,
   /** null/omitted = global rule. */
@@ -56,7 +56,7 @@ export const createRuleInputSchema = z.object({
 
 export type CreateRuleInput = z.infer<typeof createRuleInputSchema>;
 
-/** PATCH /rules/:id — params / severity / active toggle (type is immutable). */
+/** PATCH /rules/:id - params / severity / active toggle (type is immutable). */
 export const updateRuleInputSchema = z
   .object({
     params: jsonObjectSchema.optional(),

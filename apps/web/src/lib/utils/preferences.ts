@@ -4,14 +4,14 @@ import { useSyncExternalStore } from "react";
 
 /**
  * Local display preferences (spec trade-entry-ux.md §5: the reveal animation
- * is "disable-able in settings"). V1 keeps them in localStorage — a real
+ * is "disable-able in settings"). V1 keeps them in localStorage - a real
  * user-settings API will replace this later without changing the hook API.
  */
 
 const STORAGE_KEY = "cosmoz:preferences:v1";
 
 export interface Preferences {
-  /** Reveal star animation — spec: ≤ 500 ms, skippable, disable-able. */
+  /** Reveal star animation - spec: ≤ 500 ms, skippable, disable-able. */
   revealAnimation: boolean;
 }
 
@@ -40,7 +40,7 @@ function writeToStorage(next: Preferences): void {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   } catch {
-    // Private mode / quota — preferences stay in memory for this session.
+    // Private mode / quota - preferences stay in memory for this session.
   }
   for (const listener of listeners) listener();
 }
@@ -55,7 +55,7 @@ function subscribe(listener: () => void): () => void {
   return () => listeners.delete(listener);
 }
 
-/** Reactive read-side — defaults to true until the client hydrates. */
+/** Reactive read-side - defaults to true until the client hydrates. */
 export function useRevealAnimation(): boolean {
   return useSyncExternalStore(
     subscribe,

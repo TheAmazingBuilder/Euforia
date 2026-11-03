@@ -1,5 +1,5 @@
 /**
- * Settings pure logic (Phase 15) — document assembly helpers.
+ * Settings pure logic (Phase 15) - document assembly helpers.
  *
  * The Settings bounded context owns ONE aggregate: the 9-domain user
  * preferences document (shared settings.ts). These helpers are the only
@@ -10,7 +10,7 @@
  *   - the envelope fields (userId / updatedAt) are server-managed (§10/§30):
  *     a client can never supply or spoof them through a domain payload.
  *
- * Pure functions — no Prisma, no Nest — unit-tested in isolation.
+ * Pure functions - no Prisma, no Nest - unit-tested in isolation.
  */
 import {
   DEFAULT_USER_PREFERENCES,
@@ -19,7 +19,7 @@ import {
 } from "../../shared/contracts";
 
 /**
- * Fresh document from safe defaults — the register flow persists
+ * Fresh document from safe defaults - the register flow persists
  * `preferences: null`, so the first preferences read lazily provisions it.
  */
 export function freshPreferencesDoc(userId: string, now: Date = new Date()): UserPreferences {
@@ -30,7 +30,7 @@ export function freshPreferencesDoc(userId: string, now: Date = new Date()): Use
   } as UserPreferences;
 }
 
-/** One-domain merge — sibling domains are carried over verbatim (§39). */
+/** One-domain merge - sibling domains are carried over verbatim (§39). */
 export function mergeDomainIntoDoc(
   doc: UserPreferences,
   domain: PreferenceDomain,
@@ -44,7 +44,7 @@ export function mergeDomainIntoDoc(
   } as UserPreferences;
 }
 
-/** Reset ONE domain to defaults — never touches unrelated domains (§37). */
+/** Reset ONE domain to defaults - never touches unrelated domains (§37). */
 export function resetDomainInDoc(
   doc: UserPreferences,
   domain: PreferenceDomain,
@@ -58,7 +58,7 @@ export function resetDomainInDoc(
  * domain carries the mirrored Profile.timezone. Returns the timezone the
  * profile must adopt, or null when no write-through applies. The timezone
  * of OTHER domains is irrelevant by contract (single source of truth:
- * Profile — settings.ts boundary rules).
+ * Profile - settings.ts boundary rules).
  */
 export function timezoneWriteThroughOf(
   domain: PreferenceDomain,

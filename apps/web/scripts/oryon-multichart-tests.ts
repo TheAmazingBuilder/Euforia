@@ -1,12 +1,12 @@
 /**
- * Oryon multi-chart synchronization — unit tests (bun).
+ * Oryon multi-chart synchronization - unit tests (bun).
  *
  * Phase 7 spec §8 (sync engine), §9 (sync group model), §14 (loop safety):
  *   - EchoGuard: programmatic applies are suppressed within the window,
  *     expired guards release the value (user input of the same value
  *     still propagates), range objects compare with the epsilon;
  *   - rangesEqual: same-second epsilon semantics;
- *   - findBarContainingTime: timestamp-based crosshair anchoring — a time
+ *   - findBarContainingTime: timestamp-based crosshair anchoring - a time
  *     is snapped ONLY onto a bar that actually contains it (session gaps,
  *     out-of-span times and non-finite inputs are honestly rejected);
  *   - OryonSyncCoordinator with FAKE adapters (no chart library, no DOM):
@@ -170,7 +170,7 @@ function newCoordinator(features: Partial<OryonSyncSettings> = {}): OryonSyncCoo
 
 // ── 1. Gardes d'écho (protection anti-boucle, spec §14) ─────────────────────
 
-console.log("— gardes d'écho");
+console.log("- gardes d'écho");
 
 {
   const guard = createEchoGuard();
@@ -232,7 +232,7 @@ console.log("— gardes d'écho");
 
 // ── 2. Égalité de plages (epsilon) ───────────────────────────────────────────
 
-console.log("— égalité de plages (epsilon)");
+console.log("- égalité de plages (epsilon)");
 
 eq("rangesEqual → identiques", rangesEqual({ from: 10, to: 20 }, { from: 10, to: 20 }), true);
 eq(
@@ -253,7 +253,7 @@ eq(
 
 // ── 3. Ancrage temporel (containment honnête) ───────────────────────────────
 
-console.log("— ancre temporelle findBarContainingTime");
+console.log("- ancre temporelle findBarContainingTime");
 
 const BARS: Candle[] = [
   { t: 1_700_000_000_000, o: 1, h: 2, l: 0.5, c: 1.5, v: 10 },
@@ -291,9 +291,9 @@ ok("interval <= 0 → null (garde d'invariant)", findBarContainingTime(BARS, 1_7
 ok("temps NaN → null", findBarContainingTime(BARS, Number.NaN, MIN_MS) === null);
 ok("temps Infinity → null", findBarContainingTime(BARS, Number.POSITIVE_INFINITY, MIN_MS) === null);
 
-// ── 4. Coordinateur — discipline d'inscription ──────────────────────────────
+// ── 4. Coordinateur - discipline d'inscription ──────────────────────────────
 
-console.log("— coordinateur : inscriptions et teardown");
+console.log("- coordinateur : inscriptions et teardown");
 
 {
   const coordinator = newCoordinator();
@@ -351,7 +351,7 @@ console.log("— coordinateur : inscriptions et teardown");
 
 // ── 5. Synchronisation time-scale ────────────────────────────────────────────
 
-console.log("— sync time-scale");
+console.log("- sync time-scale");
 
 {
   // Feature OFF: nothing propagates.
@@ -397,7 +397,7 @@ console.log("— sync time-scale");
     0,
   );
 
-  // B echoes the applied value synchronously (library behavior) — the
+  // B echoes the applied value synchronously (library behavior) - the
   // coordinator must NOT rebroadcast it (A gets nothing new, C does not
   // receive a SECOND apply from B's echo).
   b.appliedRanges.length = 0;
@@ -455,7 +455,7 @@ console.log("— sync time-scale");
 
 // ── 6. Synchronisation crosshair (timestamp-based) ──────────────────────────
 
-console.log("— sync crosshair");
+console.log("- sync crosshair");
 
 {
   const coordinator = newCoordinator(); // crosshair false
@@ -519,7 +519,7 @@ console.log("— sync crosshair");
 
 // ── 7. Indépendance des fonctionnalités ─────────────────────────────────────
 
-console.log("— indépendance des canaux de synchronisation");
+console.log("- indépendance des canaux de synchronisation");
 
 {
   const coordinator = newCoordinator({ timeScale: true });
@@ -582,7 +582,7 @@ console.log("— indépendance des canaux de synchronisation");
 
 // ── 8. Désinscription des handlers par l'adapter (retours d'abonnement) ─────
 
-console.log("— retours d'abonnement utilisables");
+console.log("- retours d'abonnement utilisables");
 
 {
   const coordinator = newCoordinator({ timeScale: true, crosshair: true });
@@ -591,7 +591,7 @@ console.log("— retours d'abonnement utilisables");
   coordinator.register("a", a);
   coordinator.register("b", b);
   coordinator.unregister("b");
-  coordinator.register("b", b); // panel remount — fresh subscriptions
+  coordinator.register("b", b); // panel remount - fresh subscriptions
   a.userPan(1_700_060_000, 1_700_060_600);
   eq(
     "remount → l'adapter réinscrit reçoit à nouveau les broadcasts",

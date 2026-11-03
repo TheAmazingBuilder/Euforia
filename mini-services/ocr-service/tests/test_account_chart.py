@@ -1,7 +1,7 @@
 """Account & Chart profile tests (Recognition V1.1).
 
 Unit level: the ACCOUNT_POSITION and CHART_ANALYSIS extractors over
-OcrLine fixtures (no OCR — fast, fully deterministic). API level: both
+OcrLine fixtures (no OCR - fast, fully deterministic). API level: both
 profiles through the FastAPI pipeline on rendered screenshots (real
 Tesseract), asserting the wire contract (field vocabulary, candidates,
 classification) and the TRADE path staying untouched.
@@ -65,7 +65,7 @@ def test_account_header_labeled_values():
     assert values["accountServer"] == "MetaQuotes-Demo"
     assert values["accountCurrency"] == "USD"
     assert values["accountLeverage"] == "1:500"
-    # Canonical decimal form — trailing zeros stripped by house normalization.
+    # Canonical decimal form - trailing zeros stripped by house normalization.
     assert values["accountBalance"] == "10420.5"
     assert values["accountEquity"] == "10653.4"
     assert values["accountMargin"] == "421.1"
@@ -87,7 +87,7 @@ def test_account_margin_specificity_priority():
 
 
 def test_account_no_label_no_value():
-    """Unlabeled numbers are never claimed (§20 — labeled evidence only)."""
+    """Unlabeled numbers are never claimed (§20 - labeled evidence only)."""
     lines = [_line("some", "10420.50", "random", "1:500")]
     assert extract_account_fields(lines) == []
 
@@ -147,7 +147,7 @@ def test_chart_explicit_price_label_beats_derived_close():
     assert values["chartPrice"] == "2350.0"
 
 
-# ── API level — ACCOUNT_POSITION through the real pipeline ─────────────────
+# ── API level - ACCOUNT_POSITION through the real pipeline ─────────────────
 
 def test_api_account_profile_end_to_end():
     image, width, height = render_mt5_account_summary()

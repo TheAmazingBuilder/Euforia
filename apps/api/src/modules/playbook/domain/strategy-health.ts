@@ -1,15 +1,15 @@
 /**
- * Strategy completeness health (Phase 7 §20 of the product contract) —
+ * Strategy completeness health (Phase 7 §20 of the product contract) -
  * FACTUAL indicators only, never profitability judgments (§82 of the phase
  * prompt): the playbook describes methodology; Analytics owns performance.
  *
  * Mirrors the product read model (PlaybookOverviewResponse.health):
- *   DRAFT / ARCHIVED          — lifecycle state echoes
- *   NO_RECENT_TRADES          — no trade attributed in the last 30 days
- *   MISSING_RISK              — risk frame absent or every field null
- *   MISSING_ENTRY_CONDITIONS  — no structured conditions AND no markdown body
- *   MISSING_INVALIDATION      — no invalidation criteria
- *   MISSING_CHECKLIST         — neither own nor global checklist template
+ *   DRAFT / ARCHIVED          - lifecycle state echoes
+ *   NO_RECENT_TRADES          - no trade attributed in the last 30 days
+ *   MISSING_RISK              - risk frame absent or every field null
+ *   MISSING_ENTRY_CONDITIONS  - no structured conditions AND no markdown body
+ *   MISSING_INVALIDATION      - no invalidation criteria
+ *   MISSING_CHECKLIST         - neither own nor global checklist template
  */
 
 import type { StrategyHealthFlag } from "../../../shared/contracts";
@@ -18,13 +18,13 @@ export interface StrategyHealthInput {
   id: string;
   status: string;
   entryRules: string | null;
-  entryConditions: unknown; // JSON column — array when present
-  invalidations: unknown; // JSON column — array when present
-  risk: unknown; // JSON column — object when present
+  entryConditions: unknown; // JSON column - array when present
+  invalidations: unknown; // JSON column - array when present
+  risk: unknown; // JSON column - object when present
 }
 
 export interface StrategyUsage {
-  /** Last trade attribution (entry time) — null when none exists. */
+  /** Last trade attribution (entry time) - null when none exists. */
   lastTradeAt: Date | null;
 }
 
@@ -47,7 +47,7 @@ function arraySize(value: unknown): number {
  * `usage.lastTradeAt` comes from the Trading Core attribution
  * (Trade.strategyId). While Trading Core carries no playbook attribution
  * (documented Phase 7 seam), usage is empty for every strategy and
- * NO_RECENT_TRADES is the honest flag — "no trade attributed" is factually
+ * NO_RECENT_TRADES is the honest flag - "no trade attributed" is factually
  * true, not a guess.
  */
 export function computeStrategyHealth(

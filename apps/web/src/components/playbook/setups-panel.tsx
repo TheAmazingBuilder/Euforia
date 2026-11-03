@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * Setups (§9): every setup in the playbook, grouped by strategy. A setup is
- * the operational recipe — trigger, confirmation, models, and ABOVE ALL its
+ * the operational recipe - trigger, confirmation, models, and ABOVE ALL its
  * invalidation (§12). Expand a row to read the recipe; edit inline.
  */
 export function SetupsPanel({
@@ -169,7 +169,7 @@ function SetupRow({
   const deleteSetup = useDeleteSetup();
   const router = useRouter();
 
-  // Nofy integration — the SETUP side of the knowledge loop (increment ③):
+  // Nofy integration - the SETUP side of the knowledge loop (increment ③):
   // notes taken here carry a real SETUP ref and stay reachable from the row.
   const createNofyNote = useCreateNofyNote({
     onCreated: (note) => {
@@ -325,7 +325,7 @@ function SetupRow({
                   <div>
                     <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{V.statWinRate}</dt>
                     <dd className="font-mono text-sm font-semibold tabular-nums">
-                      {insight.winRatePct === null ? "—" : `${insight.winRatePct.toFixed(0)}%`}
+                      {insight.winRatePct === null ? "-" : `${insight.winRatePct.toFixed(0)}%`}
                     </dd>
                   </div>
                   <div>
@@ -336,7 +336,7 @@ function SetupRow({
                         (insight.totalR ?? 0) >= 0 ? "text-profit" : "text-loss",
                       )}
                     >
-                      {insight.totalR === null ? "—" : `${insight.totalR > 0 ? "+" : ""}${insight.totalR.toFixed(1)}R`}
+                      {insight.totalR === null ? "-" : `${insight.totalR > 0 ? "+" : ""}${insight.totalR.toFixed(1)}R`}
                     </dd>
                   </div>
                   <div>
@@ -347,13 +347,13 @@ function SetupRow({
                         (insight.expectancyR ?? 0) >= 0 ? "text-profit" : "text-loss",
                       )}
                     >
-                      {insight.expectancyR === null ? "—" : `${insight.expectancyR > 0 ? "+" : ""}${insight.expectancyR.toFixed(2)}R`}
+                      {insight.expectancyR === null ? "-" : `${insight.expectancyR > 0 ? "+" : ""}${insight.expectancyR.toFixed(2)}R`}
                     </dd>
                   </div>
                   <div>
                     <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{V.statBestWindow}</dt>
                     <dd className="text-sm text-foreground">
-                      {insight.topInstrument ?? "—"}
+                      {insight.topInstrument ?? "-"}
                       {insight.topSession ? (
                         <span className="ml-1 font-mono text-[10px] text-muted-foreground">{insight.topSession}</span>
                       ) : null}

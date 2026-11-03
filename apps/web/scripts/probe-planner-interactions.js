@@ -1,12 +1,12 @@
 /**
- * Probe — cross-module interactions for the Trade Planner.
+ * Probe - cross-module interactions for the Trade Planner.
  *
  * 1. Settings → Planner: lowering the account's Max risk per trade to 0.5%
  *    must flip the READY plan's AUTO check (risk 1%) to FAILED and block
- *    readiness — the planner composes the user's risk preferences live.
+ *    readiness - the planner composes the user's risk preferences live.
  *    Restoring 2% restores PASSED/READY.
  * 2. Planner → Playbook: a linked plan shows the strategy's risk frame
- *    (default/max risk, min RR) — the playbook stays the canonical source.
+ *    (default/max risk, min RR) - the playbook stays the canonical source.
  *
  * Sidebar SPA navigation only; no reload.
  */
@@ -25,7 +25,7 @@ const DEMO_PASSWORD = "cosmoz-demo-2026";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
@@ -44,7 +44,7 @@ const DEMO_PASSWORD = "cosmoz-demo-2026";
   await page.locator('[data-testid="settings-risk-max-input"]').waitFor({ state: "visible", timeout: 15_000 });
   check("S1 Settings risk card exposes the max-risk field",
     (await page.locator('[data-testid="settings-risk-max-input"]').count()) === 1);
-  // The card forbids max < default — lower the default first.
+  // The card forbids max < default - lower the default first.
   await page.locator('[data-testid="settings-risk-default-input"]').fill("0.25");
   await page.locator('[data-testid="settings-risk-max-input"]').fill("0.5");
   await page.waitForTimeout(400);
@@ -68,7 +68,7 @@ const DEMO_PASSWORD = "cosmoz-demo-2026";
   check("P3 Blocker message rendered from the stable code",
     (await page.locator('[data-testid="planner-readiness-blockers"]').innerText()).length > 0);
 
-  // ── 3. Restore the preference — the same plan returns to READY ─────────
+  // ── 3. Restore the preference - the same plan returns to READY ─────────
   await page.locator('nav[aria-label="Main navigation"] a[href="/settings"]').click();
   await page.waitForURL(/\/settings/, { timeout: 30_000 });
   await page.locator('[data-testid="settings-nav-risk"]').click();

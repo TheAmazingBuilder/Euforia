@@ -37,9 +37,9 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 /**
- * Performance snapshots panel (Dashboard Customization Phase 08 §6–§9) —
+ * Performance snapshots panel (Dashboard Customization Phase 08 §6–§9) -
  * capture the CURRENT filtered scope as a frozen point-in-time record,
- * inspect it, rename it (metadata only — metrics are immutable by
+ * inspect it, rename it (metadata only - metrics are immutable by
  * contract), export it, delete it, and compare two snapshots with the pure
  * shared engine (direction-aware deltas, currency-honest warnings).
  *
@@ -55,7 +55,7 @@ type Suite = AnalyticsSuiteResponse;
 
 function MetricValue({ snapshot, metric }: { snapshot: PerformanceSnapshot; metric: keyof PerformanceSnapshot["metrics"] }) {
   const value = snapshot.metrics[metric];
-  if (value === null) return <span className="text-muted-foreground">—</span>;
+  if (value === null) return <span className="text-muted-foreground">-</span>;
   if (metric === "winRate") return <>{formatPercent(value, 1)}</>;
   if (metric === "trades") return <>{value}</>;
   if (metric === "netPnl") {
@@ -102,7 +102,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
     const trimmed = name.trim();
     if (trimmed.length === 0) return;
     try {
-      // The EXACT current filter bag (period + scope) — the server resolves
+      // The EXACT current filter bag (period + scope) - the server resolves
       // the window and freezes it; the snapshot never shifts later.
       await createSnapshot.mutateAsync({
         name: trimmed,
@@ -271,7 +271,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
               aria-label={`${T.compare} A`}
               data-testid="compare-select-a"
             >
-              <option value="">A — {T.compareSelect}</option>
+              <option value="">A - {T.compareSelect}</option>
               {snapshots.map((snapshot) => (
                 <option key={snapshot.id} value={snapshot.id}>
                   {snapshot.name} ({snapshot.capturedAt.slice(0, 10)})
@@ -285,7 +285,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
               aria-label={`${T.compare} B`}
               data-testid="compare-select-b"
             >
-              <option value="">B — {T.compareSelect}</option>
+              <option value="">B - {T.compareSelect}</option>
               {snapshots.map((snapshot) => (
                 <option key={snapshot.id} value={snapshot.id}>
                   {snapshot.name} ({snapshot.capturedAt.slice(0, 10)})
@@ -472,7 +472,7 @@ export function SnapshotsPanel({ suite, filters }: { suite: Suite; filters: Anal
                         <td className="py-1.5">{T.metricNames[metric] ?? metric}</td>
                         <td className="py-1.5 text-right font-mono tabular-nums">
                           {value === null
-                            ? "—"
+                            ? "-"
                             : metric === "trades"
                               ? String(value)
                               : metric === "netPnl" && detail.currency !== null

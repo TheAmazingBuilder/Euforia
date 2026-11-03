@@ -148,7 +148,7 @@ function parseDateTime(raw: string): string | null {
 }
 
 /**
- * CSV import with per-broker column mapping — the client parses and maps,
+ * CSV import with per-broker column mapping - the client parses and maps,
  * the server receives normalized rows (validated, deduplicated per broker
  * ref, results recomputed). Auto-mapping covers the common layouts so the
  * happy path is one click: choose file → Import.
@@ -186,7 +186,7 @@ export function CsvImportDialog({
   const dataRows = hasHeader ? rows.slice(1) : rows;
 
   // Auto-map on new content: render-time adjustment against a content key
-  // (codebase convention — no setState inside effects).
+  // (codebase convention - no setState inside effects).
   const contentKey = `${broker}|${hasHeader}|${headerRow.join("\u0001")}`;
   const [mappedFor, setMappedFor] = React.useState<string | null>(null);
   if (csvText !== "" && mappedFor !== contentKey) {
@@ -230,7 +230,7 @@ export function CsvImportDialog({
       const exitAt = parseDateTime(cellOf("exitAt"));
       const exitPrice = parseDecimal(cellOf("exitPrice"), true);
       const quantity = parseDecimal(cellOf("quantity"), true);
-      // Broker files carry commissions as negative amounts — normalize to ≥ 0.
+      // Broker files carry commissions as negative amounts - normalize to ≥ 0.
       const feesRaw = parseDecimal(cellOf("fees"), false);
       const fees = feesRaw === null ? null : String(Math.abs(Number(feesRaw)));
       const pnl = parseDecimal(cellOf("pnl"), false);
@@ -456,8 +456,8 @@ export function CsvImportDialog({
                         <td className="px-2.5 py-1.5 text-muted-foreground">{row.entryAt.slice(0, 16).replace("T", " ")}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.entryPrice}</td>
                         <td className="px-2.5 py-1.5 text-right tabular-nums">{row.exitPrice ?? T.openValue}</td>
-                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.quantity ?? "—"}</td>
-                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.pnl ?? "—"}</td>
+                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.quantity ?? "-"}</td>
+                        <td className="px-2.5 py-1.5 text-right tabular-nums">{row.pnl ?? "-"}</td>
                       </tr>
                     ))}
                   </tbody>

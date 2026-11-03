@@ -1,5 +1,5 @@
 /**
- * Security controller — account-protection endpoints (shared security.ts).
+ * Security controller - account-protection endpoints (shared security.ts).
  * Requires an authenticated session; sensitive mutations additionally
  * consume a single-use re-authentication token (body `reauthToken`).
  */
@@ -28,7 +28,7 @@ import { IdentityRepository, type UserRow } from "./identity.repository";
 
 /**
  * Missing reauthToken must reach the HANDLER (contract: 401
- * INVALID_REAUTH_TOKEN, mock §13) — so the pipe-level schemas accept it as
+ * INVALID_REAUTH_TOKEN, mock §13) - so the pipe-level schemas accept it as
  * optional and ReauthService enforces presence/consumption.
  */
 const sensitiveOptional = sensitiveActionInputSchema.extend({
@@ -50,7 +50,7 @@ export class SecurityController {
   private async loadUser(userId: string): Promise<UserRow> {
     const user = await this.repository.findUserById(userId);
     if (!user) {
-      // Authenticated principal without a row — treat as unauthenticated.
+      // Authenticated principal without a row - treat as unauthenticated.
       throw new UnauthorizedError("Not authenticated.", "INVALID_TOKEN");
     }
     return user;

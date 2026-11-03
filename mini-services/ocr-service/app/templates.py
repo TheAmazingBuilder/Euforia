@@ -1,23 +1,23 @@
 """Platform layout templates (engine quality review §1.3).
 
 The classifier already names the platform (§9). Templates turn that name
-into STRUCTURAL PRIORS for extraction — known layouts constrain what the
+into STRUCTURAL PRIORS for extraction - known layouts constrain what the
 field finders may accept and reward evidence found in the expected shape:
 
-  MT5_DESKTOP_HISTORY — landscape panels with one trade per row:
+  MT5_DESKTOP_HISTORY - landscape panels with one trade per row:
       time · type · volume · symbol · price [· sl · tp · profit];
       S/L and T/P often appear as COLUMN HEADERS rather than per-row labels;
       a trailing signed number on a closed row is the profit;
       volumes span a wider plausible range (portfolio accounts).
 
-  MT5_MOBILE_SUMMARY — portrait position cards:
+  MT5_MOBILE_SUMMARY - portrait position cards:
       direction and volume are adjacent ("buy 0.15"),
       S/L / T/P / Profit are explicit per-card labels,
       one trade per screenshot.
 
-  GENERIC — the conservative V1 behavior (no structural assumptions).
+  GENERIC - the conservative V1 behavior (no structural assumptions).
 
-Templates NEVER invent values — they can only (a) widen/tighten plausibility
+Templates NEVER invent values - they can only (a) widen/tighten plausibility
 windows, (b) add a small explainable confidence bonus when the evidence fits
 the expected row shape (LAYOUT_MATCH note), (c) enable the trailing-profit
 rule for history rows. Everything stays deterministic and auditable.
@@ -32,12 +32,12 @@ from typing import List, Optional, Tuple
 from .contract import EngineField, SourceRegion
 from .extraction_types import OcrLine, OcrWord
 
-# Layout template names — reported in processingMetadata.passes for observability.
+# Layout template names - reported in processingMetadata.passes for observability.
 MT5_DESKTOP_HISTORY = "MT5_DESKTOP_HISTORY"
 MT5_MOBILE_SUMMARY = "MT5_MOBILE_SUMMARY"
 GENERIC = "GENERIC"
 
-# Direction words — V2 §11 normalization vocabulary: the LONG/SHORT synonyms
+# Direction words - V2 §11 normalization vocabulary: the LONG/SHORT synonyms
 # are now FIRST-CLASS direction evidence (they were already accepted by
 # normalize_direction; the regex simply never matched them before).
 DIRECTION_WORD = re.compile(r"^(buy|sell|b|s|long|short)$", re.IGNORECASE)
@@ -47,12 +47,12 @@ SYMBOL_TOKEN = re.compile(r"^[A-Za-z]{2,6}(?:[A-Za-z0-9]{0,4})?$")
 SL_LABELS = re.compile(r"\bs[./]?l\b", re.IGNORECASE)
 TP_LABELS = re.compile(r"\bt[./]?p\b", re.IGNORECASE)
 PROFIT_LABELS = re.compile(r"\bprofit\b", re.IGNORECASE)
-# Exit price (V2 §11) lives in extraction.py as WORD-level label shapes —
+# Exit price (V2 §11) lives in extraction.py as WORD-level label shapes -
 # the bare word "close" in a history row is an order TYPE there, and the
 # OCR splits "exit price" into two words, so a single-line regex cannot
 # express the rule (see _EXIT_WORD / _exit_labeled_value).
 
-# Words that can never be a symbol (platform vocabulary — mirrors extraction).
+# Words that can never be a symbol (platform vocabulary - mirrors extraction).
 SYMBOL_STOPWORDS = {
     "BUY", "SELL", "PROFIT", "BALANCE", "EQUITY", "MARGIN", "DEPOSIT",
     "WITHDRAWAL", "CREDIT", "SYMBOL", "TIME", "TYPE", "VOLUME", "PRICE",
@@ -67,7 +67,7 @@ class LayoutTemplate:
     """Structural priors for one platform layout (deterministic, explainable)."""
 
     name: str
-    # Plausible volume window — lots (history panels accept portfolio sizes).
+    # Plausible volume window - lots (history panels accept portfolio sizes).
     volume_min: float
     volume_max: float
     # History rows may carry the profit as the LAST signed decimal (no label).
@@ -124,7 +124,7 @@ def choose_template(
     MT5 evidence (detected platform, or an MT5-shaped type for legacy
     callers) + a landscape aspect ratio (desktop panel) selects the history
     template; MT5 evidence on a portrait/square crop selects the mobile
-    summary. Anything else stays GENERIC — no guesses (§9).
+    summary. Anything else stays GENERIC - no guesses (§9).
     """
     is_mt5 = (platform == "MT5") or (
         platform is None and classification_type in MT5_TYPES
@@ -178,11 +178,11 @@ def is_header_row(line: OcrLine) -> bool:
 
 
 def trailing_profit_value(line: OcrLine) -> Optional[OcrWord]:
-    """The LAST signed decimal on a history row — MT5's profit column.
+    """The LAST signed decimal on a history row - MT5's profit column.
 
     Only enabled by the desktop history template (trailing_profit=True) and
     only when the sign is explicit (+/−): an unsigned trailing number is far
-    too ambiguous to claim (§20 — never invent).
+    too ambiguous to claim (§20 - never invent).
     """
     for word in reversed(line.words):
         if re.match(r"^[-+]\d", word.text) and DECIMAL_TOKEN.match(word.text):
@@ -193,7 +193,7 @@ def trailing_profit_value(line: OcrLine) -> Optional[OcrWord]:
 
 
 def apply_shape_bonus(field: EngineField, template: LayoutTemplate) -> EngineField:
-    """Reward evidence that fits the expected layout — small, explainable.
+    """Reward evidence that fits the expected layout - small, explainable.
 
     The bonus never pushes a field past 0.99 and always carries the
     LAYOUT_MATCH note so the review UI can show why confidence rose.

@@ -11,9 +11,9 @@ export const metadata: Metadata = {
 };
 
 /**
- * Oryon — Phase 1. Server page (repo convention: Server Components by
+ * Oryon - Phase 1. Server page (repo convention: Server Components by
  * default); the workspace itself is the client boundary. AuthGate + AppShell
- * come from the (app) layout — Oryon never implements its own auth checks.
+ * come from the (app) layout - Oryon never implements its own auth checks.
  */
 export default function OryonPage() {
   return (

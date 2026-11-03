@@ -1,4 +1,4 @@
-/** Debug — settings trading card state. */
+/** Debug - settings trading card state. */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 

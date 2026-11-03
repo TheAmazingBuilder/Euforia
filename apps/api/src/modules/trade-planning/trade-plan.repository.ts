@@ -1,12 +1,12 @@
 /**
- * Trade Planning data access (infrastructure) — Phase 5.
+ * Trade Planning data access (infrastructure) - Phase 5.
  *
  * The ONLY place in the trade-planning context that touches Prisma. All
- * methods return narrow row projections — no Prisma type crosses into
+ * methods return narrow row projections - no Prisma type crosses into
  * services or controllers (Phase 1 §10 boundary).
  *
  * Concurrency (§41): lifecycle transitions use conditional updates
- * (`updateMany` with the expected status set) — a stale read produces a
+ * (`updateMany` with the expected status set) - a stale read produces a
  * zero-count write that the service translates into a 409, instead of
  * blindly succeeding. This is the plan-sized analogue of Phase 4's
  * account-row serialization: one atomic guarded write per transition.
@@ -133,7 +133,7 @@ export class TradePlanRepository {
   // ── Reads ─────────────────────────────────────────────────────────────────
 
   /**
-   * Ownership check is part of the lookup — foreign ids are simply not found
+   * Ownership check is part of the lookup - foreign ids are simply not found
    * (IDOR → honest 404, the established convention).
    */
   async findPlanForUser(planId: string, userId: string): Promise<TradePlanRow | null> {
@@ -144,7 +144,7 @@ export class TradePlanRepository {
     return (row as TradePlanRow) ?? null;
   }
 
-  /** §40 — create dedupe: the plan an earlier retried request already made. */
+  /** §40 - create dedupe: the plan an earlier retried request already made. */
   async findByClientRequest(
     userId: string,
     clientRequestId: string,
@@ -182,10 +182,10 @@ export class TradePlanRepository {
   }
 
   /**
-   * Analytics attribution rows (Phase 8 — additive public contract): the
+   * Analytics attribution rows (Phase 8 - additive public contract): the
    * strategy reference + the canonical planned RR the risk engine computed,
    * per plan, for the whole user. Analytics CONSUMES these canonical values
-   * (it never re-derives RR — Phase 8 §29) when comparing planned vs
+   * (it never re-derives RR - Phase 8 §29) when comparing planned vs
    * realized through the review's origin-plan linkage.
    */
   async listPlanAttributionRows(
@@ -378,7 +378,7 @@ export class TradePlanRepository {
   /**
    * Phase 7 (additive): number of plans referencing a Playbook strategy.
    * Exercised by the Playbook context through this repository's PUBLIC
-   * contract — deletion guards read references here, ownership stays
+   * contract - deletion guards read references here, ownership stays
    * query-local (cross-context reference counting, no ownership transfer).
    */
   async countStrategyReferences(userId: string, strategyId: string): Promise<number> {

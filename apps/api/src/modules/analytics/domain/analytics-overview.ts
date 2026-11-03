@@ -1,13 +1,13 @@
 /**
- * Analytics overview engine (Phase 8) — the dashboard KPI aggregation
+ * Analytics overview engine (Phase 8) - the dashboard KPI aggregation
  * (GET /stats/overview, contract `statsOverviewResponseSchema`).
  *
- * The dashboard/Session surfaces consume this — NOT the Analytics module
+ * The dashboard/Session surfaces consume this - NOT the Analytics module
  * itself (the module renders the suite). Blocks owned by bounded contexts
  * that do not exist backend yet (ghost trades / DailyStat discipline
- * materialization) are honest zeros/nulls — never fabricated (§8/§54).
+ * materialization) are honest zeros/nulls - never fabricated (§8/§54).
  *
- * Main account = the DEFAULT account (isDefault, else the first) — the
+ * Main account = the DEFAULT account (isDefault, else the first) - the
  * account the journal anchors equity to, matching the frontend reference.
  */
 import type { Currency, StatsOverviewResponse } from "../../../shared/contracts";
@@ -43,11 +43,11 @@ export function computeAnalyticsOverview(environment: OverviewEnvironment): Stat
   const winRate = closed.length > 0 ? wins.length / closed.length : 0;
   const expectancy =
     closed.length > 0 ? closed.reduce((sum, t) => sum + t.rMultiple, 0) / closed.length : 0;
-  // Discipline score comes from the nightly DailyStat materialization —
+  // Discipline score comes from the nightly DailyStat materialization -
   // that bounded context does not exist backend yet: honest null (§54).
   const disciplineScore: number | null = null;
 
-  // ── Per-day aggregation (only days WITH closed trades — no zero-fill) ───
+  // ── Per-day aggregation (only days WITH closed trades - no zero-fill) ───
   const byDay = new Map<string, { pnl: number; count: number }>();
   for (const trade of closed) {
     const entry = byDay.get(trade.tradingDate) ?? { pnl: 0, count: 0 };
@@ -99,7 +99,7 @@ export function computeAnalyticsOverview(environment: OverviewEnvironment): Stat
   };
   const cur = aggregate(closed.filter((t) => t.tradingDate >= currentStart));
   const prev = aggregate(closed.filter((t) => t.tradingDate >= prevStart && t.tradingDate < currentStart));
-  // DailyStat-backed discipline deltas: absent backend — null baseline.
+  // DailyStat-backed discipline deltas: absent backend - null baseline.
   const curDisc: number | null = null;
   const prevDisc: number | null = null;
 
@@ -113,7 +113,7 @@ export function computeAnalyticsOverview(environment: OverviewEnvironment): Stat
       ? { value: null, direction: cur.netPnl > prev.netPnl && cur.hasData ? "UP" : "FLAT" }
       : rawDelta(cur.netPnl, prev.netPnl);
 
-  // ── Per-KPI sparklines — WEEKLY buckets (last 8 data weeks, Mon-anchored)
+  // ── Per-KPI sparklines - WEEKLY buckets (last 8 data weeks, Mon-anchored)
   const sparklines: StatsOverviewResponse["sparklines"] = {
     netPnl: [],
     winRate: [],
@@ -192,7 +192,7 @@ export function computeAnalyticsOverview(environment: OverviewEnvironment): Stat
 
   return {
     // Account currencies are validated against the shared Currency enum at
-    // creation — the DB string is cast, never re-validated here.
+    // creation - the DB string is cast, never re-validated here.
     currency: (mainAccount?.currency ?? "USD") as Currency,
     netPnl: dec(netPnl),
     winRate: dec(round2(winRate)),

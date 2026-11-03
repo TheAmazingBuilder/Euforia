@@ -1,5 +1,5 @@
 /**
- * GET /stats/overview + GET /stats/analytics — pure computations ported
+ * GET /stats/overview + GET /stats/analytics - pure computations ported
  * 1:1 from the mock store (the algorithms the frontend already renders).
  * Server-computed aggregates, decimal strings out; the client only formats.
  */
@@ -142,7 +142,7 @@ export function computeStatsOverview(ctx: StatsContext): StatsOverviewResponse {
       ? { value: null, direction: cur.netPnl > prev.netPnl && cur.hasData ? "UP" : "FLAT" }
       : rawDelta(cur.netPnl, prev.netPnl);
 
-  // ── Per-KPI sparklines — WEEKLY buckets (last 8 weeks, Monday-anchored) ───
+  // ── Per-KPI sparklines - WEEKLY buckets (last 8 weeks, Monday-anchored) ───
   const sparklines: StatsOverviewResponse["sparklines"] = {
     netPnl: [],
     winRate: [],
@@ -211,7 +211,7 @@ export function computeStatsOverview(ctx: StatsContext): StatsOverviewResponse {
   );
   const rCost = hesitantGhosts.reduce((sum, g) => sum + Math.abs(num(g.hypotheticalR)), 0);
 
-  // ── Ghost trend — fear vs discipline skip counts, last 30 days ────────────
+  // ── Ghost trend - fear vs discipline skip counts, last 30 days ────────────
   const trendDays = 30;
   const ghostTrend: StatsOverviewResponse["ghostTrend"] = [];
   for (let offset = trendDays - 1; offset >= 0; offset -= 1) {
@@ -373,7 +373,7 @@ export function computeAnalytics(ctx: StatsContext): AnalyticsResponse {
     );
   });
 
-  // ── Emotions (worst average R first — friction surfaces on top) ───────────
+  // ── Emotions (worst average R first - friction surfaces on top) ───────────
   const emotionBuckets = [...new Set(closed.map((t) => t.emotionBefore).filter((e): e is string => e !== null))]
     .map((emotion) => bucketOf(emotion, emotionLabelOf(emotion), closed.filter((t) => t.emotionBefore === emotion)))
     .sort((a, b) => Number(a.avgR ?? 0) - Number(b.avgR ?? 0));

@@ -1,17 +1,17 @@
 /**
- * Verify — Dashboard upgrades (module-by-module round).
- * Probes (ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Dashboard upgrades (module-by-module round).
+ * Probes (ONE SPA session - the mock store reseeds on full reload):
  *  1. Seven widgets render in the canonical order
  *  2. « Goals on pace »: counters render; the at-risk counter is clickable
  *     → lands on /journal?tab=goals (Goals tab)
  *  3. « Week vs week »: two labeled rows, 7+7 day bands, delta pill
- *  4. Edit layout: draft transaction — tools render, move-down reorders the
+ *  4. Edit layout: draft transaction - tools render, move-down reorders the
  *     DRAFT (no PATCH), Save commits (PATCH /me/preferences/dashboard)
  *  5. Native drag & drop reorders the draft → Save fires the PATCH
  *  6. Saved order SURVIVES SPA navigation (server persisted)
  *  7. Cancel-with-changes asks + restores; Reset → draft = canonical → Save
  *  8. Density COMPACT (Settings → Appearance): dashboard-scoped tightening
- *     (descriptions hidden) — then back to COMFORTABLE
+ *     (descriptions hidden) - then back to COMFORTABLE
  *  9. Light theme + mobile 390 no overflow; zero unexpected console errors
  */
 const { chromium } = require("playwright");
@@ -42,7 +42,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const widgetOrder = async () =>
     page.$$eval('[data-page="dashboard"] section[data-widget]', (nodes) =>
@@ -57,7 +57,7 @@ const BASE = "http://localhost:3000";
   const run = async () => {
   // ── 1. Canonical widget order ────────────────────────────────────────────
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60000 });
-  // Fresh browsers have no session — sign in with the demo account first
+  // Fresh browsers have no session - sign in with the demo account first
   // (same preamble as the other dashboard probes).
   if (page.url().includes("/login")) {
     const fillDemo = page.locator('[data-testid="fill-demo"]');
@@ -77,8 +77,8 @@ const BASE = "http://localhost:3000";
   check("Canonical default order", order0.join() === canonical.join(), order0.join());
   check("Edit toolbar renders", await page.locator('[data-testid="dashboard-customize"]').isVisible());
 
-  // ── 2. Goals on pace — counters + clickable at-risk counter ─────────────
-  // The goals query resolves async — wait it out instead of racing isVisible.
+  // ── 2. Goals on pace - counters + clickable at-risk counter ─────────────
+  // The goals query resolves async - wait it out instead of racing isVisible.
   await page.locator('[data-testid="dashboard-goals-counters"]').waitFor({ state: "visible", timeout: 10000 }).catch(() => {});
   check("Goals card header renders", await page.locator('[data-testid="dashboard-goals-pace"]').isVisible());
   check("Counters grid renders", await page.locator('[data-testid="dashboard-goals-counters"]').isVisible());
@@ -99,7 +99,7 @@ const BASE = "http://localhost:3000";
   check("14 day bands (7 per week)", bandCount === 14, `${bandCount} bands`);
   check("Delta pill renders", await page.locator('[data-testid="dashboard-week-delta"]').isVisible());
 
-  // ── 4. Edit layout — draft transaction: reorder stays local until Save ───
+  // ── 4. Edit layout - draft transaction: reorder stays local until Save ───
   await page.locator('[data-testid="dashboard-customize"]').click();
   await page.waitForTimeout(400);
   check("Edit hint appears", await page.locator('[data-testid="dashboard-edit-hint"]').isVisible());
@@ -134,7 +134,7 @@ const BASE = "http://localhost:3000";
   check("Save fires PATCH /me/preferences/dashboard", patchCount >= 1, `${patchCount} patch(es)`);
   check("Save exits edit mode (toolbar gone)", (await page.locator('[data-testid="dashboard-edit-toolbar"]').count()) === 0);
 
-  // ── 6. Server persistence — SPA away and back; the refetch must return
+  // ── 6. Server persistence - SPA away and back; the refetch must return
   // the saved order. NOTE: navigating remounts the view, so edit mode is
   // re-entered below afterwards.
   await page.locator('aside nav a[href="/trades"]').click();
@@ -160,7 +160,7 @@ const BASE = "http://localhost:3000";
   const order2 = await widgetOrder();
   check("Layout persists across SPA navigation (server)", persisted, order2.join(","));
 
-  // ── 7. Cancel + Reset (edit mode again — the remount reset it) ───────────
+  // ── 7. Cancel + Reset (edit mode again - the remount reset it) ───────────
   await page.locator('[data-testid="dashboard-customize"]').click();
   await page.waitForTimeout(400);
   // Cancel with a dirty draft asks for confirmation, then restores.
@@ -186,7 +186,7 @@ const BASE = "http://localhost:3000";
   const toolsAfter = await page.locator('[data-testid^="dashboard-widget-tools-"]').count();
   check("Save hides the tools", toolsAfter === 0, `${toolsAfter} left`);
 
-  // ── 8. Density COMPACT — dashboard-scoped tightening ─────────────────────
+  // ── 8. Density COMPACT - dashboard-scoped tightening ─────────────────────
   await page.locator('aside nav a[href="/settings"]').click();
   await page.waitForTimeout(1200);
   await page.locator('[data-testid="settings-nav-appearance"]').click();
@@ -210,7 +210,7 @@ const BASE = "http://localhost:3000";
   check("Dashboard rhythm tightened (space-y-3)", rootCompact);
   await page.screenshot({ path: "scripts/shots/dashboard-upgrades-compact.png", fullPage: false });
 
-  // Back to COMFORTABLE — design restored byte for byte.
+  // Back to COMFORTABLE - design restored byte for byte.
   await page.locator('aside nav a[href="/settings"]').click();
   await page.waitForTimeout(1200);
   await page.locator('[data-testid="settings-nav-appearance"]').click();
@@ -274,7 +274,7 @@ const BASE = "http://localhost:3000";
   );
   check("Zero console errors (known market-service noise excluded)", errors.length - noise.length === 0, errors.slice(0, 3).join(" | "));
 
-  console.log("\n═══ DASHBOARD UPGRADES — RESULTS ═══");
+  console.log("\n═══ DASHBOARD UPGRADES - RESULTS ═══");
   results.forEach((r) => console.log(r));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} PASS`);
@@ -284,7 +284,7 @@ const BASE = "http://localhost:3000";
     await run();
   } catch (error) {
     console.log(`\n[ABORTED] ${error}`);
-    console.log("\n═══ DASHBOARD UPGRADES — PARTIAL RESULTS ═══");
+    console.log("\n═══ DASHBOARD UPGRADES - PARTIAL RESULTS ═══");
     results.forEach((r) => console.log(r));
     const failed = results.filter((r) => r.startsWith("FAIL")).length;
     console.log(`\n${results.length - failed}/${results.length} PASS so far`);

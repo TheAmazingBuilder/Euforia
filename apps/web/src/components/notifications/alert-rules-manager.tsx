@@ -56,11 +56,11 @@ import { alertRuleSummary, alertEventObservation } from "@/lib/notifications/ale
 import { cn } from "@/lib/utils";
 
 /**
- * Alert rules manager (Dashboard Customization Phase 07) — create/edit/
+ * Alert rules manager (Dashboard Customization Phase 07) - create/edit/
  * enable/disable/delete metric-threshold and goal rules, inspect each
  * rule's condition + scope, and browse its recent inbox events. Opened
  * from the notification center (the inbox is the alert center; this is
- * its rules section — spec §5/§8).
+ * its rules section - spec §5/§8).
  */
 
 const METRICS = Object.keys(METRIC_ALERT_REGISTRY) as MetricAlertMetric[];
@@ -97,7 +97,7 @@ const CONDITION_LABELS: Record<MetricAlertCondition, string> = {
   EQUAL: "Equal to",
 };
 
-// ── Per-rule recent events (lazy — hook lives in its own component) ─────────
+// ── Per-rule recent events (lazy - hook lives in its own component) ─────────
 
 function RuleEventsList({ ruleId }: { ruleId: string }) {
   const { data, isLoading, isError } = useAlertRuleEvents(ruleId);
@@ -111,7 +111,7 @@ function RuleEventsList({ ruleId }: { ruleId: string }) {
   if (events.length === 0) {
     return (
       <p className="px-3 pb-3 text-xs text-muted-foreground">
-        No events yet — the rule fires when its condition turns true.
+        No events yet - the rule fires when its condition turns true.
       </p>
     );
   }
@@ -232,7 +232,7 @@ export function AlertRuleFormDialog({
   const [form, setForm] = React.useState<FormState>(freshForm);
   const [error, setError] = React.useState<string | null>(null);
 
-  // Reset/seed the draft each time the dialog opens — guarded render-time
+  // Reset/seed the draft each time the dialog opens - guarded render-time
   // adjustment ("you might not need an effect", house pattern).
   const [wasOpen, setWasOpen] = React.useState(open);
   if (open !== wasOpen) {
@@ -323,7 +323,7 @@ export function AlertRuleFormDialog({
             {rule === null ? "New alert rule" : "Edit alert rule"}
           </DialogTitle>
           <DialogDescription>
-            Watch a metric Euforia computes from your journal — the alert lands in your inbox when
+            Watch a metric Euforia computes from your journal - the alert lands in your inbox when
             the condition turns true.
           </DialogDescription>
         </DialogHeader>
@@ -340,7 +340,7 @@ export function AlertRuleFormDialog({
             />
           </div>
 
-          {/* Kind — immutable after creation (server-enforced). */}
+          {/* Kind - immutable after creation (server-enforced). */}
           <div className="space-y-1.5">
             <Label>Rule type</Label>
             <div className="flex gap-2" role="radiogroup" aria-label="Rule type">
@@ -483,7 +483,7 @@ export function AlertRuleFormDialog({
                 </Select>
                 {(goals.data?.goals ?? []).length === 0 && (
                   <p className="text-[11px] text-muted-foreground">
-                    No goals yet — create one on the Journal&apos;s Goals tab first.
+                    No goals yet - create one on the Journal&apos;s Goals tab first.
                   </p>
                 )}
               </div>
@@ -578,7 +578,7 @@ export function AlertRulesManager({
     evaluate.mutate(undefined, {
       onSuccess: (result) => {
         toast.success(
-          `Evaluation done — ${result.triggeredEvents} alert${result.triggeredEvents === 1 ? "" : "s"} fired`,
+          `Evaluation done - ${result.triggeredEvents} alert${result.triggeredEvents === 1 ? "" : "s"} fired`,
           {
             description:
               result.skippedNoData > 0
@@ -678,7 +678,7 @@ export function AlertRulesManager({
                       }
                     />
                     <Button
-                      variant="ghost"
+                      variant="edit"
                       size="icon"
                       className="size-7 shrink-0"
                       aria-label={`Edit ${rule.name}`}
@@ -722,7 +722,7 @@ export function AlertRulesManager({
 
       <AlertRuleFormDialog open={formOpen} onOpenChange={setFormOpen} rule={editing} />
 
-      {/* Delete confirmation — destructive, consistent with app conventions. */}
+      {/* Delete confirmation - destructive, consistent with app conventions. */}
       <Dialog open={pendingDelete !== null} onOpenChange={(next) => !next && setPendingDelete(null)}>
         <DialogContent className="max-w-md" data-testid="alert-rule-delete-confirm">
           <DialogHeader>

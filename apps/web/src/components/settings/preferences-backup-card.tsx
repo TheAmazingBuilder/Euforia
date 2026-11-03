@@ -22,10 +22,10 @@ import { usePreferences } from "@/lib/api/queries";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Preferences backup (module upgrade) — the preferences PROFILE as a
+ * Preferences backup (module upgrade) - the preferences PROFILE as a
  * portable JSON file: export downloads the whole document, import restores
  * it domain by domain through the SAME server-validated PATCH endpoints the
- * settings cards use. Journal data is NOT included — that lives in the
+ * settings cards use. Journal data is NOT included - that lives in the
  * data backup (plain JSON snapshot of trades/strategies/tags).
  */
 
@@ -68,13 +68,13 @@ export function PreferencesBackupCard() {
     try {
       const text = await file.text();
       const json: unknown = JSON.parse(text);
-      // Client-side validation — the same schema the server enforces per PATCH.
+      // Client-side validation - the same schema the server enforces per PATCH.
       const parsed = userPreferencesSchema.parse(json);
       let restored = 0;
       for (const domain of PREFERENCE_DOMAINS) {
         const body = parsed[domain];
         if (body !== undefined && body !== null) {
-          // One server-validated PATCH per domain — exactly the endpoints the
+          // One server-validated PATCH per domain - exactly the endpoints the
           // settings cards write through (same merges, same constraints).
           const updated = await apiRequest<UserPreferences>(
             apiPaths.preferenceDomain(domain),

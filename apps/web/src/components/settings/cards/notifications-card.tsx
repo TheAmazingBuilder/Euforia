@@ -6,7 +6,7 @@ import { BellRing, BellOff, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { NotificationChannels, NotificationPreferences } from "@cosmoz/shared";
 
-import { Input } from "@/components/ui/input";
+import { TimePicker } from "@/components/shared/date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import {
   ConfirmDialog,
@@ -23,7 +23,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Notification preferences — the fine-grained matrix: 7 categories ×
+ * Notification preferences - the fine-grained matrix: 7 categories ×
  * concrete events × 3 delivery channels. The in-app channel feeds the
  * existing alert inbox; email/push activate when the delivery service
  * ships (preferences are stored now, honored by the real API later).
@@ -31,14 +31,14 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 type CategoryKey = keyof NotificationPreferences;
 
-/** Common envelope of every notification category — event key sets differ. */
+/** Common envelope of every notification category - event key sets differ. */
 type NotificationCategoryEnvelope = {
   enabled: boolean;
   events: Record<string, NotificationChannels>;
 };
 
 /**
- * Machine-only category metadata — labels, descriptions and event labels
+ * Machine-only category metadata - labels, descriptions and event labels
  * resolve from dict.settings.notifications.categories[key] at render time
  * (de-labeled module map, per the dict.* contract).
  */
@@ -117,7 +117,7 @@ export function NotificationsCard() {
       if (!previous) return previous;
       // All seven categories share the { enabled, events } envelope; only the
       // event key sets differ, and edits never move events across
-      // categories — the envelope-level cast is therefore sound.
+      // categories - the envelope-level cast is therefore sound.
       const current = previous[category] as NotificationCategoryEnvelope;
       return { ...previous, [category]: updater(current) } as NotificationPreferences;
     });
@@ -196,7 +196,7 @@ export function NotificationsCard() {
                 />
               </div>
               <div className={current.enabled ? "grid gap-2" : "grid gap-2 opacity-50"} aria-disabled={!current.enabled}>
-                {/* Channel headers — same fixed lanes as the switches below. */}
+                {/* Channel headers - same fixed lanes as the switches below. */}
                 <div className="flex items-center justify-between gap-3 px-1">
                   <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
                     {N.eventColumn}
@@ -230,7 +230,7 @@ export function NotificationsCard() {
                                 setEventChannel(category.key, eventKey, key, checked)
                               }
                               disabled={!current.enabled}
-                              aria-label={`${meta.events[eventKey]} — ${channelLabels[key]}`}
+                              aria-label={`${meta.events[eventKey]} - ${channelLabels[key]}`}
                               data-testid={`settings-notifications-${category.key}-${eventKey}-${key}`}
                             />
                           </span>
@@ -244,7 +244,7 @@ export function NotificationsCard() {
           );
         })}
 
-        {/* Quiet hours — out-of-band channels only; the inbox is never muted. */}
+        {/* Quiet hours - out-of-band channels only; the inbox is never muted. */}
         <section
           className="grid grid-cols-1 gap-3 rounded-xl border border-border p-4"
           data-testid="settings-notifications-quiet-hours"
@@ -280,17 +280,17 @@ export function NotificationsCard() {
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-from">
                 {N.quietHoursFrom}
               </label>
-              <Input
+              <TimePicker
                 id="quiet-hours-from"
-                type="time"
                 value={draft.quietHours.from}
                 disabled={!draft.quietHours.enabled}
-                onChange={(event) =>
+                ariaLabel={N.quietHoursFrom}
+                onChange={(from) =>
                   setDraft((previous) =>
-                    previous ? { ...previous, quietHours: { ...previous.quietHours, from: event.target.value } } : previous,
+                    previous ? { ...previous, quietHours: { ...previous.quietHours, from } } : previous,
                   )
                 }
-                className="h-8 w-full font-mono text-xs"
+                className="w-full"
                 data-testid="settings-notifications-quiet-hours-from"
               />
             </div>
@@ -298,17 +298,17 @@ export function NotificationsCard() {
               <label className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground" htmlFor="quiet-hours-to">
                 {N.quietHoursTo}
               </label>
-              <Input
+              <TimePicker
                 id="quiet-hours-to"
-                type="time"
                 value={draft.quietHours.to}
                 disabled={!draft.quietHours.enabled}
-                onChange={(event) =>
+                ariaLabel={N.quietHoursTo}
+                onChange={(to) =>
                   setDraft((previous) =>
-                    previous ? { ...previous, quietHours: { ...previous.quietHours, to: event.target.value } } : previous,
+                    previous ? { ...previous, quietHours: { ...previous.quietHours, to } } : previous,
                   )
                 }
-                className="h-8 w-full font-mono text-xs"
+                className="w-full"
                 data-testid="settings-notifications-quiet-hours-to"
               />
             </div>

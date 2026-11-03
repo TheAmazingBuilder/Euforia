@@ -18,7 +18,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Trade Review hooks — the review workflow fused with Goal setting.
+ * Trade Review hooks - the review workflow fused with Goal setting.
  * Review mutations ripple into Analytics (lessons/followedPlan live on the
  * trade) and into goal progress (FOLLOWED_PLAN_PCT is computed from trades).
  */
@@ -65,7 +65,7 @@ function useReviewInvalidation() {
   }, [queryClient]);
 }
 
-/** PUT /reviews/:tradeId — create or update the post-trade review. */
+/** PUT /reviews/:tradeId - create or update the post-trade review. */
 export function useUpsertReview() {
   const invalidate = useReviewInvalidation();
   return useMutation({
@@ -78,7 +78,7 @@ export function useUpsertReview() {
   });
 }
 
-/** DELETE /reviews/:tradeId — undo a review; the trade returns to pending. */
+/** DELETE /reviews/:tradeId - undo a review; the trade returns to pending. */
 export function useDeleteReview() {
   const invalidate = useReviewInvalidation();
   return useMutation({
@@ -103,7 +103,7 @@ function useGoalInvalidation() {
   }, [queryClient]);
 }
 
-/** POST /goals — progress is computed server-side; nothing else to seed. */
+/** POST /goals - progress is computed server-side; nothing else to seed. */
 export function useCreateGoal() {
   const invalidate = useGoalInvalidation();
   return useMutation({

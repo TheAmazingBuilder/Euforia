@@ -25,7 +25,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Privacy & data — analytics consents, visibility and data ownership
+ * Privacy & data - analytics consents, visibility and data ownership
  * (export/import through the existing backup flow). Deliberately NO auth,
  * passwords or broker credentials here: those belong to Security.
  */
@@ -154,10 +154,10 @@ export function PrivacyCard() {
         />
       </SettingsCategoryCard>
 
-      {/* Data ownership — the existing export/import flow (Priorité 3). */}
+      {/* Data ownership - the existing export/import flow (Priorité 3). */}
       <BackupCard />
 
-      {/* Preferences profile (module upgrade) — settings-only JSON backup. */}
+      {/* Preferences profile (module upgrade) - settings-only JSON backup. */}
       <PreferencesBackupCard />
 
       <p className="flex items-start gap-2 text-xs leading-relaxed text-muted-foreground">

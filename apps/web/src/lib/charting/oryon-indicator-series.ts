@@ -29,24 +29,24 @@ import { normalizeCandles } from "@/lib/oryon/indicators/normalize";
 import type { ChartTheme } from "@/lib/utils/chart-theme";
 
 /**
- * Indicator chart-integration boundary (Phase 3 spec §4E, §7) — the ONLY
+ * Indicator chart-integration boundary (Phase 3 spec §4E, §7) - the ONLY
  * module that turns calculated indicator series into Lightweight Charts
  * series. The calculation layer (lib/oryon/indicators) knows nothing about
  * this file; this file owns every LWC concern:
  *
  *  - OVERLAY indicators (SMA/EMA/BB) live in pane 0 on the main price scale;
  *  - PANE indicators (RSI/MACD/ATR/Volume) each get a NATIVE v5 pane
- *    (chart.addSeries(…, paneIndex)) — never pixel offsets, never a second
+ *    (chart.addSeries(…, paneIndex)) - never pixel offsets, never a second
  *    chart instance;
  *  - structural diff by instance id: create / option-update / destroy,
  *    so adding one indicator never recreates the chart (spec §7);
- *  - hidden instances keep their series with visible:false — toggling
+ *  - hidden instances keep their series with visible:false - toggling
  *    never reassigns panes or disturbs siblings;
  *  - tick updates replace/append ONLY the last point per series
- *    (series.update) after a full (cheap) recalculation — no setData per
+ *    (series.update) after a full (cheap) recalculation - no setData per
  *    tick, no React involvement;
  *  - every color resolves from theme tokens at option-build time (the
- *    golden rule — no hardcoded hex).
+ *    golden rule - no hardcoded hex).
  */
 
 export interface IndicatorSyncOptions {
@@ -146,7 +146,7 @@ export class OryonIndicatorSeriesManager {
       const paneIndex = paneOf.get(instance.id)!;
       const existing = this.entries.get(instance.id);
       if (existing !== undefined && existing.paneIndex !== paneIndex) {
-        // Pane reassignment (list reorder) — rebuild in the new pane.
+        // Pane reassignment (list reorder) - rebuild in the new pane.
         this.destroyEntry(existing);
         this.entries.delete(instance.id);
       }
@@ -163,7 +163,7 @@ export class OryonIndicatorSeriesManager {
     this.prunePanes(highestPane);
     this.applyStretch();
 
-    // 5. Data for every entry (full rebuild — this is the only setData path).
+    // 5. Data for every entry (full rebuild - this is the only setData path).
     this.rebuild(candles, opts);
   }
 
@@ -193,9 +193,9 @@ export class OryonIndicatorSeriesManager {
   }
 
   /**
-   * Tick-path update (called from the engine's applyTick — ≤2 Hz): recompute
+   * Tick-path update (called from the engine's applyTick - ≤2 Hz): recompute
    * (pure, cheap) then push ONLY the last point per output through
-   * series.update — no setData, no flicker, no React render.
+   * series.update - no setData, no flicker, no React render.
    */
   updateLast(candles: readonly Candle[], opts: IndicatorSyncOptions): void {
     if (this.entries.size === 0) return;
@@ -211,7 +211,7 @@ export class OryonIndicatorSeriesManager {
         if (idx < 0) continue;
         const time = entry.calc.times[idx]!;
         const known = entry.lastTimes[outputId];
-        // Monotonicity guard — series.update throws on a time regression.
+        // Monotonicity guard - series.update throws on a time regression.
         if (known !== undefined && time < known) continue;
         const point = this.buildPoint(entry, outputId, idx, normalized, opts.theme);
         if (point !== null) {
@@ -229,7 +229,7 @@ export class OryonIndicatorSeriesManager {
     for (const entry of this.entries.values()) {
       this.applyEntryOptions(entry, opts);
     }
-    // Volume/MACD histogram colors are DATA (per-point) — rebuild them.
+    // Volume/MACD histogram colors are DATA (per-point) - rebuild them.
     this.rebuild(this.lastCandles, opts);
   }
 
@@ -254,7 +254,7 @@ export class OryonIndicatorSeriesManager {
 
   /**
    * Indicator readings AT one bar-open time, unix seconds (Phase 5 crosshair
-   * §5). Exact-time lookup on the calculation's own `times` — the crosshair
+   * §5). Exact-time lookup on the calculation's own `times` - the crosshair
    * always reports a loaded bar's open time, so an exact match is the honest
    * contract; anything else (uncomputed bar, warm-up nulls) yields NO value
    * for that output rather than an interpolation. Never throws.
@@ -349,7 +349,7 @@ export class OryonIndicatorSeriesManager {
     this.applyEntryOptions(entry, opts);
   }
 
-  /** Style/visibility/price-line options — colors resolved from tokens NOW. */
+  /** Style/visibility/price-line options - colors resolved from tokens NOW. */
   private applyEntryOptions(entry: ManagedEntry, opts: IndicatorSyncOptions): void {
     const { instance, series } = entry;
     const visible = instance.visible;
@@ -421,7 +421,7 @@ export class OryonIndicatorSeriesManager {
     }
   }
 
-  /** RSI reference levels — REAL price lines on the series, not pixels. */
+  /** RSI reference levels - REAL price lines on the series, not pixels. */
   private syncRsiPriceLines(entry: ManagedEntry, opts: IndicatorSyncOptions): void {
     const series = entry.series.line;
     if (series === undefined) return;
@@ -429,7 +429,7 @@ export class OryonIndicatorSeriesManager {
       try {
         series.removePriceLine(line);
       } catch {
-        // Series already gone — nothing to clean.
+        // Series already gone - nothing to clean.
       }
     }
     entry.priceLines = [];
@@ -495,7 +495,7 @@ export class OryonIndicatorSeriesManager {
       try {
         this.chart.removeSeries(series);
       } catch {
-        // Already removed with the chart/pane — nothing to clean.
+        // Already removed with the chart/pane - nothing to clean.
       }
     }
     entry.series = {};
@@ -510,7 +510,7 @@ export class OryonIndicatorSeriesManager {
       try {
         this.chart.removePane(i);
       } catch {
-        // Upstream auto-removed the empty pane — fine.
+        // Upstream auto-removed the empty pane - fine.
       }
     }
   }
@@ -524,7 +524,7 @@ export class OryonIndicatorSeriesManager {
       try {
         pane.setStretchFactor(i === 0 ? 3 : 1);
       } catch {
-        // Non-fatal — panes keep their default proportion.
+        // Non-fatal - panes keep their default proportion.
       }
     });
   }
@@ -565,7 +565,7 @@ function latestOf(calc: IndicatorCalculation): Partial<Record<IndicatorOutputId,
 }
 
 /**
- * Theme token KEY → resolved color. Unknown keys degrade to the accent —
+ * Theme token KEY → resolved color. Unknown keys degrade to the accent -
  * never a crash, never a hardcoded hex.
  */
 export function resolveColor(tokenKey: string, theme: ChartTheme): string {

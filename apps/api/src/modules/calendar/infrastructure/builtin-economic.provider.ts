@@ -1,29 +1,29 @@
 /**
- * Built-in deterministic economic provider (Phase 13 §4/§5) — the default
+ * Built-in deterministic economic provider (Phase 13 §4/§5) - the default
  * adapter behind the provider port.
  *
- * WHY BUILT-IN SAMPLE DATA (§4 — "Do not assume any provider is available"):
+ * WHY BUILT-IN SAMPLE DATA (§4 - "Do not assume any provider is available"):
  * the audited repository has NO external economic-data integration, no
  * provider credentials and no vendor contract. The product reference
  * (frontend mock engine) ships a deterministic "macro-sample" provider:
  * realistic macro releases on their usual Toronto-time slots, a rolling
  * window of [-92 .. +13] days whose released history spans the full
  * 90-day trade fixture window so Analytics can classify the whole
- * journal. This adapter reproduces that behavior server-side — no
- * credentials, no network, always available — while the port keeps real
+ * journal. This adapter reproduces that behavior server-side - no
+ * credentials, no network, always available - while the port keeps real
  * providers one adapter away (no lock-in, §5/§62 Step 3).
  *
  * Deterministic per UTC day: the seed rolls at UTC midnight like the
  * trade fixtures; values drift ±10% around template bases. Stability of
  * IDENTITY is the adapter's responsibility (§24): `MACRO-<YYYYMMDD>-<i>`
  * is stable across days so synchronization upserts instead of
- * duplicating — the mock's per-day uuid seed is consumed ONLY to
+ * duplicating - the mock's per-day uuid seed is consumed ONLY to
  * preserve the exact value-draw order of the reference engine.
  */
 import type { EconomicCalendarProvider } from "../domain/provider.port";
 import type { ProviderEconomicEventPayload } from "../domain/economic-event";
 
-/** Deterministic PRNG — verbatim from the product reference engine. */
+/** Deterministic PRNG - verbatim from the product reference engine. */
 type Rng = () => number;
 
 function mulberry32(seed: number): Rng {
@@ -99,7 +99,7 @@ const POOLS: Record<number, EcoTemplate[]> = {
 };
 
 /** Deterministic value noise: ±10% around the base, 1 decimal (or integer
- * once |value| ≥ 100) — verbatim reference-engine rule. */
+ * once |value| ≥ 100) - verbatim reference-engine rule. */
 function seededValue(rng: Rng, base: number): string {
   const drift = base === 0 ? 0 : base * (rng() * 0.2 - 0.1);
   const value = base + drift;
@@ -121,7 +121,7 @@ export class BuiltinEconomicProvider implements EconomicCalendarProvider {
     const rng = mulberry32(Math.floor(this.nowMs / DAY_MS) ^ SAMPLE_SEED);
     const payloads: ProviderEconomicEventPayload[] = [];
 
-    // Iterate UTC days between the requested bounds — same day set as the
+    // Iterate UTC days between the requested bounds - same day set as the
     // reference engine's [-92 .. +13] offset walk when called with the
     // canonical sync window (UTC has no DST, offsets compose exactly).
     const startDay = Date.UTC(
@@ -142,7 +142,7 @@ export class BuiltinEconomicProvider implements EconomicCalendarProvider {
         const hh = Number(slot[0] ?? 0);
         const mm = Number(slot[1] ?? 0);
         // Toronto slot (EDT, UTC-4) → UTC instant. Fixture precision is
-        // fine — a documented, fixed-offset compromise (mock parity §13).
+        // fine - a documented, fixed-offset compromise (mock parity §13).
         const scheduledMs = Date.UTC(
           day.getUTCFullYear(),
           day.getUTCMonth(),
@@ -151,7 +151,7 @@ export class BuiltinEconomicProvider implements EconomicCalendarProvider {
           mm,
         );
         const released = scheduledMs <= this.nowMs;
-        // The reference engine draws a uuid per event BEFORE the values —
+        // The reference engine draws a uuid per event BEFORE the values -
         // consumed here only to preserve the exact draw order (parity),
         // never as identity (identity is the stable day+index ref below).
         void uuid(rng);

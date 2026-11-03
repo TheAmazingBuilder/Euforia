@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * bridge-e2e-sim.mjs — EA-faithful MT5 terminal bridge simulator (Livrable 1).
+ * bridge-e2e-sim.mjs - EA-faithful MT5 terminal bridge simulator (Livrable 1).
  *
  * Replicates BYTE-FOR-BYTE what docs/bridge/EuforiaBridge.mq5 v1.0.1 pushes
  * (same JSON key order, same JDec/JStr semantics, same HMAC canonical string
- * `${ts}.${JSON.stringify({eventId,kind,payload})}`), against the LIVE API —
+ * `${ts}.${JSON.stringify({eventId,kind,payload})}`), against the LIVE API -
  * with the REAL IC Markets demo login (52988790) as the bridge account.
  *
  * The loop it proves (the same one the user's terminal will drive):
@@ -15,7 +15,7 @@
  *     → POST sync (persist segments) → GET /trades (lazy reconcile) →
  *       3 closed trades + 1 open trade, exact net P&L.
  *
- * Read-only red line: this script NEVER places an order — it emulates the
+ * Read-only red line: this script NEVER places an order - it emulates the
  * EA's READ verbs only. It contains NO broker password: the bridge design
  * means Euforia never sees it.
  */
@@ -35,15 +35,15 @@ function check(name, ok, detail = "") {
   } else {
     failed += 1;
     failures.push(name);
-    console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  FAIL  ${name}${detail ? ` - ${detail}` : ""}`);
   }
 }
 
-/** EA JDec: DoubleToString(value, 5) — fixed 5-decimal STRING. */
+/** EA JDec: DoubleToString(value, 5) - fixed 5-decimal STRING. */
 const JDec = (value) => value.toFixed(5);
 /** EA IsoUtc. */
 const IsoUtc = (iso) => `${iso.slice(0, 19)}Z`;
-/** EA MakeEventId — ea-<login>-<tick>-<counter>. */
+/** EA MakeEventId - ea-<login>-<tick>-<counter>. */
 let counter = 0;
 let lastTick = 0;
 function makeEventId() {
@@ -57,7 +57,7 @@ function makeEventId() {
 }
 
 /**
- * EA PushEvent — envelope + canonical + HMAC + headers, byte-exact.
+ * EA PushEvent - envelope + canonical + HMAC + headers, byte-exact.
  * Returns { status, body } and prints the server verdict.
  */
 async function pushEvent(endpoint, bridgeKey, bridgeSecret, kind, payloadJson) {
@@ -82,7 +82,7 @@ async function pushEvent(endpoint, bridgeKey, bridgeSecret, kind, payloadJson) {
 }
 
 // ── 0. Auth (the seeded demo trader, real login flow) ────────────────────────
-console.log("\n[0] auth — demo trader login");
+console.log("\n[0] auth - demo trader login");
 const loginRes = await fetch(`${BASE}/auth/login`, {
   method: "POST",
   headers: { "content-type": "application/json" },
@@ -92,8 +92,8 @@ const login = await loginRes.json();
 check("login trader@cosmoz.app", loginRes.status === 200 && Boolean(login.accessToken), `status ${loginRes.status}`);
 const auth = { authorization: `Bearer ${login.accessToken}`, "content-type": "application/json" };
 
-// ── 1. Preflight — seed state (Livrable 2) + instrument catalog ─────────────
-console.log("\n[1] preflight — seed state + instruments");
+// ── 1. Preflight - seed state (Livrable 2) + instrument catalog ─────────────
+console.log("\n[1] preflight - seed state + instruments");
 const accountsRes = await fetch(`${BASE}/accounts`, { headers: auth });
 const accountsBody = await accountsRes.json();
 const journalAccounts = accountsBody.accounts ?? [];
@@ -114,7 +114,7 @@ check("bridge symbols in catalog (EURUSD/XAUUSD/GBPUSD)", missing.length === 0, 
 console.log(`        catalog: ${catalog.slice(0, 12).join(", ")}${catalog.length > 12 ? ` … (${catalog.length})` : ""}`);
 
 // ── 2. Connect the bridge account (the REAL IC Markets demo login) ───────────
-console.log("\n[2] connect — mt5-bridge, externalAccountId 52988790 (DEMO)");
+console.log("\n[2] connect - mt5-bridge, externalAccountId 52988790 (DEMO)");
 let accountId = null;
 let pairing = null;
 const connectRes = await fetch(`${BASE}/trading-accounts/connect`, {
@@ -145,7 +145,7 @@ if (connectRes.status === 201) {
   check("connect mt5-bridge", false, `status ${connectRes.status} ${JSON.stringify(connectBody)}`);
 }
 if (!accountId || !pairing?.secret) {
-  console.log("\nABORT — no bridge account to push to.");
+  console.log("\nABORT - no bridge account to push to.");
   process.exit(1);
 }
 console.log(`        accountId: ${accountId}`);
@@ -154,9 +154,9 @@ console.log(`        ingest:    ${pairing.ingestPath} (every ${pairing.pushInter
 console.log(`        EA:        ${pairing.ea.fileName} v${pairing.ea.version}`);
 
 // ── 3. The pushes (EA v1.0.1 byte-exact payloads) ────────────────────────────
-console.log("\n[3] pushes — ACCOUNT_INFO / SNAPSHOT / POSITIONS / ORDERS / DEALS");
+console.log("\n[3] pushes - ACCOUNT_INFO / SNAPSHOT / POSITIONS / ORDERS / DEALS");
 
-// ACCOUNT_INFO — activates the pairing + identifies the broker.
+// ACCOUNT_INFO - activates the pairing + identifies the broker.
 const info = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "ACCOUNT_INFO",
   `{"externalAccountId":"${MT5_LOGIN}"` +
   `,"currency":"USD"` +
@@ -166,7 +166,7 @@ const info = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "ACCO
   `,"accountClass":"DEMO"}`);
 check("ACCOUNT_INFO accepted → CONNECTED", info.status === 200 && info.body.accepted === true && info.body.state === "CONNECTED", JSON.stringify(info.body));
 
-// SNAPSHOT — balance/equity/margin (JDec strings).
+// SNAPSHOT - balance/equity/margin (JDec strings).
 const snap = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "SNAPSHOT",
   `{"balance":"${JDec(10000.0)}"` +
   `,"equity":"${JDec(10043.17)}"` +
@@ -175,7 +175,7 @@ const snap = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "SNAP
   `,"marginLevel":"${JDec(7572.44)}"}`);
 check("SNAPSHOT accepted", snap.status === 200 && snap.body.accepted === true, JSON.stringify(snap.body));
 
-// POSITIONS — the COMPLETE open set (one live XAUUSD long).
+// POSITIONS - the COMPLETE open set (one live XAUUSD long).
 const positions = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "POSITIONS",
   `{"positions":[{"externalPositionId":"700200"` +
   `,"symbol":"XAUUSD","side":"BUY"` +
@@ -187,7 +187,7 @@ const positions = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, 
   `,"openedAt":"${IsoUtc("2026-10-15T07:12:44Z")}"}]}`);
 check("POSITIONS accepted (1 open)", positions.status === 200, JSON.stringify(positions.body));
 
-// ORDERS — one pending BUY_LIMIT.
+// ORDERS - one pending BUY_LIMIT.
 const orders = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "ORDERS",
   `{"orders":[{"externalOrderId":"800100"` +
   `,"symbol":"EURUSD","type":"BUY_LIMIT"` +
@@ -198,22 +198,22 @@ const orders = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, "OR
   `,"createdAt":"${IsoUtc("2026-10-15T07:40:02Z")}","updatedAt":null}]}`);
 check("ORDERS accepted (1 pending)", orders.status === 200, JSON.stringify(orders.body));
 
-// DEALS — incremental history: 3 closed netting positions, 1 OPEN position's
-// entry leg (the EA pushes history — DEAL_ENTRY_IN of the live XAUUSD long),
+// DEALS - incremental history: 3 closed netting positions, 1 OPEN position's
+// entry leg (the EA pushes history - DEAL_ENTRY_IN of the live XAUUSD long),
 // and 1 balance op (deposit) that must NOT become a trade.
 const deals = [
-  // 700101 EURUSD long 0.10 — winner
+  // 700101 EURUSD long 0.10 - winner
   { id: "600101", symbol: "EURUSD", side: "BUY", volume: 0.1, price: 1.085, profit: 0, comm: -3.5, swap: 0, pos: "700101", at: "2026-10-13T09:30:12Z" },
   { id: "600102", symbol: "EURUSD", side: "SELL", volume: 0.1, price: 1.0885, profit: 35.0, comm: -3.5, swap: 0, pos: "700101", at: "2026-10-13T11:45:27Z" },
-  // 700102 XAUUSD short 0.05 — winner with swap (signed COST −0.5)
+  // 700102 XAUUSD short 0.05 - winner with swap (signed COST −0.5)
   { id: "600103", symbol: "XAUUSD", side: "SELL", volume: 0.05, price: 2658.4, profit: 0, comm: -1.75, swap: 0, pos: "700102", at: "2026-10-13T14:05:51Z" },
   { id: "600104", symbol: "XAUUSD", side: "BUY", volume: 0.05, price: 2652.1, profit: 31.5, comm: -1.75, swap: -0.5, pos: "700102", at: "2026-10-14T10:22:08Z" },
-  // 700103 GBPUSD long 0.10 — loser
+  // 700103 GBPUSD long 0.10 - loser
   { id: "600105", symbol: "GBPUSD", side: "BUY", volume: 0.1, price: 1.2685, profit: 0, comm: -2.6, swap: 0, pos: "700103", at: "2026-10-14T13:18:03Z" },
   { id: "600106", symbol: "GBPUSD", side: "SELL", volume: 0.1, price: 1.267, profit: -15.06, comm: -2.6, swap: 0, pos: "700103", at: "2026-10-14T16:02:39Z" },
-  // 700200 — ENTRY leg of the still-open XAUUSD long (POSITIONS carries the live state)
+  // 700200 - ENTRY leg of the still-open XAUUSD long (POSITIONS carries the live state)
   { id: "600108", symbol: "XAUUSD", side: "BUY", volume: 0.1, price: 2651.25, profit: 0, comm: -1.75, swap: 0, pos: "700200", at: "2026-10-15T07:12:44Z" },
-  // balance op — deposit, symbol null, positionId null → NEVER a trade
+  // balance op - deposit, symbol null, positionId null → NEVER a trade
   { id: "600107", symbol: null, side: "BUY", volume: 0, price: null, profit: 5000, comm: 0, swap: 0, pos: null, at: "2026-10-14T08:00:00Z" },
 ];
 const dealsJson = deals
@@ -234,8 +234,8 @@ const dealsPush = await pushEvent(pairing, pairing.bridgeKeyId, pairing.secret, 
   `{"deals":[${dealsJson}],"observedThrough":"${maxDealEpoch}","complete":true}`);
 check("DEALS accepted (7 legs + 1 balance op)", dealsPush.status === 200, JSON.stringify(dealsPush.body));
 
-// ── 4. Sync — the pull orchestrator reads the persisted events ───────────────
-console.log("\n[4] sync — segments from the persisted bridge log");
+// ── 4. Sync - the pull orchestrator reads the persisted events ───────────────
+console.log("\n[4] sync - segments from the persisted bridge log");
 const syncRes = await fetch(`${BASE}/trading-accounts/${accountId}/sync`, {
   method: "POST",
   headers: auth,
@@ -245,7 +245,7 @@ const syncBody = await syncRes.json();
 check("account sync COMPLETED", syncRes.status === 200 && syncBody.run?.status === "COMPLETED", JSON.stringify(syncBody.run ?? syncBody));
 
 // ── 5. Journal reconciliation (lazy on GET /trades) + assertions ─────────────
-console.log("\n[5] journal — lazy reconcile + trade assertions");
+console.log("\n[5] journal - lazy reconcile + trade assertions");
 const listRes = await fetch(`${BASE}/trades?accountId=${accountId}`, { headers: auth });
 const listBody = await listRes.json();
 const trades = listBody.trades ?? [];
@@ -271,8 +271,8 @@ const xauClosed = closed.find((t) => idToSymbol.get(t.instrumentId) === "XAUUSD"
 check("signed MT5 swap stored as cost magnitude (0.50)", Number(xauClosed?.swap) === 0.5, `swap ${xauClosed?.swap}`);
 check("balance op excluded", !trades.some((t) => Number(t.pnlNet) === 5000), "");
 
-// ── 6. Identity — the account now KNOWS its broker ───────────────────────────
-console.log("\n[6] identity — broker identification from the terminal report");
+// ── 6. Identity - the account now KNOWS its broker ───────────────────────────
+console.log("\n[6] identity - broker identification from the terminal report");
 const detailRes = await fetch(`${BASE}/trading-accounts/${accountId}`, { headers: auth });
 const detailBody = await detailRes.json();
 const detail = detailBody.account ?? detailBody;
@@ -291,4 +291,4 @@ if (failed > 0) {
   process.exit(1);
 }
 console.log(`  La boucle terminal→bridge→journal est PROUVÉE pour le compte`);
-console.log(`  IC Markets démo ${MT5_LOGIN} — le vrai EA produira exactement ce flux.`);
+console.log(`  IC Markets démo ${MT5_LOGIN} - le vrai EA produira exactement ce flux.`);

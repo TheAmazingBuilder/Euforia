@@ -1,15 +1,15 @@
 /**
- * Academy practice drills — engine-generated training rounds (support/
+ * Academy practice drills - engine-generated training rounds (support/
  * resistance reads, position-sizing arithmetic, supply/demand zones) and the
  * pattern-identification drill over the authored exemplars, with the
  * weakness-bank resurfacing rule.
  *
  * Randomness is INJECTED (rng) so the generators are unit-testable; runtime
- * uses Math.random (no security need — Phase 11 §41: educational simulations,
+ * uses Math.random (no security need - Phase 11 §41: educational simulations,
  * never real trades; no execution path exists in this module).
  *
  * DOCUMENTED CONTRACT LIMIT (Phase 11 §35/§37 vs shared contract): the
- * pattern/SR/position/zone drills are client-graded BY CONTRACT — the shared
+ * pattern/SR/position/zone drills are client-graded BY CONTRACT - the shared
  * shapes carry `answer` + `explanation` for immediate in-lesson feedback and
  * the practice log is self-reported (ledger only, no certification impact).
  * The server-graded surfaces are course quizzes, inline checkpoints and
@@ -17,7 +17,7 @@
  * a backend gap; e2e asserts quiz/exam/checkpoint answers never leak.
  *
  * Parity source: mocks/academy-engine.ts (patternDrill/srDrill/positionDrill/
- * zoneDrill) — generation shapes ported verbatim.
+ * zoneDrill) - generation shapes ported verbatim.
  */
 import type { AcademyCandle, AcademyPatternDrill, AcademyPositionDrill, AcademySrDrill, AcademyZoneDrill } from "../../../shared/contracts";
 import { PATTERN_EXEMPLARS } from "../content/patterns";
@@ -26,7 +26,7 @@ export type Rng = () => number;
 
 const round2 = (value: number): number => Math.round(value * 100) / 100;
 
-/** Safe random pick — throws only if the authored data is empty (never). */
+/** Safe random pick - throws only if the authored data is empty (never). */
 function pick<T>(items: readonly T[], rng: Rng): T {
   if (items.length === 0) throw new Error("academy drill source empty");
   return items[Math.floor(rng() * items.length)] as T;
@@ -126,7 +126,7 @@ export function srDrill(rng: Rng): AcademySrDrill {
     const c = price + drift + (rng() - 0.5) * vol;
     pushCandle(price, c, rng() * vol * 0.5, rng() * vol * 0.5);
   }
-  // The retest under examination — wicks probe the level.
+  // The retest under examination - wicks probe the level.
   for (let i = 0; i < 2; i += 1) {
     if (support) {
       const l = level - rng() * 1.2;
@@ -143,8 +143,8 @@ export function srDrill(rng: Rng): AcademySrDrill {
   pushCandle(price, c, rng() * 0.4, rng() * 0.4);
 
   const options = shuffleWith(rng, [
-    { id: "support", label: "Support — buyers defended the level, price bounced" },
-    { id: "resistance", label: "Resistance — sellers capped the level, price turned down" },
+    { id: "support", label: "Support - buyers defended the level, price bounced" },
+    { id: "resistance", label: "Resistance - sellers capped the level, price turned down" },
   ]);
   const answerId = support ? "support" : "resistance";
   return {
@@ -155,8 +155,8 @@ export function srDrill(rng: Rng): AcademySrDrill {
     options,
     answer: options.findIndex((option) => option.id === answerId),
     explanation: support
-      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing — the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
-      : "Price rallied into the level, probed above with wicks, and closed back below before turning down — the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
+      ? "Price descended into the level, probed below with wicks, and closed back above before bouncing - the footprint of buyers defending support. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits below the retest low."
+      : "Price rallied into the level, probed above with wicks, and closed back below before turning down - the footprint of sellers capping resistance. A level is a zone of interest, never a guarantee: the reaction is the evidence, and invalidation sits above the retest high.",
   };
 }
 
@@ -183,7 +183,7 @@ export function positionDrill(rng: Rng): AcademyPositionDrill {
     unit: "units",
     answer,
     tolerance: 0.03,
-    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position — the stop distance and the account rule do.`,
+    explanation: `Risk budget = $${accountBalance.toLocaleString("en-US")} × ${riskPercent}% = $${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })}. Stop distance = ${entry} − ${stop} = ${stopDistance}. Size = budget ÷ distance = ${riskBudget.toLocaleString("en-US", { maximumFractionDigits: 2 })} ÷ ${stopDistance} = ${answer} units. Confidence never sizes a position - the stop distance and the account rule do.`,
   };
 }
 
@@ -254,11 +254,11 @@ export function zoneDrill(rng: Rng): AcademyZoneDrill {
     candles,
     zones,
     context: "Daily chart, trending leg followed by a pullback. Bands mark prior reaction areas.",
-    prompt: "Which band is the demand zone — the area where buyers previously stepped in with displacement?",
+    prompt: "Which band is the demand zone - the area where buyers previously stepped in with displacement?",
     options,
     answer: demandTag === "A" ? 0 : 1,
     explanation:
-      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement — the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again — potential, never a promise.",
+      "Demand is where aggressive buying originated: the strong rally away from the lower band is displacement - the footprint of unfilled interest. Supply sits where the rally stalled and rolled over. Price returning toward a demand zone is where buyers may defend again - potential, never a promise.",
   };
 }
 
@@ -268,7 +268,7 @@ export interface PracticeLedgerRow {
   drill: string;
   correct: boolean;
   at: Date;
-  /** Target ref (pattern id, card id, scenario step) — weakness-bank input. */
+  /** Target ref (pattern id, card id, scenario step) - weakness-bank input. */
   refId?: string | null;
 }
 

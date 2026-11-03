@@ -1,8 +1,8 @@
 /**
- * Verify — TOOLS module: Lot Size + Compounding calculators.
+ * Verify - TOOLS module: Lot Size + Compounding calculators.
  *
  * IMPORTANT: navigation uses sidebar clicks ONLY (SPA). Exactly ONE reload
- * is performed, for the compounding re-render sanity on a fresh mount — and
+ * is performed, for the compounding re-render sanity on a fresh mount - and
  * dark mode is exercised through media emulation (no reload).
  *
  * Covers (MASTER PROMPT §54 DoD + §45/§49):
@@ -64,7 +64,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = async (name) => {
@@ -76,7 +76,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   };
 
   const sidebarClick = async (href) => {
-    // Desktop: the rail link. Mobile: the sheet link — take whichever is
+    // Desktop: the rail link. Mobile: the sheet link - take whichever is
     // VISIBLE (both navs exist in the DOM once the sheet is open).
     const link = page
       .locator(`nav[aria-label="Main navigation"] a[href="${href}"]`)
@@ -119,7 +119,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
     /FOREX/i.test(await page.locator('[data-testid="lot-size-spec"]').innerText()));
   shot("A-lot-size-empty");
 
-  // ══ B. Lot size happy path — XAUUSD example (§10) ══════════════════════
+  // ══ B. Lot size happy path - XAUUSD example (§10) ══════════════════════
   await page.locator('[data-testid="lot-size-instrument"]').click();
   await page.locator('[role="option"]', { hasText: /XAUUSD/ }).click();
   await page.locator('[data-testid="lot-size-direction-long"]').check({ force: true }).catch(async () => {
@@ -190,13 +190,13 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   check("D2 Advanced shows contract/pip/pip-value fields + broker note (§15)",
     /Contract Size/i.test(advancedText) && /Pip Size/i.test(advancedText) && /Pip Value/i.test(advancedText));
 
-  // ══ E. Copy Lot Size (§39) — assert against the DISPLAYED size ═════════
+  // ══ E. Copy Lot Size (§39) - assert against the DISPLAYED size ═════════
   await page.locator('[data-testid="lot-size-calculate"]').click();
   await page.locator('[data-testid="lot-size-copy-lots"]').waitFor({ state: "visible", timeout: 10_000 });
   const displayedLots = (await page.locator('[data-testid="lot-size-result-lots"]').innerText())
     .replace(/\u202f|\u00a0/g, " ")
     .trim();
-  // innerText glues "0,15" and "Lots" together (CSS margin, no character) —
+  // innerText glues "0,15" and "Lots" together (CSS margin, no character) -
   // extract the numeric token itself.
   const displayedLotsValue = displayedLots.match(/\d+(?:[.,]\d+)?/)?.[0] ?? ""; // "0,15"
   await page.locator('[data-testid="lot-size-copy-lots"]').click();
@@ -206,7 +206,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
     displayedLotsValue !== "" && clipboard.includes(displayedLotsValue) && /lots/i.test(clipboard),
     `clipboard="${clipboard}" displayed="${displayedLotsValue}"`);
 
-  // ══ F. Compounding — SPA nav, prefilled live results ═══════════════════
+  // ══ F. Compounding - SPA nav, prefilled live results ═══════════════════
   await compLink.click();
   await page.waitForURL(/\/features\/compounding/, { timeout: 30_000 });
   await page.locator('[data-testid="compounding-summary-grid"]').waitFor({ state: "visible", timeout: 60_000 });
@@ -272,7 +272,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   await page.locator('[role="option"]', { hasText: /^USD$/ }).click();
   await page.waitForTimeout(400);
 
-  // ══ I. Mobile 390px — no overflow, table becomes cards ═════════════════
+  // ══ I. Mobile 390px - no overflow, table becomes cards ═════════════════
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(600);
   const overflowComp = await page.evaluate(
@@ -290,11 +290,11 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   );
   check("I3 Mobile 390px: no horizontal overflow on Lot Size", overflowLot <= 0, `overflow=${overflowLot}px`);
 
-  // ══ J. Dark mode (§45) — desktop, dark emulation ═══════════════════════
+  // ══ J. Dark mode (§45) - desktop, dark emulation ═══════════════════════
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.emulateMedia({ colorScheme: "dark" });
   await page.waitForTimeout(800);
-  // SPA remount reset the form — re-select the instrument, then re-fill.
+  // SPA remount reset the form - re-select the instrument, then re-fill.
   await page.locator('[data-testid="lot-size-instrument"]').click();
   await page.locator('[role="option"]', { hasText: /XAUUSD/ }).click();
   await page.locator('[data-testid="lot-size-balance"]').fill("10000");
@@ -307,7 +307,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
     /0[,\.]10/.test((await page.locator('[data-testid="lot-size-result-lots"]').innerText()).replace(/[\u202f\u00a0]/g, " ")));
   shot("J-dark-lot-size");
 
-  // ══ L. Trading costs (V1.1) — commission + spread shrink the size ══════
+  // ══ L. Trading costs (V1.1) - commission + spread shrink the size ══════
   await page.locator('[data-testid="lot-size-costs"] summary').click();
   await fillInput("lot-size-commission", "30");
   await fillInput("lot-size-spread", "0.5");
@@ -340,7 +340,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   check("J2 Compounding renders and computes under dark emulation", /13\s?266,49|2\s?653,30|6\s?727|667,61/.test(darkSummary) || darkSummary.length > 20, darkSummary.slice(0, 120));
   shot("J-dark-compounding");
 
-  // ══ M. Periodic deposits (V1.1) — end-of-period, earned figures split ══
+  // ══ M. Periodic deposits (V1.1) - end-of-period, earned figures split ══
   await fillInput("compounding-deposit", "100");
   await page.waitForTimeout(800);
   const depositCell = page.locator('[data-testid="compounding-summary-deposits"]');
@@ -360,7 +360,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
     /2\s?653,30/.test(depositsCleared) && !(await depositCell.isVisible().catch(() => false)),
     depositsCleared.slice(0, 140));
 
-  // ══ N. Annual rate mode (V1.1) — compound-consistent conversion ════════
+  // ══ N. Annual rate mode (V1.1) - compound-consistent conversion ════════
   await page.locator('[data-testid="compounding-mode-annual"]').check({ force: true }).catch(async () => {
     await page.locator('[data-testid="compounding-mode-annual"]').click({ force: true });
   });
@@ -421,7 +421,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   await fillInput("compounding-scenario-optimistic", "");
   await page.waitForTimeout(600);
 
-  // Pip & Tick Value tool — new TOOLS page (SPA nav).
+  // Pip & Tick Value tool - new TOOLS page (SPA nav).
   const pipLink = page.locator('nav[aria-label="Main navigation"] a[href="/features/pip-value"]');
   check("O6 Sidebar carries the Pips link (TOOLS)", (await pipLink.count()) === 1);
   await pipLink.click();
@@ -444,7 +444,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/calculators";
   await fillInput("pip-value-price", "150");
   await page.waitForTimeout(700);
   const pipConverted = cleanC(await page.locator('[data-testid="pip-value-summary-grid"]').innerText());
-  // 0.01×100000/150 = 6,67 $US per pip on 1 lot — converted at the price
+  // 0.01×100000/150 = 6,67 $US per pip on 1 lot - converted at the price
   check("O10 USDJPY @150 → converted 6,67 per pip", /6,67/.test(pipConverted) && /converted/i.test(pipConverted), pipConverted.replace(/\s+/g, " ").slice(0, 160));
   shot("O-pip-value");
 

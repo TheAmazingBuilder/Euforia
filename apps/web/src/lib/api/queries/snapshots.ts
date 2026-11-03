@@ -11,10 +11,10 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Performance snapshots (Dashboard Customization Phase 08) — capture the
+ * Performance snapshots (Dashboard Customization Phase 08) - capture the
  * analytics suite's current scope as a frozen point-in-time record, list/
  * inspect/rename/delete, and compare (comparison itself is the pure shared
- * engine — see components/analytics/snapshots-panel). Every mutation
+ * engine - see components/analytics/snapshots-panel). Every mutation
  * invalidates the single snapshots list key (targeted, never broad).
  */
 

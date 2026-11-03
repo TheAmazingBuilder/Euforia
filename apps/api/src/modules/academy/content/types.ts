@@ -6,7 +6,7 @@ import type {
 
 /**
  * Academy content authoring types. Content lives server-side (mock server)
- * and is served through the API — the client renders it from responses and
+ * and is served through the API - the client renders it from responses and
  * never imports it directly, so a future CMS can replace these files.
  */
 
@@ -46,7 +46,7 @@ export type AuthoredCategory = {
   icon: string;
 };
 
-/** Shorthand block builders — keep the lesson files readable. */
+/** Shorthand block builders - keep the lesson files readable. */
 export const text = (body: string): AcademyBlock => ({ kind: "text", body });
 export const tip = (title: string, body: string): AcademyBlock => ({ kind: "callout", tone: "tip", title, body });
 export const info = (title: string, body: string): AcademyBlock => ({ kind: "callout", tone: "info", title, body });

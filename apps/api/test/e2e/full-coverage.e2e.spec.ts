@@ -1,7 +1,7 @@
 /**
- * e2e — Full-coverage backends (backend parity phase): stats (overview /
+ * e2e - Full-coverage backends (backend parity phase): stats (overview /
  * analytics / analytics-suite), backup (export / import), tags catalog,
- * trade mistakes resolution and the trade session-series sketch — against
+ * trade mistakes resolution and the trade session-series sketch - against
  * the real AppModule, real PostgreSQL, real contract validation.
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -215,7 +215,7 @@ describe("backup export/import", () => {
     });
     expect(imported.statusCode).toBe(200);
     // The documented import contract REPLACES trades (delete + re-insert the
-    // snapshot — every trade is written) and MERGES strategies/tags by id
+    // snapshot - every trade is written) and MERGES strategies/tags by id
     // (re-import adds none). The trade id stays stable on a same-user restore.
     expect(imported.json()).toEqual({ imported: { trades: 1, strategies: 0, tags: 0 } });
     const restored = await prisma.trade.findUnique({ where: { id: tradeId } });
@@ -331,7 +331,7 @@ describe("discipline module", () => {
       headers: user.authHeader,
       payload: { type: "MAX_TRADES_PER_DAY", params: { limit: 0 }, severity: "WARN" },
     });
-    // One trade today (created 2026-01-05) — wait: status needs today's date.
+    // One trade today (created 2026-01-05) - wait: status needs today's date.
     // The rule engine counts trades by TRADING DATE; the created trade's
     // entryAt is 2026-01-05, so force a breach by making the limit 0 with
     // an OPEN trade dated today instead.
@@ -352,7 +352,7 @@ describe("discipline module", () => {
       },
     });
     expect(created.statusCode).toBe(201);
-    // Rule evaluation subscribes to the `trade.closed` domain event — the
+    // Rule evaluation subscribes to the `trade.closed` domain event - the
     // breach is only detected when the trade actually CLOSES.
     const closed = await app.inject({
       method: "POST",
@@ -399,17 +399,17 @@ describe("discipline module", () => {
       method: "PATCH",
       url: `/api/v1/violations/${violationsBody.violations[0].id}/acknowledge`,
       headers: user.authHeader,
-      payload: { note: "Noted — I overtraded." },
+      payload: { note: "Noted - I overtraded." },
     });
     expect(acknowledge.statusCode).toBe(200);
     expect(acknowledge.json().violation.acknowledgedAt).not.toBeNull();
-    expect(acknowledge.json().violation.userNote).toBe("Noted — I overtraded.");
+    expect(acknowledge.json().violation.userNote).toBe("Noted - I overtraded.");
   });
 
   it("computes the Cosmoz Index score, emotion matrix and mistake ledger", async () => {
     const user = await trader();
     // The Cosmoz Index scores CLOSED trades that passed the decision gate
-    // (decisionGrade frozen at capture) — seed one, then read the aggregate.
+    // (decisionGrade frozen at capture) - seed one, then read the aggregate.
     await createClosedTrade(user.authHeader, user.accountId, user.instrumentId);
     const score = await app.inject({
       method: "GET",
@@ -421,7 +421,7 @@ describe("discipline module", () => {
     expect(scoreBody.score).not.toBeNull(); // today's row is upserted on read
     expect(Number(scoreBody.score)).toBeGreaterThanOrEqual(0);
     expect(Number(scoreBody.score)).toBeLessThanOrEqual(100);
-    // Idempotent read — the upsert keeps the same value for the same inputs.
+    // Idempotent read - the upsert keeps the same value for the same inputs.
     const again = await app.inject({
       method: "GET",
       url: "/api/v1/discipline/score",
@@ -745,7 +745,7 @@ describe("session-live module", () => {
       payload: {},
     });
     // The wired session-live context maps the double-start to ConflictError
-    // (409) — matching the module's own e2e contract.
+    // (409) - matching the module's own e2e contract.
     expect(doubleStart.statusCode).toBe(409);
 
     const updated = await app.inject({
@@ -986,11 +986,11 @@ describe("nofy module", () => {
     expect(versions.json().versions.length).toBe(1); // pre-update snapshot
 
     // SKIP-assertion: GET /nofy/search (wordCount/todoOpen projection) is a
-    // later nofy surface — not wired on the current NofyModule (documented
+    // later nofy surface - not wired on the current NofyModule (documented
     // reconciliation; the module's own e2e covers the wired routes).
 
     const overview = await app.inject({ method: "GET", url: "/api/v1/nofy/overview", headers: user.authHeader });
-    // Fresh users receive the seeded starter content — the total is seed-tolerant.
+    // Fresh users receive the seeded starter content - the total is seed-tolerant.
     expect(overview.json().totals.notes).toBeGreaterThanOrEqual(1);
     expect(overview.json().activity).toHaveLength(8);
 
@@ -1044,7 +1044,7 @@ describe("academy module", () => {
     expect(catalogBody.courses.length).toBeGreaterThan(0);
     expect(catalogBody.courses[0].progress).toBe(0);
 
-    // Resolve the lesson id from the FIRST course's detail — the catalog
+    // Resolve the lesson id from the FIRST course's detail - the catalog
     // sorts courses by level, so hard-coded ids would be fragile.
     const firstCourse = await app.inject({
       method: "GET",
@@ -1082,7 +1082,7 @@ describe("academy module", () => {
     const progress = await app.inject({ method: "GET", url: "/api/v1/academy/progress", headers: user.authHeader });
     expect(progress.json().overall.completedLessons).toBe(1);
 
-    // Quiz mechanics — the answer KEY stays server-side, so this test reads
+    // Quiz mechanics - the answer KEY stays server-side, so this test reads
     // a real quiz from the catalog and asserts the GRADING CONTRACT (answers
     // hidden pre-submit, score + explanations revealed post-submit) without
     // knowing the correct options.
@@ -1126,7 +1126,7 @@ describe("academy module", () => {
     expect(practice.json().practiceAttempts).toBe(1);
 
     const stats = await app.inject({ method: "GET", url: "/api/v1/academy/practice/stats", headers: user.authHeader });
-    // The contract projects perDrill + recent (no flat totals — the aggregate
+    // The contract projects perDrill + recent (no flat totals - the aggregate
     // per-drill row carries the counts).
     const statsBody = stats.json() as { perDrill: Array<{ attempts: number; correct: number }> };
     const totalAttempts = statsBody.perDrill.reduce((sum, row) => sum + row.attempts, 0);
@@ -1151,7 +1151,7 @@ describe("academy module", () => {
 
     const overview = await app.inject({ method: "GET", url: "/api/v1/academy/overview", headers: user.authHeader });
     expect(overview.statusCode).toBe(200);
-    // The only lesson opened was COMPLETED — continueLearning may honestly be
+    // The only lesson opened was COMPLETED - continueLearning may honestly be
     // null (nothing in progress). The overview's progress block still counts it.
     const overviewBody = overview.json() as { progress: { overall: { completedLessons: number } } };
     expect(overviewBody.progress.overall.completedLessons).toBeGreaterThanOrEqual(1);

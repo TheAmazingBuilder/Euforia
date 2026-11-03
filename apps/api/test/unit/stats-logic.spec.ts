@@ -1,5 +1,5 @@
 /**
- * Stats logic tests — pure computations over synthetic rows (no DB).
+ * Stats logic tests - pure computations over synthetic rows (no DB).
  * Verifies the algorithms the frontend renders: overview aggregates, equity
  * curve, deltas, sparklines, ghost trend, analytics cards + heatmap + tilt,
  * mistake ledger, suite summary/filters/histograms/Monte Carlo determinism.

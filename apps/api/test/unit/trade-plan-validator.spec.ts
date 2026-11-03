@@ -1,5 +1,5 @@
 /**
- * Unit — pre-trade validation battery (Phase 5 §21/§22/§23).
+ * Unit - pre-trade validation battery (Phase 5 §21/§22/§23).
  * Composition checks: the engine's findings flow through, the checklist gate
  * and the risk-limit gate add their own, and pass/fail is decided by ERROR
  * severity only (warnings never block).
@@ -50,7 +50,7 @@ function checklist(items: Array<[boolean, boolean]>): TradePlanChecklistSnapshot
   };
 }
 
-describe("validation battery — pass path", () => {
+describe("validation battery - pass path", () => {
   it("a clean plan passes with zero issues", () => {
     const result = runValidationBattery(CLEAN);
     expect(result.passed).toBe(true);
@@ -65,7 +65,7 @@ describe("validation battery — pass path", () => {
   });
 });
 
-describe("validation battery — checklist gate (§23/§24)", () => {
+describe("validation battery - checklist gate (§23/§24)", () => {
   it("an unchecked required item blocks with a structured finding", () => {
     const result = runValidationBattery({
       ...CLEAN,
@@ -108,7 +108,7 @@ describe("validation battery — checklist gate (§23/§24)", () => {
   });
 });
 
-describe("validation battery — risk-limit gate (§22)", () => {
+describe("validation battery - risk-limit gate (§22)", () => {
   it("a configured per-trade percent limit blocks when exceeded", () => {
     const result = runValidationBattery({
       ...CLEAN,
@@ -144,7 +144,7 @@ describe("validation battery — risk-limit gate (§22)", () => {
   });
 });
 
-describe("validation battery — engine findings flow through", () => {
+describe("validation battery - engine findings flow through", () => {
   it("an inverted stop fails the battery", () => {
     const result = runValidationBattery({ ...CLEAN, stopLoss: new Decimal("1.09000") });
     expect(result.passed).toBe(false);

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * live-discipline-probe.mjs — proves the "Émotions & violations en base"
+ * live-discipline-probe.mjs - proves the "Émotions & violations en base"
  * deliverable against the LIVE API (not MSW):
  *   [A] login trader@cosmoz.app (seeded by seed-demo-data.mjs)
  *   [B] rules: seed a MAX_LOSSES_PER_DAY rule (limit 2)
@@ -21,8 +21,8 @@ let passed = 0;
 let failed = 0;
 const failures = [];
 function check(name, ok, detail = "") {
-  if (ok) { passed += 1; console.log(`  PASS  ${name}${detail ? ` — ${detail}` : ""}`); }
-  else { failed += 1; failures.push(name); console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`); }
+  if (ok) { passed += 1; console.log(`  PASS  ${name}${detail ? ` - ${detail}` : ""}`); }
+  else { failed += 1; failures.push(name); console.log(`  FAIL  ${name}${detail ? ` - ${detail}` : ""}`); }
 }
 
 let token;
@@ -62,7 +62,7 @@ function todayIso(hh) {
   const instrument = (instruments.json?.instruments ?? instruments.json?.items ?? []).find((i) => i.symbol === INSTRUMENT);
   check("[A] EURUSD instrument resolved", Boolean(instrument), instrument?.symbol ?? "none");
 
-  // [B] rules — idempotent seed of a MAX_LOSSES_PER_DAY rule (limit 2)
+  // [B] rules - idempotent seed of a MAX_LOSSES_PER_DAY rule (limit 2)
   const rulesList = await api("GET", "/rules");
   const existing = (rulesList.json?.rules ?? rulesList.json ?? []).find(
     (r) => r.type === "MAX_LOSSES_PER_DAY" && r.isActive,
@@ -81,7 +81,7 @@ function todayIso(hh) {
     check("[B] rule already active (MAX_LOSSES_PER_DAY, limit 2)", true, ruleId);
   }
 
-  // [C] breach — 2 losing CLOSED trades today (SL exit), psychology after
+  // [C] breach - 2 losing CLOSED trades today (SL exit), psychology after
   const probeExternal = `probe-viol-${Date.now()}`;
   const mk = (i) => ({
     variant: "closed",
@@ -116,7 +116,7 @@ function todayIso(hh) {
   const psy2 = await api("PATCH", `/trades/${createdTrades[1]}/psychology`, { emotionAfter: "CONFIDENT" });
   check("[C] emotion-after persisted (reflect seam)", (psy.status === 200 || psy.status === 201) && (psy2.status === 200 || psy2.status === 201), `status ${psy.status}/${psy2.status}`);
 
-  // rule engine listens to trade.closed — give the async event a beat
+  // rule engine listens to trade.closed - give the async event a beat
   await new Promise((r) => setTimeout(r, 1500));
 
   // [D] violations persisted
@@ -135,7 +135,7 @@ function todayIso(hh) {
     check("[E] violation acknowledged + persisted", false, "no violation to acknowledge");
   }
 
-  // [F] emotion matrix serves real psychology rows (keyed by emotionBefore —
+  // [F] emotion matrix serves real psychology rows (keyed by emotionBefore -
   // the heatmap is "emotion at entry → outcome" by design) + the reflect
   // seam (emotionAfter) persists on the trade view itself.
   const matrix = await api("GET", "/discipline/emotion-matrix");
@@ -149,7 +149,7 @@ function todayIso(hh) {
   const tv = lrows.find((t) => t.id === createdTrades[0]);
   check("[F] emotion-after persisted on the trade (reflect seam)", tv?.emotionAfter === "FRUSTRATED", `emotionAfter=${tv?.emotionAfter ?? "?"} confidence=${tv?.confidence ?? "?"}`);
 
-  // [G] cleanup — soft-delete probe trades (undo possible by design §57)
+  // [G] cleanup - soft-delete probe trades (undo possible by design §57)
   let cleaned = 0;
   for (const id of createdTrades) {
     const del = await api("DELETE", `/trades/${id}`);

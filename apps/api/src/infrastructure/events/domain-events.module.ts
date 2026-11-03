@@ -1,13 +1,13 @@
 /**
- * Domain events infrastructure — a tiny in-process, fire-and-forget event
+ * Domain events infrastructure - a tiny in-process, fire-and-forget event
  * bus (Node's built-in EventEmitter, typed, ZERO extra dependencies).
  *
  * WHY: bounded contexts must stay acyclic (§46). When Trades closes a trade,
- * Discipline needs to evaluate its rules — but Discipline consumes the
+ * Discipline needs to evaluate its rules - but Discipline consumes the
  * Trades read contract, so Trades cannot import Discipline without a module
  * cycle. A domain event breaks the coupling: Trades PUBLISHES a fact
  * ("trade.closed"), Discipline SUBSCRIBES and reacts. Delivery is
- * synchronous and in-process by design — no queue, no outbox; a failed
+ * synchronous and in-process by design - no queue, no outbox; a failed
  * listener must not fail the trade write (listeners catch their own
  * errors).
  */
@@ -36,7 +36,7 @@ export class DomainEventsService implements OnModuleDestroy {
     this.emitter.setMaxListeners(64);
   }
 
-  /** Publish a domain fact. Fire-and-forget — never throws to the caller. */
+  /** Publish a domain fact. Fire-and-forget - never throws to the caller. */
   publish<K extends keyof DomainEvents>(event: K, payload: DomainEvents[K]): void {
     try {
       this.emitter.emit(event, payload);

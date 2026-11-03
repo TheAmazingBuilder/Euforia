@@ -1,5 +1,5 @@
 /**
- * Setup controller (Phase 7) — market opportunities within a strategy.
+ * Setup controller (Phase 7) - market opportunities within a strategy.
  * All routes authenticated (global guard); ownership enforced in the
  * service; static route (/insights) declared before /:setupId.
  */

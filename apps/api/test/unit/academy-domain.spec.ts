@@ -1,5 +1,5 @@
 /**
- * Unit — Academy pure domain engines (Phase 11).
+ * Unit - Academy pure domain engines (Phase 11).
  *
  * Grading (quiz/checkpoint/exam share ONE evaluator), learning-state
  * derivations (streak, weekly plan, progress, milestones), Leitner
@@ -95,7 +95,7 @@ describe("grading", () => {
     expect(gradeAnswer(zero, 0.5).correct).toBe(false);
   });
 
-  it("grades only the owned question list — foreign questionIds earn nothing", () => {
+  it("grades only the owned question list - foreign questionIds earn nothing", () => {
     const results = gradeAnswers(questions, new Map<string, number | boolean | null>([
       ["q1", 2],
       ["q2", false],
@@ -192,7 +192,7 @@ describe("progress", () => {
       completedLessonIds: new Set([...realLessons, "lsn-a"]), // lsn-a: unknown → ignored
       quizAttempts: [
         { quizId: "qz-1", score: 2 },
-        { quizId: "qz-1", score: 1 }, // older attempt — best(2) wins, not the average
+        { quizId: "qz-1", score: 1 }, // older attempt - best(2) wins, not the average
         { quizId: "qz-2", score: 1 },
       ],
       practiceAttempts: 7,
@@ -512,7 +512,7 @@ describe("utcDateKey", () => {
 // ── checkpoint rule constant ─────────────────────────────────────────────────
 
 describe("checkpoint rule", () => {
-  it("requires long lessons (≥ 6 blocks) — the authored threshold", () => {
+  it("requires long lessons (≥ 6 blocks) - the authored threshold", () => {
     expect(CHECKPOINT_MIN_BLOCKS).toBe(6);
   });
 });

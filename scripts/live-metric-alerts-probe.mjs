@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * live-metric-alerts-probe.mjs — proves Phase 07 (metric alert rules)
+ * live-metric-alerts-probe.mjs - proves Phase 07 (metric alert rules)
  * against the LIVE API (not MSW), mirroring live-discipline-probe.mjs:
  *   [A] login trader@cosmoz.app (seeded by seed-demo-data.mjs)
  *   [B] idempotent cleanup of previous probe rules ("[probe] …")
@@ -10,11 +10,11 @@
  *   [E] manual re-evaluate → NO duplicate (transition semantics)
  *   [F] threshold flip: raise → evaluate (quiet) → restore → evaluate
  *       (false→true fires again, evaluationKey t2)
- *   [G] GET /alert-rules/:id/events — rule-scoped history, newest first
+ *   [G] GET /alert-rules/:id/events - rule-scoped history, newest first
  *   [H] dismiss the newest event → dismissedAt set, audit history kept
  *   [I] GOAL rule (ACHIEVED on a fresh WIN_RATE goal) → evaluate → fires
  *   [J] disabled rule is not evaluated
- *   [K] cleanup — delete the probe rules (events survive by design)
+ *   [K] cleanup - delete the probe rules (events survive by design)
  */
 const BASE = process.env.API_BASE ?? "http://localhost:4000/api/v1";
 const EMAIL = "trader@cosmoz.app";
@@ -24,8 +24,8 @@ let passed = 0;
 let failed = 0;
 const failures = [];
 function check(name, ok, detail = "") {
-  if (ok) { passed += 1; console.log(`  PASS  ${name}${detail ? ` — ${detail}` : ""}`); }
-  else { failed += 1; failures.push(name); console.log(`  FAIL  ${name}${detail ? ` — ${detail}` : ""}`); }
+  if (ok) { passed += 1; console.log(`  PASS  ${name}${detail ? ` - ${detail}` : ""}`); }
+  else { failed += 1; failures.push(name); console.log(`  FAIL  ${name}${detail ? ` - ${detail}` : ""}`); }
 }
 
 let token;
@@ -111,7 +111,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   while (Date.now() < deadline && event === null) {
     await sleep(400);
     const alerts = await api("GET", "/alerts");
-    // Array.find yields undefined when absent — normalize to null so the
+    // Array.find yields undefined when absent - normalize to null so the
     // loop actually waits for the debounced evaluation.
     event = (alerts.json?.alerts ?? []).find(
       (a) => a.type === "METRIC_THRESHOLD" && a.payload?.ruleId === ruleId,
@@ -162,7 +162,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
     (afterDismiss.json?.events ?? []).length === 2,
     `status ${dismissed.status}`);
 
-  // [I] goal rule — ACHIEVED via the authoritative goal engine
+  // [I] goal rule - ACHIEVED via the authoritative goal engine
   const goal = await api("POST", "/goals", {
     title: "[probe] Win rate goal",
     metric: "WIN_RATE",
@@ -191,7 +191,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   check("[J] disabled rule not evaluated", disabledEval.json?.evaluatedRules >= 1 && disabledEval.json?.triggeredEvents === 0,
     `evaluated ${disabledEval.json?.evaluatedRules}, triggered ${disabledEval.json?.triggeredEvents}`);
 
-  // [K] cleanup — rules deleted, events survive
+  // [K] cleanup - rules deleted, events survive
   await api("DELETE", `/alert-rules/${ruleId}`);
   await api("DELETE", `/alert-rules/${goalRule.json?.id}`);
   await api("DELETE", `/goals/${goalId}`);

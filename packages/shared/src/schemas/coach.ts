@@ -7,7 +7,7 @@ import {
 import { directionSchema, emotionSchema, gradeSchema, tradeStatusSchema } from "../enums";
 
 /**
- * AI coach chat contract — Priorité 3, feature 11. The client builds a
+ * AI coach chat contract - Priorité 3, feature 11. The client builds a
  * compact DATA snapshot of the user's journal from the queries it already
  * holds, then posts it with the conversation. The server route composes the
  * system prompt around the snapshot and calls the LLM. Validated with the
@@ -31,7 +31,7 @@ export const coachTradeContextSchema = z.object({
 export type CoachTradeContext = z.infer<typeof coachTradeContextSchema>;
 
 /**
- * The data snapshot attached to every chat request. Compact on purpose —
+ * The data snapshot attached to every chat request. Compact on purpose -
  * the whole context must stay small enough to inline in the LLM prompt.
  */
 export const coachContextSchema = z.object({
@@ -105,7 +105,7 @@ export const coachChatMessageSchema = z.object({
 
 export type CoachChatMessage = z.infer<typeof coachChatMessageSchema>;
 
-/** POST /api/coach/chat — request body. */
+/** POST /api/coach/chat - request body. */
 export const coachChatRequestSchema = z.object({
   /** Full visible conversation, oldest first (client caps the window). */
   messages: z.array(coachChatMessageSchema).min(1).max(16),
@@ -114,7 +114,7 @@ export const coachChatRequestSchema = z.object({
 
 export type CoachChatRequest = z.infer<typeof coachChatRequestSchema>;
 
-/** POST /api/coach/chat — response body. */
+/** POST /api/coach/chat - response body. */
 export const coachChatResponseSchema = z.object({
   reply: z.string().min(1),
 });

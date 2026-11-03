@@ -6,7 +6,7 @@ import { SecurityCenterView } from "@/components/security/security-view";
 export const metadata: Metadata = {
   title: "Security",
   description:
-    "The Security center: authentication, sessions, two-factor authentication, API keys, connected accounts, the append-only event log and login history.",
+    "The Security center: authentication, sessions, two-factor authentication, API keys, the append-only event log and login history.",
 };
 
 export default function SecurityPage() {

@@ -6,14 +6,14 @@
  * engine), list/get/patch/delete, and the per-user unique-name rule.
  *
  * Authority rules (spec §3/§6/§9):
- *   - Captured metrics come from AnalyticsService.getAnalyticsSuite — the
+ *   - Captured metrics come from AnalyticsService.getAnalyticsSuite - the
  *     EXACT dataset the Analytics page renders. This service computes NO
  *     financial math of its own (no duplicated analytics engine, spec §2).
  *   - A capture freezes: the summary band + currency context + the RESOLVED
  *     period (periodFrom/periodTo) + the human scope descriptor. Preset
  *     periods (YTD, MTD…) can never silently shift a stored snapshot later.
  *   - Captured values are immutable: PATCH accepts name/notes only (the
- *     update input schema has no metric field — the shape is the guarantee)
+ *     update input schema has no metric field - the shape is the guarantee)
  *     and the repository merge is metadata-only.
  *   - Each POST creates a NEW row; duplicates by name are rejected with
  *     SNAPSHOT_NAME_TAKEN (case-insensitive, storage-level unique index).
@@ -45,7 +45,7 @@ import { SnapshotsRepository } from "./snapshots.repository";
 type CreateInput = CreatePerformanceSnapshotInput;
 
 /** Minimal Monte-Carlo sims (engine clamps 100–2000): a snapshot needs the
- * summary band only — the smallest authoritative pass, never a custom engine. */
+ * summary band only - the smallest authoritative pass, never a custom engine. */
 const CAPTURE_SIMS = 100;
 
 /** List bound (spec §11: reasonable row limits, no unbounded reads). */
@@ -55,7 +55,7 @@ function nameKeyOf(name: string): string {
   return name.trim().toLowerCase();
 }
 
-/** Non-period half of the filter bag — the frozen scope. */
+/** Non-period half of the filter bag - the frozen scope. */
 function scopeOfFilters(filters: CreateInput["filters"]): SnapshotScope {
   const scope: SnapshotScope = {};
   if (filters.accountId !== undefined) scope.accountId = filters.accountId;
@@ -99,7 +99,7 @@ export class SnapshotsService {
   }
 
   async create(userId: string, input: CreateInput): Promise<PerformanceSnapshot> {
-    // Spec §11 — validate account/strategy references against the
+    // Spec §11 - validate account/strategy references against the
     // authenticated user BEFORE any capture (a foreign id is 404, never a
     // silently-empty snapshot).
     if (input.filters.accountId !== undefined) {
@@ -121,7 +121,7 @@ export class SnapshotsService {
       }
     }
 
-    // THE capture — one authoritative suite pass; everything below is frozen
+    // THE capture - one authoritative suite pass; everything below is frozen
     // from its response (meta descriptor + resolved window + currency).
     const suite = await this.analytics.getAnalyticsSuite(userId, input.filters, CAPTURE_SIMS);
 
@@ -179,7 +179,7 @@ export class SnapshotsService {
 
   /**
    * Metadata-only patch (name/notes). Metrics, scope, period, currency and
-   * capture timestamp are structurally unreachable — the input schema has no
+   * capture timestamp are structurally unreachable - the input schema has no
    * such field and the merge below copies ONLY name/notes over the stored doc.
    */
   async update(

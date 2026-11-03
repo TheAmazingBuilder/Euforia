@@ -1,5 +1,5 @@
 /**
- * MT5 terminal bridge — ingest service (Phase 08).
+ * MT5 terminal bridge - ingest service (Phase 08).
  *
  * The ONLY public (JWT-free) route of the accounts module. Authentication is
  * per-event HMAC-SHA256 over a canonical serialization, mirroring the
@@ -10,13 +10,13 @@
  *
  * The terminal sends: X-Bridge-Key (public routing key), X-Bridge-Timestamp,
  * X-Bridge-Signature, X-Bridge-Event-Id. The service re-serializes the
- * PARSED wrapper ({eventId, kind, payload}) — JSON.parse preserves property
+ * PARSED wrapper ({eventId, kind, payload}) - JSON.parse preserves property
  * order, so the canonical string is byte-identical to what the EA signed
- * (decimals travel as strings to keep this stable — EA + guide mandate it).
+ * (decimals travel as strings to keep this stable - EA + guide mandate it).
  *
  * Trust model: the routing key locates the connection; the SECRET proves the
  * terminal; the timestamp bounds replay; the event id dedupes. The first
- * accepted push flips the pairing (CONNECTING → CONNECTED) — pairing IS the
+ * accepted push flips the pairing (CONNECTING → CONNECTED) - pairing IS the
  * validation for an external terminal (capability connectionValidation,
  * ON_CONNECT). Account identity facts (currency, broker identification from
  * the EA-reported company/server) refresh on ACCOUNT_INFO pushes.
@@ -36,7 +36,7 @@ import {
   normalizedPositionSchema,
 } from "./normalization";
 
-/** Ingest envelope kinds — one zod payload schema per kind. */
+/** Ingest envelope kinds - one zod payload schema per kind. */
 export const bridgeEventKindSchema = z.enum([
   "ACCOUNT_INFO",
   "SNAPSHOT",
@@ -56,7 +56,7 @@ export const bridgeAccountInfoPayloadSchema = z.object({
   accountClass: z.enum(["REAL", "DEMO"]).nullable().optional(),
 });
 
-/** Balance/equity/margin snapshot — decimals as strings, nullable = unknown. */
+/** Balance/equity/margin snapshot - decimals as strings, nullable = unknown. */
 export const bridgeSnapshotPayloadSchema = z.object({
   balance: z.string().nullable().optional(),
   equity: z.string().nullable().optional(),
@@ -105,7 +105,7 @@ export const bridgeIngestEnvelopeSchema = z
   });
 export type BridgeIngestEnvelope = z.infer<typeof bridgeIngestEnvelopeSchema>;
 
-/** ±5 minutes — the SAME replay window as the integrations webhook pipeline. */
+/** ±5 minutes - the SAME replay window as the integrations webhook pipeline. */
 const TIMESTAMP_TOLERANCE_MS = 5 * 60 * 1000;
 
 /** Ingest rate bound: generous (a 5 s cadence ≈ 12/min), bounded (≤ 120/min). */
@@ -114,7 +114,7 @@ const INGEST_MAX_PER_WINDOW = 120;
 
 @Injectable()
 export class Mt5BridgeIngestService implements OnModuleDestroy {
-  /** In-memory sliding window per routing key (bounded map — keys rotate). */
+  /** In-memory sliding window per routing key (bounded map - keys rotate). */
   private readonly ingestWindows = new Map<string, number[]>();
 
   constructor(
@@ -140,12 +140,12 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     signatureHex: string;
     envelope: BridgeIngestEnvelope;
   }): Promise<{ accepted: true; duplicate: boolean; state: "CONNECTING" | "CONNECTED" }> {
-    this.enforceRateLimit(input.keyId);
-
     const connection = await this.repository.findConnectionByBridgeKeyId(input.keyId);
     if (!connection) {
       throw new UnauthorizedError("Unknown bridge key.", "BRIDGE_KEY_UNKNOWN");
     }
+    // Only allocate per-key rate-limit state after resolving a real bridge key.
+    // Otherwise arbitrary unauthenticated key IDs can grow the in-memory map.
     if (connection.method !== "PLATFORM_BRIDGE") {
       throw new ForbiddenError(
         "This connection does not accept bridge pushes.",
@@ -159,10 +159,12 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
       );
     }
 
+    this.enforceRateLimit(input.keyId);
+
     const now = Date.now();
     // Freshness is compared in MILLISECONDS. The EA v1.0.0 sends epoch
     // SECONDS ((long)TimeGMT()); ms-capable terminals send ms. Detect by
-    // magnitude (ms epochs exceed 1e12 since 2001-09-09) — the SIGNATURE
+    // magnitude (ms epochs exceed 1e12 since 2001-09-09) - the SIGNATURE
     // still binds the raw string the terminal sent (canonical uses the
     // un-converted value), so this can never widen who can authenticate.
     const rawTimestamp = input.timestampMs;
@@ -185,7 +187,7 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
       );
     }
 
-    // Canonical serialization — identical bytes to what the terminal signed.
+    // Canonical serialization - identical bytes to what the terminal signed.
     const canonical = `${input.timestampMs}.${JSON.stringify({
       eventId: input.envelope.eventId,
       kind: input.envelope.kind,
@@ -198,40 +200,169 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
       );
     }
 
-    const { duplicate } = await this.repository.insertBridgeEvent({
+    // The routing key is bound to one Euforia account. Validate the
+    // terminal-reported login/environment/broker before recording or activating
+    // this pairing; the DB repeats the broker uniqueness check under the same
+    // transaction that writes the event and changes the connection state.
+    let identifiedBrokerId: string | undefined;
+    if (input.envelope.kind === "ACCOUNT_INFO") {
+      identifiedBrokerId = await this.assertAccountInfoMatchesConnection(
+        connection.accountId,
+        input.envelope,
+      );
+    }
+
+    // The database revalidates the active key/status and stores the event in
+    // the same transaction. This serializes acceptance against disconnect,
+    // rotation, and two accounts racing to claim the same broker/login.
+    const accepted = await this.repository.acceptBridgeEvent({
       bridgeKeyId: input.keyId,
       eventId: input.envelope.eventId,
       kind: input.envelope.kind,
       payload: input.envelope.payload,
+      ...(identifiedBrokerId ? { identifiedBrokerId } : {}),
     });
-
-    let state: "CONNECTING" | "CONNECTED" =
-      connection.status === "CONNECTED" ? "CONNECTED" : "CONNECTING";
-
-    if (!duplicate) {
-      if (connection.status !== "CONNECTED") {
-        // Pairing IS the validation — the first accepted push activates.
-        await this.repository.activateBridgeConnection(connection.accountId);
-        state = "CONNECTED";
-        const account = await this.repository.findAccountById(connection.accountId);
-        await this.events.record({
-          userId: account?.userId ?? "unknown",
-          type: "TRADING_ACCOUNT_CONNECTED",
-          actor: "mt5-bridge",
-          context: `First bridge push accepted for account ${account?.externalAccountId ?? connection.accountId} — pairing complete (PLATFORM_BRIDGE).`,
-        });
+    if (!accepted.accepted) {
+      if (accepted.reason === "BROKER_DUPLICATE") {
+        throw new ForbiddenError(
+          "This broker account is already connected to Euforia.",
+          "BRIDGE_DUPLICATE_ACCOUNT",
+        );
       }
-      if (input.envelope.kind === "ACCOUNT_INFO") {
-        await this.applyAccountInfo(connection.accountId, input.envelope);
-        // Bounded log maintenance on the slowest cadence.
-        await this.repository.pruneBridgeEvents(input.keyId);
+      if (accepted.reason === "BROKER_MISMATCH") {
+        throw new ForbiddenError(
+          "The terminal broker differs from the broker originally paired to this account.",
+          "BRIDGE_BROKER_MISMATCH",
+        );
       }
+      throw new UnauthorizedError(
+        "This bridge key has been revoked or is no longer active. Pair the terminal again.",
+        "BRIDGE_KEY_UNKNOWN",
+      );
     }
 
-    return { accepted: true, duplicate, state };
+    if (accepted.activated && !accepted.duplicate) {
+      const account = await this.repository.findAccountById(connection.accountId);
+      await this.events.record({
+        userId: account?.userId ?? "unknown",
+        type: "TRADING_ACCOUNT_CONNECTED",
+        actor: "mt5-bridge",
+        context: `First bridge push accepted for account ${account?.externalAccountId ?? connection.accountId} - pairing complete (PLATFORM_BRIDGE).`,
+      });
+    }
+
+    if (!accepted.duplicate && input.envelope.kind === "ACCOUNT_INFO") {
+      await this.applyAccountInfo(connection.accountId, input.envelope);
+      // Bounded log maintenance on the slowest cadence.
+      await this.repository.pruneBridgeEvents(input.keyId);
+    }
+
+    return { accepted: true, duplicate: accepted.duplicate, state: "CONNECTED" as const };
   }
 
   // ── Internals ───────────────────────────────────────────────────────────────
+
+  /** Enforce the immutable pairing/account boundary before accepting identity data. */
+  private async assertAccountInfoMatchesConnection(
+    accountId: string,
+    envelope: BridgeIngestEnvelope,
+  ): Promise<string | undefined> {
+    const payload = envelope.payload as {
+      externalAccountId: string;
+      accountClass?: "REAL" | "DEMO" | null;
+      brokerName?: string | null;
+      server?: string | null;
+    };
+    const account = await this.repository.findAccountById(accountId);
+    if (!account || payload.externalAccountId.trim() !== account.externalAccountId) {
+      throw new ForbiddenError(
+        "The terminal login does not match the Euforia account paired with this bridge key.",
+        "BRIDGE_ACCOUNT_MISMATCH",
+      );
+    }
+
+    // DEMO and LIVE are explicit user choices. PROP_FIRM is a separate
+    // journal category and may use either a broker DEMO or REAL account.
+    const classMismatch =
+      (account.type === "DEMO" && payload.accountClass === "REAL") ||
+      (account.type === "LIVE" && payload.accountClass === "DEMO");
+    if (classMismatch) {
+      throw new ForbiddenError(
+        "The terminal account class does not match the DEMO/LIVE environment selected in Euforia.",
+        "BRIDGE_ENVIRONMENT_MISMATCH",
+      );
+    }
+
+    const reported = payload.brokerName
+      ? this.identification.identifyAtConnect({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          providerReported: {
+            brokerName: payload.brokerName,
+            accountClass: payload.accountClass ?? null,
+          },
+        })
+      : null;
+    const server = payload.server
+      ? this.identification.identify({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          endpoint: payload.server,
+        })
+      : null;
+    const isSpecificBroker = (brokerId: string | undefined) =>
+      Boolean(brokerId && brokerId !== "unknown" && brokerId !== "metatrader-platform");
+    if (
+      reported &&
+      server &&
+      isSpecificBroker(reported.brokerId) &&
+      isSpecificBroker(server.brokerId) &&
+      reported.brokerId !== server.brokerId
+    ) {
+      throw new ForbiddenError(
+        "The broker name and MT5 server do not identify the same broker. Verify the account and terminal server.",
+        "BRIDGE_BROKER_MISMATCH",
+      );
+    }
+
+    const storedIdentity = account.brokerIdentity as { brokerId?: string } | null;
+    const nextIdentity =
+      reported && isSpecificBroker(reported.brokerId)
+        ? reported
+        : server && isSpecificBroker(server.brokerId)
+          ? server
+          : reported ?? server;
+    const connection = await this.repository.findConnectionByAccountId(accountId);
+    if (
+      connection?.expectedBrokerId &&
+      (!nextIdentity ||
+        !isSpecificBroker(nextIdentity.brokerId) ||
+        connection.expectedBrokerId !== nextIdentity.brokerId)
+    ) {
+      throw new ForbiddenError(
+        "The selected broker could not be confirmed from the MT5 terminal identity, or it does not match the selected broker. Verify the broker name and server before pairing.",
+        "BRIDGE_BROKER_MISMATCH",
+      );
+    }
+    if (
+      nextIdentity &&
+      isSpecificBroker(nextIdentity.brokerId) &&
+      (
+        (storedIdentity && isSpecificBroker(storedIdentity.brokerId) &&
+          storedIdentity.brokerId !== nextIdentity.brokerId) ||
+        (isSpecificBroker(account.brokerId) && account.brokerId !== nextIdentity.brokerId)
+      )
+    ) {
+      throw new ForbiddenError(
+        "This terminal is now reporting a different broker than the account originally paired in Euforia. Reconnect the intended terminal account.",
+        "BRIDGE_BROKER_MISMATCH",
+      );
+    }
+
+    return nextIdentity && isSpecificBroker(nextIdentity.brokerId)
+      ? nextIdentity.brokerId
+      : undefined;
+  }
 
   /** ACCOUNT_INFO pushes refresh the journal anchor facts + identification. */
   private async applyAccountInfo(
@@ -248,35 +379,60 @@ export class Mt5BridgeIngestService implements OnModuleDestroy {
     const account = await this.repository.findAccountById(accountId);
     if (!account) return;
 
-    // Identification: runs at the first ACCOUNT_INFO push (the connect-time
-    // placeholder is confidence UNKNOWN) and UPGRADES from UNKNOWN. An
-    // already-resolved identity is a frozen snapshot — never re-guessed.
-    const stored = account.brokerIdentity as { confidence?: string } | null;
+    // Capture the strongest trustworthy evidence. A recognized broker may
+    // upgrade the initial UNKNOWN/generic MT5 identity, and provider-reported
+    // identity may strengthen a prior server-pattern match. A different
+    // specific broker is rejected before event persistence by the pairing guard.
+    const stored = account.brokerIdentity as {
+      brokerId?: string;
+      confidence?: string;
+    } | null;
     let brokerIdentity: unknown = undefined;
-    if (!account.brokerIdentity || stored?.confidence === "UNKNOWN") {
-      const identification = payload.brokerName
-        ? this.identification.identifyAtConnect({
-            providerId: "mt5-bridge",
-            externalAccountId: payload.externalAccountId,
-            providerReported: {
-              brokerName: payload.brokerName,
-              accountClass: payload.accountClass ?? null,
-            },
-          })
-        : this.identification.identify({
-            providerId: "mt5-bridge",
-            externalAccountId: payload.externalAccountId,
-            ...(payload.server ? { endpoint: payload.server } : {}),
-          });
+    const identification = payload.brokerName
+      ? this.identification.identifyAtConnect({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          endpoint: payload.server ?? null,
+          providerReported: {
+            brokerName: payload.brokerName,
+            accountClass: payload.accountClass ?? null,
+          },
+        })
+      : this.identification.identify({
+          providerId: "mt5-bridge",
+          externalAccountId: payload.externalAccountId,
+          ...(payload.server ? { endpoint: payload.server } : {}),
+        });
+    const isSpecificBroker = (brokerId: string | undefined) =>
+      Boolean(brokerId && brokerId !== "unknown" && brokerId !== "metatrader-platform");
+    const confidenceRank: Record<string, number> = {
+      UNKNOWN: 0,
+      PLATFORM_KNOWN: 1,
+      PATTERN_MATCH: 2,
+      PROVIDER_REPORTED: 3,
+    };
+    const currentRank = confidenceRank[stored?.confidence ?? "UNKNOWN"] ?? 0;
+    const nextRank = confidenceRank[identification.confidence] ?? 0;
+    const storedIsGeneric =
+      !stored ||
+      !isSpecificBroker(stored.brokerId) ||
+      stored.confidence === "UNKNOWN";
+    if (
+      !stored ||
+      (isSpecificBroker(identification.brokerId) &&
+        (storedIsGeneric ||
+          (stored.brokerId === identification.brokerId && nextRank > currentRank)))
+    ) {
       brokerIdentity = identification;
     }
     await this.repository.setBridgeAccountIdentity(accountId, {
       currency: payload.currency,
+      ...(isSpecificBroker(identification.brokerId) ? { brokerId: identification.brokerId } : {}),
       ...(brokerIdentity !== undefined ? { brokerIdentity } : {}),
     });
   }
 
-  /** Timing-safe HMAC-SHA256 (hex) — same construction as integrations. */
+  /** Timing-safe HMAC-SHA256 (hex) - same construction as integrations. */
   private signatureMatches(
     secret: string,
     _timestampMs: number,

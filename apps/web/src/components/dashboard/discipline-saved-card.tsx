@@ -19,7 +19,7 @@ interface DisciplineSavedCardProps {
 }
 
 /**
- * "Discipline saved" widget — the behavioral ROI of NOT trading: R kept out
+ * "Discipline saved" widget - the behavioral ROI of NOT trading: R kept out
  * of harm's way by setups the plan rejected (Registre des Regrets).
  */
 export function DisciplineSavedCard({ rSaved, settledCount }: DisciplineSavedCardProps) {
@@ -31,7 +31,7 @@ export function DisciplineSavedCard({ rSaved, settledCount }: DisciplineSavedCar
           Discipline saved
         </CardTitle>
         <CardDescription>
-          Capital preserved by settled ghost trades — setups you saw and did not take.
+          Capital preserved by settled ghost trades - setups you saw and did not take.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -46,7 +46,7 @@ export function DisciplineSavedCard({ rSaved, settledCount }: DisciplineSavedCar
         </p>
         <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
           Every avoided loser is R kept in your account. Settling your ghost trades turns
-          restraint into a measurable edge — the coach tracks it here after each session.
+          restraint into a measurable edge - the coach tracks it here after each session.
         </p>
       </CardContent>
     </Card>

@@ -6,7 +6,7 @@ import {
 } from "../schemas/calculators";
 
 /**
- * Compounding projection — pure, deterministic financial math.
+ * Compounding projection - pure, deterministic financial math.
  *
  * This is the client-side LIVE-ESTIMATE layer (same contract as utils/risk.ts):
  * the authoritative exact-decimal recomputation lives in the backend
@@ -15,22 +15,22 @@ import {
  * float-safe vectors.
  *
  * Model (§20/§22 of the calculator spec): a constant gain applied once per
- * period, compounded — each period's gain is computed from the PREVIOUS
+ * period, compounded - each period's gain is computed from the PREVIOUS
  * ending balance, never re-applied to the principal:
  *   A = P × (1 + r)^n     with r = gainPerPeriodPercent / 100
  *
  * Domain differences vs the server contract (deliberate, documented):
  *   - Negative per-period rates ARE accepted here ([-100, 0) percent) so the
  *     UI can answer drawdown what-ifs. A rate of −100 % floors the balance at
- *     zero and it stays there — mathematically consistent, never negative.
+ *     zero and it stays there - mathematically consistent, never negative.
  *   - The server growth-only contract ([0, 10 000] percent) is untouched.
  *
  * The annual nominal-rate form A = P(1 + r/n)^(n·t) is intentionally NOT
- * implemented — the product input is explicitly "gain per period".
+ * implemented - the product input is explicitly "gain per period".
  */
 
 /**
- * Product caps — the canonical constants live in the shared calculators
+ * Product caps - the canonical constants live in the shared calculators
  * contract (schemas/calculators.ts); aliased here, not re-declared (the
  * barrel must not export the same name twice).
  */
@@ -48,7 +48,7 @@ export interface CompoundingInput {
   periods: number;
   /**
    * Gain per period, PERCENT: 5 = 5 %. Compounded on the running balance.
-   * Accepted range [−100, 10 000] — negative rates model drawdowns.
+   * Accepted range [−100, 10 000] - negative rates model drawdowns.
    */
   gainPerPeriodPercent: number;
 }
@@ -62,9 +62,9 @@ export interface CompoundingPeriodResult {
   endingBalance: string;
   /** Profit of THIS period only: ending − starting (decimal string). */
   periodProfit: string;
-  /** Total Profit — cumulative absolute profit vs the ORIGINAL balance (decimal string). */
+  /** Total Profit - cumulative absolute profit vs the ORIGINAL balance (decimal string). */
   totalProfit: string;
-  /** Total Gain — cumulative PERCENT of the ORIGINAL balance, not of the running one (decimal string). */
+  /** Total Gain - cumulative PERCENT of the ORIGINAL balance, not of the running one (decimal string). */
   totalGainPercent: string;
 }
 
@@ -77,9 +77,9 @@ export interface CompoundingSchedule {
   rows: CompoundingPeriodResult[];
   /** Balance after the last period (decimal string). */
   finalBalance: string;
-  /** Total Profit — absolute, account currency (decimal string). */
+  /** Total Profit - absolute, account currency (decimal string). */
   totalProfit: string;
-  /** Total Gain — percent of the ORIGINAL starting balance (decimal string). */
+  /** Total Gain - percent of the ORIGINAL starting balance (decimal string). */
   totalGainPercent: string;
 }
 
@@ -92,7 +92,7 @@ export interface CompoundingSchedule {
  * cross the 1e15 balance ceiling.
  *
  * Precision: the loop runs at full float precision (no intermediate
- * rounding — display rounds only at emission); every emitted value goes
+ * rounding - display rounds only at emission); every emitted value goes
  * through toDecimalString (≤ 8 decimals, trailing zeros stripped) so float
  * artifacts never reach the UI.
  */
@@ -127,7 +127,7 @@ export function calculateCompounding(
   for (let period = 1; period <= periods; period += 1) {
     const starting = running;
     const ending = starting * (1 + rate);
-    // Overflow guard — a pathological rate can still explode past the ceiling.
+    // Overflow guard - a pathological rate can still explode past the ceiling.
     if (!Number.isFinite(ending) || ending > COMPOUNDING_MAX_BALANCE) {
       return null;
     }

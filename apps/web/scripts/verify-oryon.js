@@ -1,5 +1,5 @@
 /**
- * verify-oryon.js — Phase 1 browser verification of the Oryon workspace.
+ * verify-oryon.js - Phase 1 browser verification of the Oryon workspace.
  *
  * Checks (cahier de charge Phase 1 §12):
  *   1.  The /oryon route resolves through the app router (sidebar click).
@@ -9,9 +9,9 @@
  *   5.  Instrument change updates the chart (palette → EURUSD).
  *   6.  Notifications + calendar utility panels open (existing journal feed).
  *   7.  Positions panel shows its honest deferred state.
- *   8.  Navigate away/back — no duplicate chart instances (cleanup works).
+ *   8.  Navigate away/back - no duplicate chart instances (cleanup works).
  *   9.  Mobile fallback (390px): rails hidden, no horizontal overflow.
- *   10. Page errors collected — the probe fails on any unfiltered error.
+ *   10. Page errors collected - the probe fails on any unfiltered error.
  *
  * Screenshots → /home/z/my-project/download/ (desktop + tablet + mobile).
  * Run: node scripts/verify-oryon.js   (server on :3000, mock mode)
@@ -26,7 +26,7 @@ const OUT = "/home/z/my-project/download";
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` - ${detail}` : ""}`);
 }
 
 /** Known console noise: the documented auth boot 401 pair + favicon. */
@@ -90,13 +90,13 @@ function isNoise(text) {
     check("chart canvas initialized", true);
     const canvasCount = await page.locator('[data-testid="oryon-chart-canvas"] canvas').count();
     // LW Charts v5 renders ~7 canvas LAYERS per instance (pane base/top, axes,
-    // crosshair). A leak shows up as GROWTH of that count — snapshot baseline.
+    // crosshair). A leak shows up as GROWTH of that count - snapshot baseline.
     const canvasBaseline = canvasCount;
     check("canvas layers snapshot", canvasCount >= 1, `count=${canvasCount}`);
 
     await page.locator('[data-testid="oryon-legend"]').waitFor({ state: "visible", timeout: 30_000 });
     const legend = await page.locator('[data-testid="oryon-legend"]').textContent();
-    check("legend shows instrument", /XAUUSD/.test(legend ?? ""), legend ?? "");
+    check("legend shows instrument", /XAU\/?USD/.test(legend ?? ""), legend ?? "");
     check("legend shows OHLC", /[OHC]/.test(legend ?? "") && /\d/.test(legend ?? ""));
 
     const source = await page.locator('[data-testid="oryon-source-badge"]').textContent();
@@ -108,7 +108,7 @@ function isNoise(text) {
     const canvasAfterTf = await page.locator('[data-testid="oryon-chart-canvas"] canvas').count();
     const legendAfterTf = await page.locator('[data-testid="oryon-legend"]').textContent();
     check("timeframe switch: no duplicated chart instance", canvasAfterTf === canvasBaseline, `count=${canvasAfterTf}`);
-    check("timeframe switch keeps instrument", /XAUUSD/.test(legendAfterTf ?? ""));
+    check("timeframe switch keeps instrument", /XAU\/?USD/.test(legendAfterTf ?? ""));
 
     // ── 6. Instrument switch (palette) ─────────────────────────────────────
     await page.locator('[data-testid="oryon-instrument-trigger"]').click();
@@ -116,7 +116,7 @@ function isNoise(text) {
     await page.locator('[data-testid="oryon-instrument-option-EURUSD"]').click();
     await page.waitForTimeout(2_000);
     const legendAfterInstrument = await page.locator('[data-testid="oryon-legend"]').textContent();
-    check("instrument switch updates chart", /EURUSD/.test(legendAfterInstrument ?? ""), legendAfterInstrument ?? "");
+    check("instrument switch updates chart", /EUR\/?USD/.test(legendAfterInstrument ?? ""), legendAfterInstrument ?? "");
 
     // ── 7. Right utility panels ────────────────────────────────────────────
     await page.locator('[data-testid="oryon-notifications-toggle"]').click();
@@ -128,7 +128,7 @@ function isNoise(text) {
     await page.locator('[data-testid="oryon-utility-close"]').click();
     await page.waitForTimeout(300);
 
-    // ── 8. Positions panel — honest deferred state ─────────────────────────
+    // ── 8. Positions panel - honest deferred state ─────────────────────────
     await page.locator('[data-testid="oryon-positions-toggle"]').click();
     const deferred = await page
       .locator("text=Positions are not integrated into Oryon yet")
@@ -141,7 +141,7 @@ function isNoise(text) {
     await page.screenshot({ path: `${OUT}/oryon-phase1-desktop.png` });
     check("desktop screenshot saved", true, `${OUT}/oryon-phase1-desktop.png`);
 
-    // ── 10. Cleanup: leave and return — no duplicate instances ─────────────
+    // ── 10. Cleanup: leave and return - no duplicate instances ─────────────
     await page.locator('[data-testid="oryon-exit"]').click();
     await page.waitForTimeout(1_000);
     await page.goto(`${BASE}/oryon`, { waitUntil: "domcontentloaded", timeout: 60_000 });

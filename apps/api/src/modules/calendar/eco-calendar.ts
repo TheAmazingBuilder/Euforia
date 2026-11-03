@@ -2,17 +2,17 @@
  * Deterministic eco-calendar source (B7). Euforia has NO live macro-data
  * provider (§68 honesty contract), so the calendar runs on the SAME
  * solution as the mock engine's "macro-sample" provider: a DETERMINISTIC
- * SYNTHETIC schedule generated relative to today — seeded per date key
+ * SYNTHETIC schedule generated relative to today - seeded per date key
  * (mulberry32), so every consumer sees the same releases for a given day
  * and the import-eco → blockers flow is reproducible. Past releases carry
  * an `actual`; future ones stay honest nulls.
  *
  * Replacing this with a real provider is a matter of swapping this module's
- * source — the wire contract (ecoEventSchema) stays identical.
+ * source - the wire contract (ecoEventSchema) stays identical.
  */
 import type { EcoEvent } from "../../shared/contracts";
 
-/** mulberry32 — the same deterministic PRNG the session series uses. */
+/** mulberry32 - the same deterministic PRNG the session series uses. */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -70,7 +70,7 @@ export function generateEcoEvents(todayUtc: Date): EcoEvent[] {
     const rand = mulberry32(
       [...dateKey].reduce((acc, character) => (acc * 31 + character.charCodeAt(0)) >>> 0, 7),
     );
-    // 0–2 releases per day (weekends lighter — deterministically).
+    // 0–2 releases per day (weekends lighter - deterministically).
     const weekday = day.getUTCDay();
     const weekend = weekday === 0 || weekday === 6;
     const count = weekend ? Math.floor(rand() * 2) : Math.floor(rand() * 3);

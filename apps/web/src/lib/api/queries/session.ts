@@ -11,7 +11,7 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
-/** GET /session/timeline — today's events + mood strip (server-assembled). */
+/** GET /session/timeline - today's events + mood strip (server-assembled). */
 export function useSessionTimeline() {
   return useQuery({
     queryKey: queryKeys.sessionTimeline,
@@ -21,7 +21,7 @@ export function useSessionTimeline() {
 
 // ── Session logbook (timestamped in-session notes) ─────────────────────────
 
-/** GET /session/notes — today's logbook, oldest first (server-resolved day). */
+/** GET /session/notes - today's logbook, oldest first (server-resolved day). */
 export function useSessionNotes() {
   return useQuery({
     queryKey: queryKeys.sessionNotes,
@@ -29,7 +29,7 @@ export function useSessionNotes() {
   });
 }
 
-/** POST /session/notes — the server stamps date + wall-clock time. */
+/** POST /session/notes - the server stamps date + wall-clock time. */
 export function useCreateSessionNote() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -41,7 +41,7 @@ export function useCreateSessionNote() {
   });
 }
 
-/** DELETE /session/notes/:noteId — undo a mistyped entry. */
+/** DELETE /session/notes/:noteId - undo a mistyped entry. */
 export function useDeleteSessionNote() {
   const queryClient = useQueryClient();
   return useMutation({

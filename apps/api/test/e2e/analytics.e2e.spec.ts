@@ -1,12 +1,12 @@
 /**
- * e2e — Analytics bounded context (Phase 8).
+ * e2e - Analytics bounded context (Phase 8).
  *
  * Over the REAL AppModule + real database: the Analytics module's single
  * dataset (GET /stats/analytics-suite) and the dashboard KPI aggregation
  * (GET /stats/overview).
  *
  * Fixture strategy: canonical Trade rows (the P&L/R Trading Core computes for
- * provider-synced journals — manual journals carry no P&L by Phase 4 §29
+ * provider-synced journals - manual journals carry no P&L by Phase 4 §29
  * semantics, which the analytics engine treats as "R = 0" honestly) are
  * seeded DIRECTLY with deterministic canonical values; the account,
  * strategy, origin plan and reviews are created through the REAL API so the
@@ -141,7 +141,7 @@ async function seedReferenceUser(auth: Record<string, string>, userId: string) {
   for (const spec of referenceSpecs()) {
     trades.push(await seedTrade(userId, account.id, spec));
   }
-  // The OPEN position — counted by meta, never leaked into stats (§45).
+  // The OPEN position - counted by meta, never leaked into stats (§45).
   await prisma.trade.create({
     data: {
       userId,
@@ -243,7 +243,7 @@ describe("security battery", () => {
       rMultiple: "2",
     });
 
-    // B sees exactly his own journal — never A's (userId from the principal only).
+    // B sees exactly his own journal - never A's (userId from the principal only).
     const suiteB = (await getSuite(userB.authHeader)).json();
     expect(suiteB.meta.closedTrades).toBe(1);
     expect(suiteB.meta.descriptor).toBe("All accounts · all symbols");
@@ -255,7 +255,7 @@ describe("security battery", () => {
     expect(filteredB.meta.closedTrades).toBe(0);
     expect(filteredB.meta.warnings).toContain("No closed trades match the current filters.");
 
-    // A still sees his full dataset (6 closed) — isolation is symmetric.
+    // A still sees his full dataset (6 closed) - isolation is symmetric.
     const suiteA = (await getSuite(userA.authHeader)).json();
     expect(suiteA.meta.closedTrades).toBe(6);
 
@@ -287,7 +287,7 @@ describe("analytics-suite contract", () => {
     expect(suite.meta.descriptor).toBe("All accounts · all symbols");
     expect(suite.meta.resolvedFrom).toBe("2026-03-02");
     expect(suite.meta.resolvedTo).toBe("2026-03-09");
-    expect(suite.meta.anomalies).toEqual([]); // 6 trades < 10 — silent
+    expect(suite.meta.anomalies).toEqual([]); // 6 trades < 10 - silent
     expect(suite.currency).toBe("USD");
 
     // ── summary (canonical math over +500/−300/0/+500/+200/+400, R 5/−3/0/5/2/4) ──
@@ -422,10 +422,10 @@ describe("analytics-suite contract", () => {
     expect(suite.quality.scatter).toHaveLength(6);
     expect(suite.quality.scatter.every((p) => p.mfeR === null && p.maeR === null)).toBe(true);
     expect(suite.mistakes).toEqual({ entries: [], violatingTrades: 0, totalR: "0" });
-    // Phase 13 — the canonical Calendar feeds the economic-event context.
+    // Phase 13 - the canonical Calendar feeds the economic-event context.
     // Coverage now reflects the builtin provider's rolling window and the
     // exact phase split depends on the run date (the deterministic engine
-    // contract is asserted in the unit spec) — here we assert the shape
+    // contract is asserted in the unit spec) - here we assert the shape
     // and the closed-set invariant.
     const coverage = suite.events.calendarCoverage;
     expect(coverage.from === null || /^\d{4}-\d{2}-\d{2}$/.test(coverage.from)).toBe(true);
@@ -476,7 +476,7 @@ describe("analytics-suite contract", () => {
     await seedReferenceUser(user.authHeader, user.userId);
     const suite = analyticsSuiteResponseSchema.parse((await getSuite(user.authHeader)).json());
 
-    // Durations — every closed trade has an exit timestamp; nothing excluded;
+    // Durations - every closed trade has an exit timestamp; nothing excluded;
     // single-currency scope → per-bucket money is computed, never nulled.
     expect(suite.durations.buckets).toHaveLength(6);
     expect(suite.durations.buckets.reduce((sum, bucket) => sum + bucket.trades, 0)).toBe(
@@ -485,14 +485,14 @@ describe("analytics-suite contract", () => {
     expect(suite.durations.excludedMissingTimestamp).toBe(0);
     expect(suite.durations.buckets.every((bucket) => bucket.netPnl !== null)).toBe(true);
 
-    // Streak profile — the reference journal has a single 1-loss run; the
+    // Streak profile - the reference journal has a single 1-loss run; the
     // documented breakeven rule travels with the payload.
     expect(suite.streakProfile.rule).toContain("Breakeven trades");
     expect(suite.streakProfile.currentLossStreak).toBe(0);
     expect(suite.streakProfile.distribution).toEqual([{ length: 1, occurrences: 1 }]);
     expect(suite.streakProfile.afterStreak.trades).toBe(0); // no ≥3-loss streak
 
-    // Insights — 6 trades sit below every documented minimum-sample
+    // Insights - 6 trades sit below every documented minimum-sample
     // threshold: honest silence, never small-sample conclusions. The
     // methodology rules still ship so the UI can explain the thresholds.
     expect(suite.insights.insights).toEqual([]);
@@ -665,7 +665,7 @@ describe("stats overview", () => {
     expect(overview.weeklyCompare.prevWeek.days).toHaveLength(7);
     expect(overview.weeklyCompare.thisWeek.days.every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.date))).toBe(true);
 
-    // ghost/regret blocks: the domain is not backend — honest zeros
+    // ghost/regret blocks: the domain is not backend - honest zeros
     expect(overview.disciplineSaved).toEqual({ rSaved: "0.0", settledCount: 0 }); // Phase-8 1dp
     expect(overview.hesitationCost).toEqual({ rCost: "0.0", settledCount: 0 }); // Phase-8 1dp
     expect(overview.ghostTrend).toHaveLength(30);
@@ -713,7 +713,7 @@ describe("query performance (§68)", () => {
     const suite = analyticsSuiteResponseSchema.parse(res.json());
     expect(suite.meta.closedTrades).toBe(300);
     expect(suite.monteCarlo.bands).toHaveLength(80); // capped band indices
-    // Generous CI budget — the gate catches O(n²) blowups, not CI jitter.
+    // Generous CI budget - the gate catches O(n²) blowups, not CI jitter.
     expect(elapsed).toBeLessThan(10_000);
   });
 });

@@ -3,7 +3,7 @@ import { assetClassSchema, currencySchema } from "../enums";
 import { decimalStringSchema, uuidSchema } from "./primitives";
 
 /**
- * Instrument — data-model.md "Domaine 2".
+ * Instrument - data-model.md "Domaine 2".
  * Specs live per instrument (pipSize, contractSize, digits); there are NO
  * per-asset-class constants in code (synthetic indices ≠ forex lots).
  */

@@ -1,5 +1,5 @@
-// Chart context-menu verification — the TradingView-inspired right-click menu.
-// PROD-SAFE: no dev-only debug handles — assertions via DOM/testids only.
+// Chart context-menu verification - the TradingView-inspired right-click menu.
+// PROD-SAFE: no dev-only debug handles - assertions via DOM/testids only.
 // (1) opens at cursor on empty space   (2) price under cursor in labels
 // (3) add alert prefilled              (4) add horizontal level → hline row
 // (5) reset / object tree / templates  (6) settings live-apply + persist + revert
@@ -24,7 +24,7 @@ async function ensureLogin(page) {
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, label, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 
 function noiseFiltered(errors) {
@@ -54,7 +54,7 @@ function noiseFiltered(errors) {
     await page.waitForSelector('[data-testid="oryon-chart-canvas"]', { timeout: 20000 });
     await page.waitForTimeout(8000);
 
-    /** Right-click at a FRACTION of the chart canvas — the box is re-measured
+    /** Right-click at a FRACTION of the chart canvas - the box is re-measured
      *  every call (the objects dock shrinks the chart mid-run). */
     const rclick = async (fx, fy) => {
       const box = await page.locator('[data-testid="oryon-chart-canvas"]').boundingBox();
@@ -81,7 +81,7 @@ function noiseFiltered(errors) {
       check(`M1c-${tag}`, "menu inside viewport (no clipping)", inside === true,
         mb ? `w=${Math.round(mb.width)} h=${Math.round(mb.height)}` : "");
 
-      // ── (2) Copy price — label carries the cursor price, clipboard matches ──
+      // ── (2) Copy price - label carries the cursor price, clipboard matches ──
       const copyItem = page.locator('[data-testid="oryon-ctx-copy-price"]');
       const copyLabel = (await copyItem.innerText()).trim();
       const priceMatch = copyLabel.match(/([\d,]+\.\d+)/);
@@ -130,7 +130,7 @@ function noiseFiltered(errors) {
     await rclick(0.62, 0.45);
     await page.locator('[data-testid="oryon-ctx-add-level"]').click();
     await page.waitForTimeout(500);
-    // The level line now sits under the OLD point — use a clearly different one.
+    // The level line now sits under the OLD point - use a clearly different one.
     await rclick(0.62, 0.2);
     await page.locator('[data-testid="oryon-ctx-objects"]').click();
     await page.waitForTimeout(800);
@@ -153,7 +153,7 @@ function noiseFiltered(errors) {
       check(`M5b-${tag}`, "Reset chart view runs without error", false, "menu did not reopen");
     }
 
-    // ── (6) Settings — live apply + persistence + revert ────────────────────
+    // ── (6) Settings - live apply + persistence + revert ────────────────────
     await rclick(0.62, 0.2);
     await page.locator('[data-testid="oryon-ctx-settings"]').click();
     await page.waitForTimeout(600);

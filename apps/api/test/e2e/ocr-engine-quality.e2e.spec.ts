@@ -1,5 +1,5 @@
 /**
- * e2e — engine-quality phase service behaviors against the REAL AppModule,
+ * e2e - engine-quality phase service behaviors against the REAL AppModule,
  * the REAL database and the DETERMINISTIC mock engine (§57):
  *
  *   - recrop route: auth, unknown id, region bounds, mock happy path;
@@ -9,7 +9,7 @@
  *     corrections memory rows, suggestedTags on the confirmed record.
  *
  * Real cropping and real fingerprints belong to the FastAPI sidecar (pytest
- * suite + the runtime verification script) — the mock documents PIPELINE
+ * suite + the runtime verification script) - the mock documents PIPELINE
  * behavior (§62 honesty).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -56,7 +56,7 @@ async function upload(authHeader: Record<string, string>, dataUrl: string) {
 
 // ── Re-OCR by crop (§2.4) ────────────────────────────────────────────────────
 
-describe("recrop — targeted region re-OCR", () => {
+describe("recrop - targeted region re-OCR", () => {
   it("is 401 without credentials", async () => {
     const res = await app.inject({
       method: "POST",
@@ -81,7 +81,7 @@ describe("recrop — targeted region re-OCR", () => {
       });
       expect(res.statusCode).toBe(404);
     }
-    // Foreign id is also 404 — never a 403 leak.
+    // Foreign id is also 404 - never a 403 leak.
     void id;
   });
 
@@ -115,7 +115,7 @@ describe("recrop — targeted region re-OCR", () => {
     const body = res.json();
     expect(Array.isArray(body.fields)).toBe(true);
     expect(body.region).toMatchObject({ x: 0, y: 0 });
-    // Ephemeral: nothing was written — the recognition is untouched.
+    // Ephemeral: nothing was written - the recognition is untouched.
     const reloaded = await app.inject({
       method: "GET",
       url: `/api/v1/ocr/recognitions/${created.body.recognition.id}`,
@@ -202,7 +202,7 @@ describe("grouped confirmation", () => {
 
     // Seed TWO multi-trade drafts into the validated result payload (the
     // deterministic engine stays mono; grouping is exercised at the
-    // service/contract level — the sidecar's real grouping is pytest-covered).
+    // service/contract level - the sidecar's real grouping is pytest-covered).
     const draftFields = (symbol: string, entry: string, direction: string) => [
       { field: "symbol", rawValue: symbol, normalizedValue: symbol, confidence: 0.9, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
       { field: "direction", rawValue: direction.toLowerCase(), normalizedValue: direction, confidence: 0.9, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },
@@ -245,7 +245,7 @@ describe("grouped confirmation", () => {
     expect(confirmed.status).toBe("CONFIRMED");
 
     // BOTH drafts imported through Trading Core (distinct external refs per
-    // draft index) — the recognition links every one of them.
+    // draft index) - the recognition links every one of them.
     expect(confirmed.tradeIds).toHaveLength(2);
     expect(confirmed.tradeId).toBe(confirmed.tradeIds[0]);
     expect(confirmed.candidates).not.toBeNull();
@@ -295,7 +295,7 @@ describe("grouped confirmation", () => {
     const created = await upload(a.authHeader, pngDataUrl(makeHappyPathPng()));
     const recognition = created.body.recognition;
 
-    // The user has NO account: every included draft skips with NO_ACCOUNT —
+    // The user has NO account: every included draft skips with NO_ACCOUNT -
     // but the exclusion decision itself is honored (draft 1 never attempted).
     const draftFields = (symbol: string, entry: string, direction: string) => [
       { field: "symbol", rawValue: symbol, normalizedValue: symbol, confidence: 0.9, confidenceBand: "HIGH", validationStatus: "VALID", sourceRegion: null, warnings: [] },

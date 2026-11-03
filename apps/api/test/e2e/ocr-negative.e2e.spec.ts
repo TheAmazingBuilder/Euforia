@@ -1,8 +1,8 @@
 /**
- * e2e — OCR failure paths and resource protection (Phase 19 §27/§34/§35/§37/
+ * e2e - OCR failure paths and resource protection (Phase 19 §27/§34/§35/§37/
  * §38/§53). This file runs in its OWN process (vitest forks pool) and boots
  * the app with the REAL FastAPI engine adapter pointed at a local fake
- * engine — proving the HTTP client path (timeouts, transient retries,
+ * engine - proving the HTTP client path (timeouts, transient retries,
  * contract violations, unprocessable mapping) without the Python sidecar.
  *
  * Env is set at module top, BEFORE loadAppConfig memoizes (single boot).
@@ -21,7 +21,7 @@ process.env.OCR_MOCK_ENGINE = "disabled";
 process.env.OCR_ENGINE_TIMEOUT_MS = "2000";
 process.env.OCR_ENGINE_MAX_RETRIES = "1";
 
-// ── Fake engine — per-scenario behavior with call counting ──────────────────
+// ── Fake engine - per-scenario behavior with call counting ──────────────────
 
 type Scenario = "ok" | "hang" | "fail-then-ok" | "malformed-json" | "malformed-shape" | "unprocessable";
 
@@ -76,7 +76,7 @@ const httpServer: Server = createServer((req, res) => {
       return;
     }
 
-    if (scenario === "hang") return; // never answer — client timeout
+    if (scenario === "hang") return; // never answer - client timeout
     if (scenario === "fail-then-ok") {
       if (calls % 2 === 1) {
         res.writeHead(500).end();
@@ -93,7 +93,7 @@ const httpServer: Server = createServer((req, res) => {
     }
     if (scenario === "malformed-shape") {
       // Structurally invalid against the contract (§54): missing fields,
-      // wrong types — must be rejected WITHOUT retry.
+      // wrong types - must be rejected WITHOUT retry.
       res.writeHead(200, { "content-type": "application/json" });
       res.end(JSON.stringify({ hello: "world", processingStatus: 42 }));
       return;
@@ -174,7 +174,7 @@ describe("OCR via the real FastAPI engine adapter", () => {
     const res = await upload(a.authHeader, 8);
     expect(res.statusCode).toBe(201);
     expect(res.json().recognition.status).toBe("REVIEW_REQUIRED");
-    expect(calls).toBe(2); // one retry, then success — bounded (§34)
+    expect(calls).toBe(2); // one retry, then success - bounded (§34)
     scenario = "ok";
   });
 
@@ -223,7 +223,7 @@ describe("OCR via the real FastAPI engine adapter", () => {
     const recognition = res.json().recognition;
     expect(recognition.status).toBe("FAILED");
     expect(recognition.failure.category).toBe("PROCESSING_TIMEOUT");
-    // Bounded: 2 attempts × 2 s timeout + overhead — not an infinite wait.
+    // Bounded: 2 attempts × 2 s timeout + overhead - not an infinite wait.
     expect(elapsed).toBeLessThan(15_000);
     expect(calls).toBe(2);
     scenario = "ok";

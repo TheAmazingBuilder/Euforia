@@ -1,19 +1,13 @@
 /**
- * Euforia service worker — Priorité 3, feature 12 (PWA offline).
+ * Euforia service worker - Priorité 3, feature 12 (PWA offline).
  *
- * COMPOSITION: this worker ALSO hosts the MSW mock layer. MSW's generated
- * script (mockServiceWorker.js) is imported below — it intercepts the API
- * requests and BYPASSES navigations, so both layers coexist in one
- * registration at scope "/" (two workers cannot fight for the scope).
- *
+
  * Offline strategy (this file):
  * - Navigations: network-first, /offline.html fallback when the network is
  *   unreachable. The captured data stays on the device; reconnect to sync.
  * - Dev/prod identical: no static caching here (Next's immutable assets ride
  *   the browser HTTP cache), so Turbopack HMR can never serve stale chunks.
  */
-importScripts("/mockServiceWorker.js");
-
 const CACHE_VERSION = "cosmoz-shell-v1";
 const OFFLINE_URL = "/offline.html";
 
@@ -39,8 +33,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// MSW's fetch listener (imported above) bypasses navigations — this listener
-// owns them: network-first with the offline shell as the last resort.
+// Navigations: network-first with the offline shell as the last resort.
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.mode !== "navigate") return;

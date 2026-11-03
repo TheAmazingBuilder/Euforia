@@ -1,5 +1,5 @@
 /**
- * Verify — Dashboard Customization Phase 07 (Alert rules UI).
+ * Verify - Dashboard Customization Phase 07 (Alert rules UI).
  * ONE SPA session against the running web (:3000, MSW mirror):
  *   [A] Login → dashboard renders
  *   [B] Bell → notification panel opens
@@ -31,7 +31,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── [A] Sign in ─────────────────────────────────────────────────────────────
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
@@ -90,12 +90,12 @@ const BASE = "http://localhost:3000";
   const renamed = await page.locator('[data-testid="alert-rule-row"]', { hasText: "Probe monthly profit renamed" }).count();
   check("[F] rename persists in the manager", renamed === 1);
 
-  // ── [G] Events expander — honest empty state ────────────────────────────────
+  // ── [G] Events expander - honest empty state ────────────────────────────────
   await page.locator('[data-testid="alert-rule-row"]', { hasText: "Probe monthly profit renamed" }).locator('button[aria-label^="Toggle events"]').click();
   await page.waitForTimeout(800);
   const eventsNote = await page.locator('[data-testid="alert-rule-row"]', { hasText: "Probe monthly profit renamed" }).innerText();
   check("[G] events expander shows the empty state", eventsNote.includes("No events yet"), eventsNote.includes("No events yet") ? "empty" : eventsNote.slice(0, 80));
-  // Collapse before delete — the events query must not refetch a deleted rule.
+  // Collapse before delete - the events query must not refetch a deleted rule.
   await page.locator('[data-testid="alert-rule-row"]', { hasText: "Probe monthly profit renamed" }).locator('button[aria-label^="Toggle events"]').click();
   await page.waitForTimeout(400);
 
@@ -107,7 +107,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(800);
   check("[H] rule removed from the manager", (await page.locator('[data-testid="alert-rule-row"]').count()) === 0);
 
-  // ── [I] Dismiss action on an inbox row (conditional — mock inbox content) ──
+  // ── [I] Dismiss action on an inbox row (conditional - mock inbox content) ──
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
   await page.locator('[data-testid="notification-bell"]').click();
@@ -119,7 +119,7 @@ const BASE = "http://localhost:3000";
     const dismissedBadge = await page.locator('[data-testid="notification-item"]', { hasText: "dismissed" }).count();
     check("[I] dismiss marks the row (history kept)", dismissedBadge >= 0, `dismiss buttons before: ${dismissCount}`);
   } else {
-    check("[I] no inbox rows to dismiss (mock session) — skipped", true, "0 rows");
+    check("[I] no inbox rows to dismiss (mock session) - skipped", true, "0 rows");
   }
 
   // ── [J] Console hygiene (401 pre-login auth probes are expected noise) ─────

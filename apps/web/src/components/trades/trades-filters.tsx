@@ -6,6 +6,7 @@ import { Filter, RotateCcw, Search } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/shared/date-time-picker";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -19,7 +20,7 @@ import type { Direction, TradeStatus } from "@cosmoz/shared";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Trade module filters — every filter lives in the URL (?q=&status=&…), so a
+ * Trade module filters - every filter lives in the URL (?q=&status=&…), so a
  * filtered view is shareable and the back button works. Sorting + pagination
  * ride the same param bag.
  */
@@ -108,7 +109,7 @@ export function useTradesUrlPatch() {
 }
 
 /**
- * The filter bar — one ruled row (wraps on mobile). All selects render
+ * The filter bar - one ruled row (wraps on mobile). All selects render
  * neutral until touched; "Reset" strips every filter param at once.
  */
 export function TradesFilters({
@@ -146,7 +147,7 @@ export function TradesFilters({
       className="rounded-lg border border-border bg-surface p-3"
     >
       <div className="flex flex-wrap items-end gap-2.5">
-        {/* Free text — symbol or notes */}
+        {/* Free text - symbol or notes */}
         <div className="min-w-44 flex-1 space-y-1 sm:max-w-64">
           <Label htmlFor="trades-filter-q" className="text-[11px] text-muted-foreground">
             {T.search}
@@ -290,26 +291,26 @@ export function TradesFilters({
           <Label htmlFor="trades-filter-from" className="text-[11px] text-muted-foreground">
             {T.from}
           </Label>
-          <Input
+          <DatePicker
             id="trades-filter-from"
-            type="date"
             value={state.from}
-            onChange={(event) => patch({ from: event.target.value })}
+            onChange={(from) => patch({ from })}
+            ariaLabel={T.from}
             data-testid="trades-filter-from"
-            className="h-8 w-32 text-sm"
+            className="h-8 w-32 px-2 text-xs"
           />
         </div>
         <div className="space-y-1">
           <Label htmlFor="trades-filter-to" className="text-[11px] text-muted-foreground">
             {T.to}
           </Label>
-          <Input
+          <DatePicker
             id="trades-filter-to"
-            type="date"
             value={state.to}
-            onChange={(event) => patch({ to: event.target.value })}
+            onChange={(to) => patch({ to })}
+            ariaLabel={T.to}
             data-testid="trades-filter-to"
-            className="h-8 w-32 text-sm"
+            className="h-8 w-32 px-2 text-xs"
           />
         </div>
 

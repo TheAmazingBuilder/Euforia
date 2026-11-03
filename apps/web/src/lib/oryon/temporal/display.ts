@@ -1,17 +1,17 @@
 /**
- * Oryon temporal display helpers (Phase 8 spec §9) — PURE Intl formatting.
+ * Oryon temporal display helpers (Phase 8 spec §9) - PURE Intl formatting.
  *
  * Conventions audited and kept:
- *  - Transport/canonical: ISO-UTC (Z) and epoch ms — never ambiguous local
+ *  - Transport/canonical: ISO-UTC (Z) and epoch ms - never ambiguous local
  *    strings, never fixed-offset arithmetic (spec §9).
- *  - Chart time axis + crosshair legend: UTC (the LWC UTCTimestamp domain —
+ *  - Chart time axis + crosshair legend: UTC (the LWC UTCTimestamp domain -
  *    documented in lib/oryon/crosshair/format.ts, unchanged this phase).
- *  - User display timezone: Profile.timezone (PATCH /me — the repo's single
+ *  - User display timezone: Profile.timezone (PATCH /me - the repo's single
  *    source of truth, spec §9.1 "reuse it"), resolved by the hook in
  *    use-display-timezone.ts with the repo default as fallback.
  *
  * Changing the display timezone NEVER changes an event instant or a
- * session interval — these helpers format one instant differently, they
+ * session interval - these helpers format one instant differently, they
  * do not move data (spec §9.1).
  */
 
@@ -23,7 +23,7 @@ function cachedFormat(key: string, build: () => Intl.DateTimeFormat, ms: number)
     fmt = build();
     formatters.set(key, fmt);
     if (formatters.size > 64) {
-      // Bounded cache — display zones are few; a full clear is simpler and
+      // Bounded cache - display zones are few; a full clear is simpler and
       // correct (formatters are stateless).
       formatters.clear();
       formatters.set(key, fmt);
@@ -93,7 +93,7 @@ export function dateKeyInZone(ms: number, zone: string): string {
   );
 }
 
-/** Zone abbreviation label ("EDT", "AEDT"…) at an instant — display only. */
+/** Zone abbreviation label ("EDT", "AEDT"…) at an instant - display only. */
 export function zoneAbbreviation(ms: number, zone: string): string {
   if (!Number.isFinite(ms) || !isValidIanaZone(zone)) return "";
   const parts = cachedFormat(

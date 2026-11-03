@@ -17,10 +17,10 @@ import {
 import { resolveInstrument } from "@/components/oryon/oryon-chart-grid";
 
 /**
- * Oryon eco-approach bridge — renders null (the alerts feed-bridge pattern,
+ * Oryon eco-approach bridge - renders null (the alerts feed-bridge pattern,
  * reused for the calendar surface): ONE subscription to the shared eco
  * query + a 15 s clock, pushing facts into a PURE engine that returns
- * CONFIRMED approach notices. The toast is the only notification channel —
+ * CONFIRMED approach notices. The toast is the only notification channel -
  * in-app, while the workspace is open (the same honesty contract as price
  * alerts; nothing here promises background or server-side delivery).
  *
@@ -29,7 +29,7 @@ import { resolveInstrument } from "@/components/oryon/oryon-chart-grid";
  * 6-letter FX pair). Milestones T-30/T-10/T-2, one-shot per session.
  *
  * Re-render discipline: the bridge re-renders on the 15 s tick and on rare
- * query commits only — the workspace tree never re-renders because of it.
+ * query commits only - the workspace tree never re-renders because of it.
  */
 export function OryonEcoApproachBridge({
   instruments,
@@ -79,7 +79,7 @@ export function OryonEcoApproachBridge({
     engine.setEvents(events);
   }, [engine, eco.data]);
 
-  // CONFIRMED-notice wiring — the toast is the notification surface (the
+  // CONFIRMED-notice wiring - the toast is the notification surface (the
   // alert context's exact pattern; copy reads the CURRENT dict via ref).
   React.useEffect(() => {
     const onNotice = (notice: EcoApproachNotice): void => {
@@ -87,7 +87,7 @@ export function OryonEcoApproachBridge({
       const when = notice.overdue
         ? S.ecoToastImminent
         : S.ecoToastIn.replace("{m}", String(notice.milestoneMinutes));
-      const description = `${notice.event.title} — ${notice.event.currency} · ${when} · ${S.ecoToastInstruments} ${notice.symbols.join(", ")}`;
+      const description = `${notice.event.title} - ${notice.event.currency} · ${when} · ${S.ecoToastInstruments} ${notice.symbols.join(", ")}`;
       toast(`${S.ecoToastTitle} · ${when}`, {
         description,
         testId: "oryon-eco-approach-toast",
@@ -107,7 +107,7 @@ export function OryonEcoApproachBridge({
     engine.tick(nowMs);
   }, [engine, nowMs]);
 
-  // Dev-probe handle (dev builds only — the __ORYON_*_DEBUG__ convention):
+  // Dev-probe handle (dev builds only - the __ORYON_*_DEBUG__ convention):
   // inject a synthetic HIGH event minutes ahead so E2E probes assert the
   // toast deterministically. The full set is re-fed (synthetic + real), so
   // the injection survives until the next query commit. Never shipped to
@@ -131,7 +131,7 @@ export function OryonEcoApproachBridge({
         };
         lastEventsRef.current = [...lastEventsRef.current, synthetic];
         engine.setEvents(lastEventsRef.current);
-        // No synthetic tick — the next shared-clock beat (≤15 s) evaluates
+        // No synthetic tick - the next shared-clock beat (≤15 s) evaluates
         // the injection; a milestone window already crossed on arrival
         // fires with the honest "imminent" wording (overdue flag).
       },

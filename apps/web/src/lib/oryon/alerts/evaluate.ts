@@ -1,13 +1,13 @@
 import type { OryonAlert } from "@cosmoz/shared";
 
 /**
- * Oryon alert evaluation — PURE domain (Phase 5 spec §6.2, §10). Zero React,
+ * Oryon alert evaluation - PURE domain (Phase 5 spec §6.2, §10). Zero React,
  * zero DOM, zero transport: observations go in, CONFIRMED trigger events come
  * out through a callback. The caller (context layer) owns the store, the
- * persistence and the notification surface — this file owns the POLICY.
+ * persistence and the notification surface - this file owns the POLICY.
  *
  * Reference price (documented product decision): the market feed's quote
- * price — the SAME value the chart merges into the forming candle. The feed
+ * price - the SAME value the chart merges into the forming candle. The feed
  * contract carries exactly one price per symbol, so bid/ask/last/close mixing
  * cannot occur by construction.
  *
@@ -15,10 +15,10 @@ import type { OryonAlert } from "@cosmoz/shared";
  *   cross-above fires when the previous eligible price is AT OR BELOW the
  *   threshold and the current eligible price is strictly ABOVE it; cross-below
  *   mirrors it. Equality with the threshold is part of the "from" side, never
- *   the "to" side — a price sitting exactly at the threshold has NOT crossed.
+ *   the "to" side - a price sitting exactly at the threshold has NOT crossed.
  *
  * Deduplication & integrity rules (spec §10):
- *   - a fresh, unprimed alert NEVER triggers on its first observation — an
+ *   - a fresh, unprimed alert NEVER triggers on its first observation - an
  *     initial snapshot already beyond the threshold is not a crossing;
  *   - repeated/equal updates cannot re-trigger (strict side change required);
  *   - an observation older than the last processed one (out-of-order replay,
@@ -27,21 +27,21 @@ import type { OryonAlert } from "@cosmoz/shared";
  *     observation re-anchors without triggering, so a gap-crossing that may
  *     have happened while dark is never claimed by the client;
  *   - a triggered alert leaves the evaluation set (one-shot lifecycle, until
- *     the user re-arms — documented product decision).
+ *     the user re-arms - documented product decision).
  *
  * Background honesty: evaluation runs ONLY while the workspace is open and
- * the feed is live — nothing here promises server-side monitoring.
+ * the feed is live - nothing here promises server-side monitoring.
  */
 
 /** One feed observation handed to the engine (quote-store projection). */
 export interface AlertObservation {
   symbol: string;
   price: number;
-  /** Observation timestamp (epoch ms) — staleness/ordering input. */
+  /** Observation timestamp (epoch ms) - staleness/ordering input. */
   ts: number;
 }
 
-/** A CONFIRMED trigger — the caller applies it to the store + notifies. */
+/** A CONFIRMED trigger - the caller applies it to the store + notifies. */
 export interface AlertTriggerEvent {
   alert: OryonAlert;
   /** Observed price that completed the crossing. */
@@ -73,7 +73,7 @@ interface AlertRuntime {
   /** False until the first eligible observation after (re)arming. */
   primed: boolean;
   prevPrice: number | null;
-  /** Last processed observation ts (per alert) — ordering guard. */
+  /** Last processed observation ts (per alert) - ordering guard. */
   lastTs: number | null;
 }
 
@@ -93,7 +93,7 @@ export class OryonAlertEngine {
 
   /**
    * Replaces the evaluated set (store commit). Runtime priming survives for
-   * kept ids — a re-render must not re-arm live alerts; removed ids are
+   * kept ids - a re-render must not re-arm live alerts; removed ids are
    * forgotten. Only ACTIVE alerts are evaluated (triggered/disabled never
    * fire again until re-armed/enabled, and re-arming re-primes them).
    */
@@ -106,7 +106,7 @@ export class OryonAlertEngine {
   }
 
   /**
-   * Feed phase gate (spec §10 — disconnect/reconnect handling). Leaving the
+   * Feed phase gate (spec §10 - disconnect/reconnect handling). Leaving the
    * live phase re-primes everything: the next live observation re-anchors
    * without triggering. Nothing is evaluated while not live.
    */
@@ -122,7 +122,7 @@ export class OryonAlertEngine {
 
   /**
    * Feeds one broadcast of observations. Cheap by design: O(observations ×
-   * alerts-of-that-symbol) with a per-alert runtime lookup — no per-alert
+   * alerts-of-that-symbol) with a per-alert runtime lookup - no per-alert
    * connections, no per-alert timers (ONE shared feed store upstream).
    */
   observe(observations: readonly AlertObservation[]): void {
@@ -131,11 +131,11 @@ export class OryonAlertEngine {
       if (!Number.isFinite(observation.price)) continue;
       for (const alert of this.activeAlertsFor(observation.symbol)) {
         const runtime = this.runtimeFor(alert.id);
-        // Out-of-order / replayed snapshot — never evaluate as a new tick.
+        // Out-of-order / replayed snapshot - never evaluate as a new tick.
         if (runtime.lastTs !== null && observation.ts < runtime.lastTs) continue;
         runtime.lastTs = observation.ts;
         if (!runtime.primed || runtime.prevPrice === null) {
-          // First eligible observation: anchor WITHOUT triggering (spec §10 —
+          // First eligible observation: anchor WITHOUT triggering (spec §10 -
           // "already beyond the threshold" on arrival is not a crossing).
           runtime.primed = true;
           runtime.prevPrice = observation.price;
@@ -150,7 +150,7 @@ export class OryonAlertEngine {
     }
   }
 
-  /** Re-arms one alert's runtime (user action) — primes again from scratch. */
+  /** Re-arms one alert's runtime (user action) - primes again from scratch. */
   rearm(alertId: string): void {
     this.runtimes.delete(alertId);
   }

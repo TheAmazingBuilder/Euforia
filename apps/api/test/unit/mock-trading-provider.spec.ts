@@ -1,5 +1,5 @@
 /**
- * Unit tests — MockTradingProviderAdapter (Phase 3 §55).
+ * Unit tests - MockTradingProviderAdapter (Phase 3 §55).
  * Determinism, contract validation of generated data, controlled failures.
  */
 import { describe, expect, it } from "vitest";
@@ -20,7 +20,7 @@ function ctxOf(externalAccountId: string) {
   return { credentials, externalAccountId, environment: "DEMO" as const };
 }
 
-describe("MockTradingProviderAdapter — descriptor", () => {
+describe("MockTradingProviderAdapter - descriptor", () => {
   it("declares a READ-ONLY capability set (no execution path exists)", () => {
     expect(adapter.descriptor.providerId).toBe("MOCK");
     expect(adapter.descriptor.isMock).toBe(true);
@@ -37,7 +37,7 @@ describe("MockTradingProviderAdapter — descriptor", () => {
   });
 });
 
-describe("MockTradingProviderAdapter — deterministic normalization", () => {
+describe("MockTradingProviderAdapter - deterministic normalization", () => {
   it("generates account info that validates against the normalization boundary", async () => {
     const info = await adapter.fetchAccountInfo(ctxOf("50417788"));
     expect(normalizedAccountInfoSchema.safeParse(info).success).toBe(true);
@@ -79,7 +79,7 @@ describe("MockTradingProviderAdapter — deterministic normalization", () => {
   });
 });
 
-describe("MockTradingProviderAdapter — controlled failure scenarios (§55)", () => {
+describe("MockTradingProviderAdapter - controlled failure scenarios (§55)", () => {
   it("invalid credentials", async () => {
     await expect(
       adapter.testConnection({ method: "API_KEY", secret: "fail-invalid-anything" }),
@@ -98,7 +98,7 @@ describe("MockTradingProviderAdapter — controlled failure scenarios (§55)", (
     ).rejects.toMatchObject({ code: "CONNECTION_TIMEOUT" });
   }, 10_000);
 
-  it("malformed response — the adapter answers with type-broken payloads", async () => {
+  it("malformed response - the adapter answers with type-broken payloads", async () => {
     const snapshot = await adapter.fetchSnapshot({
       credentials: { method: "API_KEY", secret: "fail-malformed" },
       externalAccountId: "50417788",

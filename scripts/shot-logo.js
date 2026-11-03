@@ -10,7 +10,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(2000);
   const aside = page.locator("aside").first();
   await aside.screenshot({ path: "scripts/shots/logo-sidebar.png" });
-  const logo = page.locator("aside a[aria-label='Cosmoz — Dashboard'] svg").first();
+  const logo = page.locator("aside a[aria-label='Cosmoz - Dashboard'] svg").first();
   await logo.screenshot({ path: "scripts/shots/logo-mark.png" });
   console.log("logo shots saved");
   await browser.close();

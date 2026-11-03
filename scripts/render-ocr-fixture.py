@@ -1,7 +1,7 @@
 """Render the deterministic MT5 fixture screenshot for the LIVE OCR e2e.
 
 Same generator as the sidecar's conftest (mini-services/ocr-service/tests/
-conftest.py) — a real PNG that the REAL tesseract sidecar recognizes.
+conftest.py) - a real PNG that the REAL tesseract sidecar recognizes.
 """
 import sys
 

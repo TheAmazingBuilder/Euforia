@@ -9,8 +9,8 @@ import type { OcrIssue, OcrQualityScore, OcrTimelineEntry } from "@cosmoz/shared
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * V2 §16 — the structured issues panel. Every code renders its documented
- * explanation (static dict strings — no free-text from the engine); a field
+ * V2 §16 - the structured issues panel. Every code renders its documented
+ * explanation (static dict strings - no free-text from the engine); a field
  * scoping is shown when the issue carries one. Clicking an issue calls back
  * so the review UI can highlight the offending field / region (V2 §55).
  */
@@ -72,7 +72,7 @@ export function RecognitionIssues({
 }
 
 /**
- * V2 §15 — the deterministic quality score with its EXPLAINABLE components.
+ * V2 §15 - the deterministic quality score with its EXPLAINABLE components.
  * The score is a stat, the components the ledger under it.
  */
 export function QualityScore({
@@ -119,7 +119,7 @@ export function QualityScore({
 }
 
 /**
- * V2 §23 — the derived chronology. Recognized wall-clock entries keep their
+ * V2 §23 - the derived chronology. Recognized wall-clock entries keep their
  * canonical form (no invented timezone, §16); lifecycle entries are instants.
  */
 export function RecognitionTimeline({

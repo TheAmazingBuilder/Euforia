@@ -1,5 +1,5 @@
 /**
- * e2e — Discipline Engine (B4, Domaine 7) over the REAL AppModule + real
+ * e2e - Discipline Engine (B4, Domaine 7) over the REAL AppModule + real
  * database: rules CRUD, the `trade.closed` evaluation pipeline (violation
  * + alert with the context frozen at time T), the violation log join,
  * acknowledge, aggregates (score, emotion matrix, mistakes ledger) and the
@@ -89,7 +89,7 @@ async function capturedClosedTrade(
 }
 
 /** Poll an async projection until the predicate holds (evaluation is
- * fire-and-forget after close — the client-visible effect lands moments
+ * fire-and-forget after close - the client-visible effect lands moments
  * later, exactly like a second request would see it). */
 async function pollUntil<T>(action: () => Promise<T>, predicate: (value: T) => boolean, timeoutMs = 3000): Promise<T> {
   const deadline = Date.now() + timeoutMs;
@@ -186,7 +186,7 @@ describe("discipline evaluation pipeline (B4)", () => {
 
     // Trade 1: fine. Trade 2: breaches the 1-trade limit (same trading day,
     // timestamps anchored on NOW so the "today" aggregate sees them).
-    // Date-string anchors INSIDE today (00:01/00:02 UTC) — immune to the
+    // Date-string anchors INSIDE today (00:01/00:02 UTC) - immune to the
     // midnight boundary that once zeroed the "today" aggregates mid-run.
     const today = new Date().toISOString().slice(0, 10);
     const dayOffsets: Array<[string, string]> = [
@@ -263,11 +263,11 @@ describe("discipline evaluation pipeline (B4)", () => {
       method: "PATCH",
       url: `/api/v1/violations/${first.id}/acknowledge`,
       headers: user.authHeader,
-      payload: { note: "Noted — overtraded after the loss." },
+      payload: { note: "Noted - overtraded after the loss." },
     });
     expect(ack.statusCode).toBe(200);
     expect(ack.json()).toMatchObject({
-      violation: { acknowledgedAt: expect.any(String), userNote: "Noted — overtraded after the loss." },
+      violation: { acknowledgedAt: expect.any(String), userNote: "Noted - overtraded after the loss." },
     });
 
     const read = await app.inject({

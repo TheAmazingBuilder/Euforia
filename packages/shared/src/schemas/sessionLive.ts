@@ -5,20 +5,20 @@ import { marketIntervalSchema } from "./market";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Session Live domain — the trading-session lifecycle, saved analyses and
+ * Session Live domain - the trading-session lifecycle, saved analyses and
  * key levels (MASTER PROMPT §5–§8, §20, §41–§45, V1 roadmap Phases 1/5/6/11).
  *
  * Product rules encoded here:
  *  - A Trading Session DOCUMENTS activity; it never executes anything.
  *  - External events keep their source attribution ("Source: MT5").
  *  - Saved analyses are historical snapshots (bias, scenarios, levels,
- *    indicator/drawing configuration) — restore reloads the chart context.
+ *    indicator/drawing configuration) - restore reloads the chart context.
  *  - Key levels are trader documentation; the chart overlay is opt-in.
  */
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
-/** The trader's directional stance — interpretation, never market fact. */
+/** The trader's directional stance - interpretation, never market fact. */
 export const marketBiasSchema = z.enum(["BULLISH", "BEARISH", "NEUTRAL"]);
 export type MarketBias = z.infer<typeof marketBiasSchema>;
 
@@ -80,7 +80,7 @@ export const tradingSessionSchema = z.object({
 });
 export type TradingSession = z.infer<typeof tradingSessionSchema>;
 
-/** POST /session-live/sessions — every field optional (§6: never force). */
+/** POST /session-live/sessions - every field optional (§6: never force). */
 export const startSessionInputSchema = z.object({
   primarySymbol: z.string().max(20).optional(),
   primaryTimeframe: marketIntervalSchema.optional(),
@@ -95,7 +95,7 @@ export const startSessionInputSchema = z.object({
 });
 export type StartSessionInput = z.infer<typeof startSessionInputSchema>;
 
-/** PATCH /session-live/sessions/:id — bias / objective / notes while active. */
+/** PATCH /session-live/sessions/:id - bias / objective / notes while active. */
 export const updateSessionInputSchema = z.object({
   marketBias: marketBiasSchema.optional(),
   sessionObjective: z.string().max(400).nullable().optional(),
@@ -109,7 +109,7 @@ export const endSessionInputSchema = z.object({
 });
 export type EndSessionInput = z.infer<typeof endSessionInputSchema>;
 
-// ── Session summary (§43 — only metrics supported by real data) ─────────────
+// ── Session summary (§43 - only metrics supported by real data) ─────────────
 
 export const sessionSummarySchema = z.object({
   durationMinutes: z.number().int().min(0),
@@ -130,7 +130,7 @@ export type SessionSummary = z.infer<typeof sessionSummarySchema>;
 // ── Session timeline mood strip (additive seam closure) ─────────────────────
 
 /**
- * One logged emotion on a session timeline mood strip — derived from the
+ * One logged emotion on a session timeline mood strip - derived from the
  * journal Trade's psychology columns (emotionBefore / emotionAfter /
  * confidence), never fabricated. Shape mirrors the B5 `sessionMoodSchema`
  * (api.ts) with an ADDITIVE optional `confidence` so existing wire payloads
@@ -142,12 +142,12 @@ export const sessionLiveMoodSchema = z.object({
   /** BEFORE = at entry; AFTER = in-trade / exit quick-log. */
   phase: z.enum(["BEFORE", "AFTER"]),
   tradeId: uuidSchema.nullable(),
-  /** 1–5 when the trader logged it — absent on older payloads. */
+  /** 1–5 when the trader logged it - absent on older payloads. */
   confidence: z.number().int().min(1).max(5).nullable().optional(),
 });
 export type SessionLiveMood = z.infer<typeof sessionLiveMoodSchema>;
 
-// ── Key levels (§20 — trader documentation) ──────────────────────────────────
+// ── Key levels (§20 - trader documentation) ──────────────────────────────────
 
 export const keyLevelKindSchema = z.enum([
   "SUPPORT",
@@ -194,7 +194,7 @@ export type UpdateKeyLevelInput = z.infer<typeof updateKeyLevelInputSchema>;
 
 // ── Chart configuration (indicators + drawings, restored by analyses) ────────
 
-/** V1 indicator set (§16 — real calculations only, no fakes). */
+/** V1 indicator set (§16 - real calculations only, no fakes). */
 export const indicatorKindSchema = z.enum(["EMA", "SMA", "VWAP", "BB", "RSI", "MACD", "ATR", "VOLUME"]);
 export type IndicatorKind = z.infer<typeof indicatorKindSchema>;
 
@@ -215,7 +215,7 @@ export const indicatorConfigSchema = z.object({
 });
 export type IndicatorConfig = z.infer<typeof indicatorConfigSchema>;
 
-/** Drawing anchor — bucket-open time (ms) + price. Max 2 points per object. */
+/** Drawing anchor - bucket-open time (ms) + price. Max 2 points per object. */
 export const drawingPointSchema = z.object({ t: z.number(), y: z.number() });
 export type DrawingPoint = z.infer<typeof drawingPointSchema>;
 
@@ -273,7 +273,7 @@ export type CreateSavedAnalysisInput = z.infer<typeof createSavedAnalysisInputSc
 
 // ── Responses ────────────────────────────────────────────────────────────────
 
-/** GET /session-live/sessions — active session + history (newest first). */
+/** GET /session-live/sessions - active session + history (newest first). */
 export const sessionLiveStateResponseSchema = z.object({
   active: tradingSessionSchema.nullable(),
   history: z.array(tradingSessionSchema),

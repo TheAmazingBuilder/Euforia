@@ -1,11 +1,11 @@
 /**
- * Verify — Business-module i18n migration (Session Live / Trades / Nofy).
+ * Verify - Business-module i18n migration (Session Live / Trades / Nofy).
  *
  *   A. Login (EN default) → switch to FR via the HEADER LanguageSelector.
- *   B. /session — Session Live renders FR (broker card, private stream card).
- *   C. /trades — Trades renders FR (breadcrumb + new-trade CTA).
- *   D. /nofy — Nofy renders FR (tabs + tagline).
- *   E. Back to EN via the header — Session Live restores English.
+ *   B. /session - Session Live renders FR (broker card, private stream card).
+ *   C. /trades - Trades renders FR (breadcrumb + new-trade CTA).
+ *   D. /nofy - Nofy renders FR (tabs + tagline).
+ *   E. Back to EN via the header - Session Live restores English.
  *   F. Console/network cleanliness.
  *
  * SPA-only navigation after the initial entry (MSW state lives in the tab).
@@ -36,7 +36,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-business-modules";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -95,7 +95,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-business-modules";
   check("D2 Nofy trash tab in FR (Corbeille)", trashFr.includes("Corbeille"), trashFr.trim());
   await page.screenshot({ path: `${SHOTS}/nofy-fr.png` });
 
-  // ══ E. Back to EN (header) — Session Live restores ════════════════════════
+  // ══ E. Back to EN (header) - Session Live restores ════════════════════════
   await page.locator('[data-testid="language-selector-trigger"]').click();
   await page.locator('[data-testid="language-option-en"]').click();
   await page

@@ -24,7 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon chart settings dialog (chart context-menu → Settings…) — four
+ * Oryon chart settings dialog (chart context-menu → Settings…) - four
  * TradingView-inspired sections, each mapped onto REAL engine options or
  * legend display flags (nothing decorative, nothing mock):
  *
@@ -34,7 +34,7 @@ import { cn } from "@/lib/utils";
  *  - Scales & lines→ price-scale + time-scale visibility, last-price line
  *  - Canvas        → grid lines, crosshair magnet mode
  *
- * Edits apply LIVE (the chart updates while the dialog is open — the parent
+ * Edits apply LIVE (the chart updates while the dialog is open - the parent
  * persists + engine-applies each snapshot). Cancel restores the snapshot
  * taken at open; Ok closes. "Reset" restores the documented defaults.
  */
@@ -61,7 +61,7 @@ export function OryonChartSettingsDialog({
   const dict = useDict();
   const S = dict.oryon.chartSettings;
 
-  /** Snapshot + draft — BOTH captured at mount: the parent mounts this
+  /** Snapshot + draft - BOTH captured at mount: the parent mounts this
    *  dialog per open, so the initializers always see the CURRENT prefs
    *  (no open-transition effect, no ref reads, no stale state). */
   const [snapshot] = React.useState<SettingsDraft>(() => ({
@@ -96,7 +96,7 @@ export function OryonChartSettingsDialog({
   };
 
   const cancel = (): void => {
-    // Live edits are undone — the chart returns to the state at open.
+    // Live edits are undone - the chart returns to the state at open.
     onApply(snapshot);
     onOpenChange(false);
   };
@@ -118,7 +118,7 @@ export function OryonChartSettingsDialog({
         onInteractOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => {
           // Escape = Cancel: revert the live edits, then close (Radix's own
-          // close is prevented — cancel() drives the close itself).
+          // close is prevented - cancel() drives the close itself).
           event.preventDefault();
           cancel();
         }}
@@ -169,7 +169,7 @@ export function OryonChartSettingsDialog({
                           : "border-border bg-surface-raised/50 hover:border-accent/50",
                       )}
                     >
-                      {/* Mini candle pair — the preset's own colors. */}
+                      {/* Mini candle pair - the preset's own colors. */}
                       <svg width="22" height="16" viewBox="0 0 22 16" aria-hidden>
                         <line x1="6" y1="1" x2="6" y2="15" stroke={preset.up} strokeWidth="1" />
                         <rect x="3" y="5" width="6" height="6" fill={preset.up} rx="0.5" />
@@ -313,7 +313,7 @@ export function OryonChartSettingsDialog({
   );
 }
 
-/** Label + switch row — the dialog's atomic control. */
+/** Label + switch row - the dialog's atomic control. */
 function SwitchRow({
   label,
   checked,
@@ -337,7 +337,7 @@ function SwitchRow({
  * Label + TradingView-style color override control: the palette picker
  * (grid/customs/opacity popover) + a "theme default" clear button when an
  * override is active. `null` renders the theme-following state (dashed
- * trigger — honest, not hidden).
+ * trigger - honest, not hidden).
  */
 function ColorRow({
   label,

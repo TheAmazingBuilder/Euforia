@@ -1,5 +1,5 @@
 /**
- * Discipline pure logic — rule evaluation, the Cosmoz Index score, the
+ * Discipline pure logic - rule evaluation, the Cosmoz Index score, the
  * emotion matrix. Ported 1:1 from the mock store where the frontend
  * algorithm already exists; the score formula is the documented V1 weights
  * (decoupled from P&L per the shared DailyStat contract).
@@ -31,7 +31,7 @@ export function violationToView(
   };
 }
 
-// ── GET /rules/status — the guardrail board for one trading day ─────────────
+// ── GET /rules/status - the guardrail board for one trading day ─────────────
 
 export function computeRulesStatus(input: {
   rules: Rule[];
@@ -84,7 +84,7 @@ export function computeRulesStatus(input: {
   };
 }
 
-// ── Rule engine (V1) — breaches for the LIMIT family are evaluated live. ────
+// ── Rule engine (V1) - breaches for the LIMIT family are evaluated live. ────
 // The other rule types (COOLDOWN, TRADING_WINDOW, NO_NEWS_WINDOW…) need
 // clock/context infrastructure that lands with their own phases; they appear
 // on the guardrail board but raise no violations yet (documented scope).
@@ -123,7 +123,7 @@ export function evaluateLimitRules(input: {
   return breaches;
 }
 
-// ── GET /discipline/score — the Cosmoz Index (decoupled from P&L) ────────────
+// ── GET /discipline/score - the Cosmoz Index (decoupled from P&L) ────────────
 
 export interface ScoreIngredients {
   planAdherencePct: number | null;

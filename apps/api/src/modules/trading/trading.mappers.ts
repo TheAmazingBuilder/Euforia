@@ -1,5 +1,5 @@
 /**
- * Trading Core contract mappers — rows → shared-schema-shaped payloads.
+ * Trading Core contract mappers - rows → shared-schema-shaped payloads.
  * The ONLY place that translates persistence shapes into wire shapes.
  * Prisma models and execution internals never reach the API surface (§33);
  * provider-specific payloads are never exposed (§38/§39).

@@ -6,16 +6,17 @@ import type { BrokerOrder, BrokerPosition, TradingDeal, TradingAccountDetails } 
 import { formatMoney, formatSignedMoney } from "@cosmoz/shared";
 
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
  * Read-only provider-activity tables (Phase 02 Step Five). Positions, orders
- * and deals are THREE DIFFERENT record kinds — never merged into one table
+ * and deals are THREE DIFFERENT record kinds - never merged into one table
  * (spec §7.4): an order is not a fill, a deal is not a journal trade, and no
  * execution control exists anywhere (there is no close/modify/cancel action
  * in this file, by construction).
  *
- * Nullable provider fields render "—" (unavailable ≠ zero). Side/direction
+ * Nullable provider fields render "-" (unavailable ≠ zero). Side/direction
  * keeps its sign on the value itself, color never travels alone.
  */
 
@@ -82,20 +83,20 @@ export function ExternalPositionsTable({
     >
       {positions.map((position) => (
         <tr key={position.id} className="border-b border-border/60 last:border-0" data-testid="external-position-row">
-          <td className="px-3 py-2 font-medium first:pl-0">{position.symbol}</td>
+          <td className="px-3 py-2 font-medium first:pl-0">{formatInstrumentSymbol(position.symbol)}</td>
           <td className={cn("px-3 py-2 font-mono text-xs", DIRECTION_CLASSES(position.direction))}>
             {position.direction}
           </td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{position.volume}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{position.entryPrice}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
-            {position.currentPrice ?? "—"}
+            {position.currentPrice ?? "-"}
           </td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.stopLoss ?? "—"}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.takeProfit ?? "—"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.stopLoss ?? "-"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{position.takeProfit ?? "-"}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
             {position.unrealizedPnl === null ? (
-              "—"
+              "-"
             ) : (
               <span
                 className={cn(
@@ -125,12 +126,12 @@ export function ExternalOrdersTable({ orders }: { orders: BrokerOrder[] }) {
     <TableShell testId="external-orders-table" headers={["Symbol", "Type", "Volume", "Price", "SL", "TP", "Created"]}>
       {orders.map((order) => (
         <tr key={order.id} className="border-b border-border/60 last:border-0" data-testid="external-order-row">
-          <td className="px-3 py-2 font-medium first:pl-0">{order.symbol}</td>
+          <td className="px-3 py-2 font-medium first:pl-0">{formatInstrumentSymbol(order.symbol)}</td>
           <td className="px-3 py-2 font-mono text-xs">{order.type}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{order.volume}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{order.price}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.stopLoss ?? "—"}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.takeProfit ?? "—"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.stopLoss ?? "-"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{order.takeProfit ?? "-"}</td>
           <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-muted-foreground last:pr-0">
             {order.createdAt.slice(0, 16).replace("T", " ")}
           </td>
@@ -161,14 +162,14 @@ export function ExternalDealsTable({
         <tr key={deal.id} className="border-b border-border/60 last:border-0" data-testid="external-deal-row">
           <td className="px-3 py-2 font-mono text-xs text-muted-foreground first:pl-0">{deal.externalDealId}</td>
           <td className="px-3 py-2 font-medium">
-            {deal.symbol ?? <span className="text-xs text-muted-foreground">balance op.</span>}
+            {deal.symbol !== null ? formatInstrumentSymbol(deal.symbol) : <span className="text-xs text-muted-foreground">balance op.</span>}
           </td>
           <td className={cn("px-3 py-2 font-mono text-xs", DIRECTION_CLASSES(deal.side))}>{deal.side}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.volume}</td>
-          <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.price ?? "—"}</td>
+          <td className="px-3 py-2 text-right font-mono tabular-nums">{deal.price ?? "-"}</td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
             {deal.profit === null ? (
-              "—"
+              "-"
             ) : (
               <span className={cn(deal.profit.trim().startsWith("-") ? "text-loss" : "text-profit")}>
                 {formatSignedMoney(deal.profit, currency)}
@@ -176,10 +177,10 @@ export function ExternalDealsTable({
             )}
           </td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
-            {deal.commission === null ? "—" : formatMoney(deal.commission, currency)}
+            {deal.commission === null ? "-" : formatMoney(deal.commission, currency)}
           </td>
           <td className="px-3 py-2 text-right font-mono tabular-nums">
-            {deal.swap === null ? "—" : formatMoney(deal.swap, currency)}
+            {deal.swap === null ? "-" : formatMoney(deal.swap, currency)}
           </td>
           <td className="px-3 py-2 text-right font-mono text-xs tabular-nums text-muted-foreground last:pr-0">
             {deal.executedAt.slice(0, 16).replace("T", " ")}

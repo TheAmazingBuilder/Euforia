@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">
 <defs><linearGradient id="g" x1="20" y1="20" x2="230" y2="230"><stop offset="0%" stop-color="#8B5CF6"/><stop offset="46%" stop-color="#6366F1"/><stop offset="100%" stop-color="#22D3EE"/></linearGradient></defs>
-<rect width="256" height="256" rx="56" fill="#020617"/>
+
 <g transform="translate(27 17) scale(.93)">
   <!-- Top ribbon -->
   <path d="M31 75 C22 57 31 38 51 31 L184 0 L172 37 L65 66 C54 69 49 76 52 84 C55 93 64 96 75 92 L169 64 L157 101 L66 128 C46 134 30 122 28 104 C27 94 28 84 31 75 Z" fill="url(#g)"/>

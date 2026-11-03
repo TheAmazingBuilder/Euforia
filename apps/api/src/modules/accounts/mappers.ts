@@ -1,5 +1,5 @@
 /**
- * Accounts contract mappers — rows → shared-schema-shaped payloads.
+ * Accounts contract mappers - rows → shared-schema-shaped payloads.
  * The ONLY place that translates persistence shapes into wire shapes.
  * Credentials NEVER appear here: connections map to views with a masked
  * hint only (§22/§23).
@@ -30,9 +30,9 @@ function decimalString(value: Prisma.Decimal | null): string | null {
 }
 
 /**
- * Phase 07 — stored connect-time broker identification, re-validated at the
+ * Phase 07 - stored connect-time broker identification, re-validated at the
  * read boundary. A stored value that no longer satisfies the shared schema
- * (catalog/schema evolution) degrades to null — never a broken wire shape.
+ * (catalog/schema evolution) degrades to null - never a broken wire shape.
  */
 export function toBrokerIdentificationView(
   stored: unknown,
@@ -48,7 +48,7 @@ export function isoDateTime(date: Date): string {
 }
 
 /**
- * Journal account identity (shared accountSchema) — the exact contract the
+ * Journal account identity (shared accountSchema) - the exact contract the
  * existing frontend consumes via GET /accounts. `propConfig` is journal
  * domain data (null until a journal phase populates it).
  */
@@ -79,7 +79,7 @@ export function toSyncRunView(row: SyncRunRow): TradingSyncRunView {
     ordersUpserted: row.ordersUpserted,
     dealsUpserted: row.dealsUpserted,
     errorCode: row.errorCode,
-    // Phase 05 — per-segment observation timestamps (the run rows carry
+    // Phase 05 - per-segment observation timestamps (the run rows carry
     // them since the Phase 03 migration; the wire exposes them additively).
     snapshotAt: row.snapshotAt ? isoDateTime(row.snapshotAt) : null,
     positionsAt: row.positionsAt ? isoDateTime(row.positionsAt) : null,
@@ -105,7 +105,7 @@ export function toSynchronizationView(
  *  - never synchronized            → UNKNOWN
  *  - a run is RUNNING              → SYNCING
  *  - the latest run FAILED         → ERROR (no prior success) / LIVE (recent success)
- *  - the latest run PARTIAL        → DELAYED — partial ≠ success in freshness,
+ *  - the latest run PARTIAL        → DELAYED - partial ≠ success in freshness,
  *    never LIVE until a full run completes (doc B §8.2/§9)
  *  - last success within freshness → LIVE, otherwise STALE
  * Connection state does NOT alter this axis (orthogonal lifecycles).
@@ -121,7 +121,7 @@ export function deriveSynchronizationStatus(
   if (!lastSyncAt) return "UNKNOWN";
   if (latestRun && latestRun.status === "PARTIAL") return "DELAYED";
   if (latestRun && latestRun.status === "FAILED" && nowMs - lastSyncAt.getTime() <= freshnessTtlMs) {
-    // Recent failure AFTER a recent success — the last good state is still fresh.
+    // Recent failure AFTER a recent success - the last good state is still fresh.
     return "LIVE";
   }
   return nowMs - lastSyncAt.getTime() <= freshnessTtlMs ? "LIVE" : "STALE";
@@ -147,7 +147,7 @@ export function toSnapshotView(row: SnapshotRow | null): TradingAccountSnapshotV
  *   age ≤ freshnessTtlMs        → FRESH
  *   age > freshnessTtlMs        → STALE
  * The account-level failure/flow semantics (SYNCING/DELAYED/ERROR) stay on
- * the synchronization status axis — a resource is never "FAILED": a failed
+ * the synchronization status axis - a resource is never "FAILED": a failed
  * segment simply never advances its timestamp, so the resource ages into
  * STALE while the status axis carries the failure story.
  */
@@ -181,14 +181,14 @@ export function toResourceFreshnessView(
   };
 }
 
-/** Full details view — identity + connection + synchronization + snapshot. */
+/** Full details view - identity + connection + synchronization + snapshot. */
 export function toAccountDetails(input: {
   account: TradingAccountRow;
   descriptor: TradingProviderDescriptor;
   connection: TradingConnectionRow | null;
   snapshot: SnapshotRow | null;
   latestRun: SyncRunRow | null;
-  /** Phase 05 — per-resource last successful refresh timestamps. */
+  /** Phase 05 - per-resource last successful refresh timestamps. */
   resourceTimestamps: {
     snapshotAt: Date | null;
     positionsAt: Date | null;

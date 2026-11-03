@@ -15,7 +15,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 import { useStatsOverview } from "./stats";
 
-/** Catalog hooks — instruments / strategies / accounts / tags + derived balance. */
+/** Catalog hooks - instruments / strategies / accounts / tags + derived balance. */
 
 export function useInstruments(q = "") {
   return useQuery({
@@ -46,7 +46,7 @@ export function useTags() {
   });
 }
 
-/** POST /tags — inline tag creation (reflect screen); refreshes the catalog. */
+/** POST /tags - inline tag creation (reflect screen); refreshes the catalog. */
 export function useCreateTag() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -67,7 +67,7 @@ export interface AccountBalance {
 /**
  * Live balance of the default account, derived from API read models:
  * startingBalance + netPnl (stats overview). The sizer and the live
- * calculation bar use it for risk estimates — never a hardcoded number.
+ * calculation bar use it for risk estimates - never a hardcoded number.
  */
 export function useCurrentBalance(): AccountBalance | null {
   const { data: accountsData } = useAccounts();

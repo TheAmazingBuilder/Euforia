@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * MASTER finalization §79/§107/§115 — clean-database migration + runtime boot
+ * MASTER finalization §79/§107/§115 - clean-database migration + runtime boot
  * verification, self-contained:
  *
  *   1. create a THROWAWAY PostgreSQL database (cosmoz_finalize)
@@ -29,11 +29,11 @@ const BASE = `http://127.0.0.1:${PORT}/api/v1`;
 const results = [];
 function step(name, ok, detail = "") {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` - ${detail}` : ""}`);
   if (!ok) process.exitCode = 1;
 }
 
-/** Admin SQL through the prisma CLI (no psql in the embedded bundle — same
+/** Admin SQL through the prisma CLI (no psql in the embedded bundle - same
  * mechanism as apps/api/scripts/dev-db.mjs). */
 function psql(sql) {
   const prismaPkg = execSync(
@@ -52,15 +52,15 @@ function psql(sql) {
 }
 
 async function main() {
-  // 0 — embedded dev postgres must be up
+  // 0 - embedded dev postgres must be up
   execSync("node scripts/dev-db.mjs up", { cwd: API_DIR, stdio: "inherit" });
 
-  // 1 — fresh throwaway database
+  // 1 - fresh throwaway database
   try { psql(`DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE);`); } catch {}
   psql(`CREATE DATABASE ${DB_NAME};`);
   step("clean database created", true, DB_NAME);
 
-  // 2 — ordered migrations on the empty database
+  // 2 - ordered migrations on the empty database
   const deploy = execSync(
     `pnpm prisma migrate deploy 2>&1`,
     { cwd: API_DIR, env: { ...process.env, DATABASE_URL: CLEAN_URL }, encoding: "utf8" },
@@ -68,13 +68,13 @@ async function main() {
   const appliedNames = [...new Set([...deploy.matchAll(/(\d{14}_\w+)/g)].map((m) => m[1]))];
   step("prisma migrate deploy on clean DB", appliedNames.length >= 6, `${appliedNames.length} migrations: ${appliedNames.join(", ")}`);
 
-  // 3 — boot the API against the clean DB
+  // 3 - boot the API against the clean DB
   const out = fs.openSync("/tmp/finalize-api-boot.log", "w");
   const child = spawn("node", ["--enable-source-maps", "dist/apps/api/src/main.js"], {
     cwd: API_DIR,
     env: {
       ...process.env,
-      // Dev mode — the production mailer deliberately REDACTS actionUrl
+      // Dev mode - the production mailer deliberately REDACTS actionUrl
       // (finalization §46/§51), so the mail-token smoke needs dev logs.
       NODE_ENV: "development",
       PORT: String(PORT),
@@ -102,7 +102,7 @@ async function main() {
   }
 
   try {
-    // 4 — probes
+    // 4 - probes
     const live = await fetch(`http://127.0.0.1:${PORT}/health/live`);
     step("GET /health/live", live.status === 200);
     const ready = await fetch(`http://127.0.0.1:${PORT}/health/ready`);
@@ -175,12 +175,12 @@ async function main() {
       headers: { ...auth, "content-type": "application/json" },
       body: JSON.stringify({ accountCurrency: "USD", instrument: "EURUSD", riskPercent: 1, stopPips: 20, balance: 10000 }),
     });
-    // Calculator contract may differ (symbol field names) — accept 200 or a
+    // Calculator contract may differ (symbol field names) - accept 200 or a
     // domain 4xx, but never 5xx.
     step("POST /calculators/lot-size (no 5xx)", calc.status < 500, `status ${calc.status}`);
 
     // Logout revokes the REFRESH token presented via cookie (auth.service
-    // §logout) — the cookie must accompany the call, exactly like a browser.
+    // §logout) - the cookie must accompany the call, exactly like a browser.
     const logout = await fetch(`${BASE}/auth/logout`, {
       method: "POST",
       headers: { ...auth, cookie: cookieHeader },
@@ -188,7 +188,7 @@ async function main() {
     step("POST /auth/logout", logout.status === 200 || logout.status === 204);
 
     // Contract (Phase 2, stateless access tokens): logout revokes the REFRESH
-    // token + session — the short-lived access JWT stays technically valid
+    // token + session - the short-lived access JWT stays technically valid
     // until expiry (≤ 15 min) by design, with no per-request session check.
     const refresh = await fetch(`${BASE}/auth/refresh`, {
       method: "POST",
@@ -201,7 +201,7 @@ async function main() {
     try { child.kill("SIGKILL"); } catch {}
   }
 
-  // 5 — drop the throwaway database
+  // 5 - drop the throwaway database
   try { psql(`DROP DATABASE IF EXISTS ${DB_NAME} WITH (FORCE);`); step("throwaway database dropped", true); }
   catch (e) { step("throwaway database dropped", false, String(e).slice(0, 120)); }
 

@@ -1,16 +1,16 @@
 /**
- * e2e — Account & Chart profiles (Recognition V1.1) against the REAL
+ * e2e - Account & Chart profiles (Recognition V1.1) against the REAL
  * AppModule, the REAL database and the DETERMINISTIC mock engine (§57):
  *
  *   - ACCOUNT_POSITION: upload → REVIEW_REQUIRED with account fields +
  *     position candidate; confirm → CONFIRMED with NO trade (explicit
- *     TRADE_IMPORT_SKIPPED_PROFILE warning — never a misleading INCOMPLETE);
+ *     TRADE_IMPORT_SKIPPED_PROFILE warning - never a misleading INCOMPLETE);
  *   - CHART_ANALYSIS: upload → REVIEW_REQUIRED with chart fields; confirm →
  *     CONFIRMED, no trade, corrections stored;
  *   - idempotency is profile-scoped: the same image under two profiles is
  *     TWO recognitions (§32).
  *
- * Real pixel reading belongs to the FastAPI sidecar (pytest suite) — the
+ * Real pixel reading belongs to the FastAPI sidecar (pytest suite) - the
  * mock documents PIPELINE behavior (§62 honesty).
  */
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
@@ -92,7 +92,7 @@ describe("ACCOUNT_POSITION profile", () => {
     const missing = recognition.issues.filter((i) => i.code === "MISSING_REQUIRED_FIELD");
     expect(missing).toHaveLength(0);
 
-    // Confirm — the snapshot is stored, the bridge is skipped EXPLICITLY.
+    // Confirm - the snapshot is stored, the bridge is skipped EXPLICITLY.
     const balance = recognition.fields.find((f) => f.field === "accountBalance")!;
     const confirmed = await confirm(ctx.authHeader, recognition.id, {
       accountBalance: balance.normalizedValue ?? "10500.00",

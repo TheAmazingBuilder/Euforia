@@ -9,7 +9,7 @@ import { apiRequest } from "@/lib/api/client";
 import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
-/** GET /stats/overview — KPIs, equity curve, daily P&L map. */
+/** GET /stats/overview - KPIs, equity curve, daily P&L map. */
 export function useStatsOverview() {
   return useQuery({
     queryKey: queryKeys.statsOverview,
@@ -18,15 +18,15 @@ export function useStatsOverview() {
 }
 
 // NOTE (Phase 09): the legacy `useAnalytics()` hook (GET /stats/analytics)
-// was REMOVED — zero consumers in src/ (audit-verified dead code) and the
+// was REMOVED - zero consumers in src/ (audit-verified dead code) and the
 // controller deliberately does not implement the legacy shape anymore.
 
 /**
- * GET /stats/analytics-suite — the Analytics module dataset. The filter set
+ * GET /stats/analytics-suite - the Analytics module dataset. The filter set
  * IS part of the query key: every filter change refetches from the server
- * (the client never re-derives aggregates — one dataset definition §5).
+ * (the client never re-derives aggregates - one dataset definition §5).
  * `options.enabled` lets consumers opt out (e.g. dashboard widgets that are
- * not on the current layout — no fetch, no wasted Monte Carlo runs).
+ * not on the current layout - no fetch, no wasted Monte Carlo runs).
  */
 export function useAnalyticsSuite(
   filters: AnalyticsFilters,
@@ -50,7 +50,7 @@ export function useAnalyticsSuite(
   const queryString = params.toString();
   return useQuery({
     queryKey: queryKeys.analyticsSuite(queryString),
-    // Phase 09 — TanStack's signal is forwarded to fetch: a filter change or
+    // Phase 09 - TanStack's signal is forwarded to fetch: a filter change or
     // unmount ABORTS the in-flight request for the superseded key instead of
     // orphaning it (apiRequest already supports signal passthrough). Key
     // scoping still guarantees stale responses can never overwrite newer ones.

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 /**
- * Reusable authentication form patterns (spec §41, §42, §43) — one source
+ * Reusable authentication form patterns (spec §41, §42, §43) - one source
  * for fields, password visibility, strength, and status banners so Login,
  * Register, Reset and Change never duplicate validation/error rendering.
  *
@@ -67,7 +67,7 @@ export function AuthField({ id, label, error, hint, children }: FieldProps) {
 // ── Password field with accessible show/hide (§42) ───────────────────────────
 
 type PasswordFieldProps = {
-  /** Optional — supplied automatically when rendered inside an AuthField. */
+  /** Optional - supplied automatically when rendered inside an AuthField. */
   id?: string;
   value: string;
   onChange: (value: string) => void;
@@ -122,7 +122,7 @@ export function PasswordField({
   );
 }
 
-// ── Password strength — factual contract feedback, no invented rules (§16) ───
+// ── Password strength - factual contract feedback, no invented rules (§16) ───
 
 export function PasswordStrength({ password }: { password: string }) {
   const checks = [
@@ -168,7 +168,7 @@ export function PasswordStrength({ password }: { password: string }) {
   );
 }
 
-// ── Status banners (§43 — never color-only; announced to screen readers) ─────
+// ── Status banners (§43 - never color-only; announced to screen readers) ─────
 
 export function FormError({
   title,

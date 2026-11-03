@@ -19,7 +19,7 @@ import {
 
 const OPTS = { isDevelopment: false };
 
-describe("mapErrorToResponse — AppError taxonomy", () => {
+describe("mapErrorToResponse - AppError taxonomy", () => {
   const cases: Array<[string, Error, number, string]> = [
     ["ValidationError", new ValidationError("bad", [{ path: "a", message: "x" }]), 400, "ValidationError"],
     ["UnauthorizedError", new UnauthorizedError(), 401, "Unauthorized"],
@@ -51,7 +51,7 @@ describe("mapErrorToResponse — AppError taxonomy", () => {
   });
 });
 
-describe("mapErrorToResponse — framework and unknown errors", () => {
+describe("mapErrorToResponse - framework and unknown errors", () => {
   it("maps ZodError-like values to 400 ValidationError with issues", () => {
     const mapped = mapErrorToResponse(
       { name: "ZodError", issues: [{ path: ["user", "email"], message: "invalid" }] },
@@ -104,7 +104,7 @@ describe("mapErrorToResponse — framework and unknown errors", () => {
     expect(JSON.stringify(mapped.body)).not.toContain("external_ref_key");
   });
 
-  it("SANITIZES unknown errors — message and internals never reach the client", () => {
+  it("SANITIZES unknown errors - message and internals never reach the client", () => {
     const mapped = mapErrorToResponse(
       new Error("connect ECONNREFUSED 10.0.0.9:5432 secret=hunter2"),
       OPTS,
@@ -135,7 +135,7 @@ describe("logSeverityFor", () => {
 describe("isZodErrorLike", () => {
   it("recognizes zod-shaped failures and rejects app errors", () => {
     expect(isZodErrorLike({ name: "ZodError", issues: [] })).toBe(true);
-    // Application errors also carry an issues array but are NOT Zod errors —
+    // Application errors also carry an issues array but are NOT Zod errors -
     // they flow through the AppError branch (their paths are strings).
     expect(isZodErrorLike(new ValidationError("bad", [{ path: "a", message: "x" }]))).toBe(false);
     expect(isZodErrorLike({ issues: [{ path: [], message: "x" }] })).toBe(false);

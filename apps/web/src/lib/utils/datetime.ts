@@ -2,7 +2,7 @@
  * datetime-local input ↔ ISO-UTC conversion helpers.
  * Timestamps travel as ISO UTC (Z suffix) over the API; the <input type
  * ="datetime-local"> widget needs a local "YYYY-MM-DDTHH:mm" string.
- * User timezone handling for DISPLAY comes from the API — these helpers
+ * User timezone handling for DISPLAY comes from the API - these helpers
  * are only for editable form widgets.
  */
 

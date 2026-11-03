@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import type { Severity } from "@cosmoz/shared";
 
 /**
- * Severity badge — deliberate token mapping (Phase 8 brief):
+ * Severity badge - deliberate token mapping (Phase 8 brief):
  * NOTIFY → muted (informational), WARN → warning, ALERT → accent (the
  * app's strong attention color), LOCK → loss (hard stop; the one accepted
  * use of the loss token outside P&L, because a lock IS a stop).

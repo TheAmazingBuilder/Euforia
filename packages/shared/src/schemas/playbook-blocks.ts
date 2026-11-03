@@ -3,7 +3,7 @@ import { assetClassSchema, tradingStyleSchema } from "../enums";
 import { decimalStringSchema } from "./primitives";
 
 /**
- * Playbook building blocks — enums + structured condition/risk blocks shared
+ * Playbook building blocks - enums + structured condition/risk blocks shared
  * by the Strategy entity (schemas/strategy.ts) and the Playbook entities
  * (schemas/playbook.ts). Kept in a LEAF module so strategy.ts can import
  * them without an import cycle.
@@ -56,7 +56,7 @@ export const confirmationTypeSchema = z.enum([
 ]);
 export type ConfirmationType = z.infer<typeof confirmationTypeSchema>;
 
-/** Structured exit plans — separate from entry rules (§15). */
+/** Structured exit plans - separate from entry rules (§15). */
 export const exitTypeSchema = z.enum([
   "TAKE_PROFIT",
   "STOP_LOSS",
@@ -69,7 +69,7 @@ export const exitTypeSchema = z.enum([
 ]);
 export type ExitType = z.infer<typeof exitTypeSchema>;
 
-/** Operating-rule categories (§24) — Rules Engine can evaluate some. */
+/** Operating-rule categories (§24) - Rules Engine can evaluate some. */
 export const playbookRuleCategorySchema = z.enum([
   "RISK",
   "SESSION",
@@ -89,7 +89,7 @@ export type PlaybookSession = z.infer<typeof playbookSessionSchema>;
 
 // ── Structured blocks on a strategy ─────────────────────────────────────────
 
-/** Market profile (§7) — never assume a strategy works everywhere. */
+/** Market profile (§7) - never assume a strategy works everywhere. */
 export const marketProfileSchema = z.object({
   assetClass: assetClassSchema.nullable(),
   symbols: z.array(z.string().max(24)),
@@ -106,7 +106,7 @@ export const entryConditionSchema = z.object({
   id: z.string().min(1),
   category: entryConditionCategorySchema,
   text: z.string().min(1).max(400),
-  /** Prepares (A AND B) OR C — all items sharing a group are ORed together. */
+  /** Prepares (A AND B) OR C - all items sharing a group are ORed together. */
   group: z.string().max(40).nullable(),
 });
 export type EntryCondition = z.infer<typeof entryConditionSchema>;
@@ -134,7 +134,7 @@ export const exitRuleSchema = z.object({
 });
 export type ExitRule = z.infer<typeof exitRuleSchema>;
 
-/** Per-strategy risk frame (§13) — percentages are plain numbers (config,
+/** Per-strategy risk frame (§13) - percentages are plain numbers (config,
  *  not ledger money); fixed amount is a decimal string like every amount. */
 export const strategyRiskSchema = z.object({
   defaultRiskPct: z.number().min(0).max(100).nullable(),

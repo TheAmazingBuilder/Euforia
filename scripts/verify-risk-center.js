@@ -1,5 +1,5 @@
 /**
- * Verify — Risk Command Center (/risk).
+ * Verify - Risk Command Center (/risk).
  * Checks: nav entry, status band, 3 loss-limit cards, exposure card,
  * engine linkage card, risk alerts; server-driven numbers present;
  * desktop + mobile 390px + light theme screenshots.
@@ -24,7 +24,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1500);

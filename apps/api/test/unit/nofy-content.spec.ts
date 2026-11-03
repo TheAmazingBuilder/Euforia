@@ -1,5 +1,5 @@
 /**
- * Unit — Nofy content domain (Phase 12). Pure functions: text projections,
+ * Unit - Nofy content domain (Phase 12). Pure functions: text projections,
  * block normalization (ref display strip), content security (unsafe image
  * protocol rejection), versioning policy and name normalization.
  */
@@ -39,7 +39,7 @@ describe("text projections", () => {
     const text = textOfBlocks(blocks);
     expect(text).toContain("Session behaviour");
     expect(text).toContain("Gold sweeps the Asian range.");
-    expect(text).toContain("Condition — Result");
+    expect(text).toContain("Condition - Result");
     expect(text).toContain("London sweep");
   });
 
@@ -67,7 +67,7 @@ describe("text projections", () => {
   });
 
   it("centers search snippets on the first text hit and pads with ellipses", () => {
-    const blocks = [block({ type: "paragraph", text: "The sweep is bait. The reclaim is the setup — wait for it, every time." })];
+    const blocks = [block({ type: "paragraph", text: "The sweep is bait. The reclaim is the setup - wait for it, every time." })];
     const snippet = searchSnippet(blocks, "reclaim");
     expect(snippet).toContain("reclaim");
     expect(snippet.startsWith("…")).toBe(false);
@@ -79,7 +79,7 @@ describe("text projections", () => {
 });
 
 describe("block normalization (storage projection)", () => {
-  it("strips client-supplied ref display fields — pointers only (kind + id)", () => {
+  it("strips client-supplied ref display fields - pointers only (kind + id)", () => {
     const [normalized] = normalizeBlocks([
       {
         id: "b1",
@@ -122,7 +122,7 @@ describe("block normalization (storage projection)", () => {
   });
 });
 
-describe("content security — image source protocol gate", () => {
+describe("content security - image source protocol gate", () => {
   it("accepts https/http and base64 data images", () => {
     expect(isSafeImageSrc(undefined)).toBe(true);
     expect(isSafeImageSrc("https://cdn.example.com/chart.png")).toBe(true);

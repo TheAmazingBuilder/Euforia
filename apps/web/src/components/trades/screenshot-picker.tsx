@@ -9,7 +9,7 @@ import { useI18n } from "@/i18n/i18n-provider";
  * Screenshot capture (spec §4/§10): file picker + paste (Ctrl+V) + previews.
  * Picked files stay in component state (binary payloads don't belong in the
  * localStorage draft) and are UPLOADED by the owning flow (capture submit /
- * reflect submit) as data URLs through POST /trades/:id/screenshots —
+ * reflect submit) as data URLs through POST /trades/:id/screenshots -
  * `draftToDataUrl` is the shared encoder.
  */
 
@@ -17,7 +17,7 @@ export interface DraftScreenshot {
   id: string;
   name: string;
   url: string;
-  /** The picked/pasted file — encoded to a data URL at upload time. */
+  /** The picked/pasted file - encoded to a data URL at upload time. */
   file: File;
 }
 

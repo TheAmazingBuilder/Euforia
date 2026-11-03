@@ -2,7 +2,7 @@
 """Rebuild og-image.png + derived icons from the corrected (traced) E assets.
 
 og layout mirrors the user's reference lockup: navy #020617, gradient mark
-left, white "Euforia" wordmark (Carlito-Bold — closest available to the
+left, white "Euforia" wordmark (Carlito-Bold - closest available to the
 reference geometric sans), letter-spaced violet→cyan tagline.
 """
 

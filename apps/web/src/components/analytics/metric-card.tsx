@@ -14,7 +14,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Analytics KPI card — every metric travels with its DEFINITION (MASTER
+ * Analytics KPI card - every metric travels with its DEFINITION (MASTER
  * PROMPT §6: "Do not hide metric definitions") and, when the sample cannot
  * support the ratio, an honest insufficient-data note instead of a fake zero
  * (§34). Values are pre-formatted server strings; this card never computes.
@@ -78,7 +78,7 @@ export function MetricCard({
         </div>
         {insufficient ? (
           <div>
-            <p className="font-mono text-2xl font-semibold tabular-nums text-muted-foreground/40">—</p>
+            <p className="font-mono text-2xl font-semibold tabular-nums text-muted-foreground/40">-</p>
             <p className="mt-1 text-[11px] italic leading-snug text-muted-foreground">
               {M.insufficient}
             </p>

@@ -1,15 +1,15 @@
 /**
- * Monitoring data access (infrastructure, Phase 17) — the ONLY place the
+ * Monitoring data access (infrastructure, Phase 17) - the ONLY place the
  * Monitoring context touches Prisma (§46).
  *
  * Persistence is deliberately MINIMAL (§40/§45): the single persisted entity
  * is the per-user MonitoringSetting (thresholds the user explicitly tuned).
  *
- * Phase 20 (§39 — no Prisma leakage across bounded contexts): this repository
+ * Phase 20 (§39 - no Prisma leakage across bounded contexts): this repository
  * touches ONLY the monitoringSetting table. Counts of observable entities are
- * consumed from the OWNING contexts' narrow contracts — IdentityRepository,
+ * consumed from the OWNING contexts' narrow contracts - IdentityRepository,
  * AccountsRepository and SecurityEventRepository each expose countUserEntities
- * over their own tables — and Monitoring composes the presentation labels.
+ * over their own tables - and Monitoring composes the presentation labels.
  */
 import { Injectable } from "@nestjs/common";
 import type { MonitoringThresholds } from "../../shared/contracts";

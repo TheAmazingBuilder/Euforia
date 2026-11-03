@@ -1,12 +1,12 @@
 /**
- * Strategy versioning (Phase 7 §11–§13/§17) — the product's freeze-before-
+ * Strategy versioning (Phase 7 §11–§13/§17) - the product's freeze-before-
  * mutation model.
  *
  * A strategy carries a definition revision counter (`version`). When a PATCH
  * touches any DEFINITION field, the CURRENT full definition is frozen into
  * an immutable StrategyVersionSnapshot BEFORE the mutation is applied, and
  * the counter is bumped. Lifecycle/presentation fields (name, status,
- * grade, color, tags) mutate IN PLACE without creating a version — they are
+ * grade, color, tags) mutate IN PLACE without creating a version - they are
  * not part of the methodology a trade was executed under.
  *
  * There is NO draft/publish lifecycle in this product (§13/§56 documented):

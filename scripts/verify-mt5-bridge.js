@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * verify-mt5-bridge.js — end-to-end probe of the MT5 terminal bridge (Phase 08).
+ * verify-mt5-bridge.js - end-to-end probe of the MT5 terminal bridge (Phase 08).
  *
  * Simulates EXACTLY what the EuforiaBridge.mq5 EA does from the user's
  * terminal: signed pushes (HMAC-SHA256 over the canonical serialization) to
@@ -30,10 +30,10 @@ let failed = 0;
 function check(name, ok, detail = "") {
   if (ok) {
     passed += 1;
-    console.log(`  ✓ ${name}${detail ? ` — ${detail}` : ""}`);
+    console.log(`  ✓ ${name}${detail ? ` - ${detail}` : ""}`);
   } else {
     failed += 1;
-    console.error(`  ✗ ${name}${detail ? ` — ${detail}` : ""}`);
+    console.error(`  ✗ ${name}${detail ? ` - ${detail}` : ""}`);
   }
 }
 
@@ -78,7 +78,7 @@ async function push(secret, login, kind, payload, overrides = {}) {
 }
 
 async function main() {
-  console.log("— MT5 terminal bridge e2e probe —");
+  console.log("- MT5 terminal bridge e2e probe -");
   const email = `bridge-${Date.now()}@cosmoz.test`;
   const password = "Bridge!2026x";
 
@@ -111,7 +111,7 @@ async function main() {
   const auth = { authorization: `Bearer ${accessToken}`, "content-type": "application/json" };
   check("access token present", Boolean(accessToken));
 
-  // 2. connect — PLATFORM_BRIDGE pairing (no client credentials!)
+  // 2. connect - PLATFORM_BRIDGE pairing (no client credentials!)
   const MT5_LOGIN = "52988790";
   const connectRes = await fetch(`${BASE}/trading-accounts/connect`, {
     method: "POST",
@@ -259,20 +259,20 @@ async function main() {
     observedThrough: String(Math.floor(now / 1000) - 60),
     complete: true,
     deals: [
-      // Position 1: XAUUSD BUY 0.10 — entry + exit (closed)
+      // Position 1: XAUUSD BUY 0.10 - entry + exit (closed)
       { externalDealId: "TXN-900001", symbol: "XAUUSD", side: "BUY", volume: "0.10", price: "4150.100", profit: "0.00", commission: "-0.65", swap: "0.00", positionId: "7005310001", executedAt: new Date(now - 5 * 86400_000).toISOString() },
       { externalDealId: "TXN-900002", symbol: "XAUUSD", side: "SELL", volume: "0.10", price: "4188.300", profit: "38.20", commission: "-0.65", swap: "-1.20", positionId: "7005310001", executedAt: new Date(now - 5 * 86400_000 + 7200_000).toISOString() },
-      // Position 2: EURUSD SELL 0.50 — entry + exit (closed)
+      // Position 2: EURUSD SELL 0.50 - entry + exit (closed)
       { externalDealId: "TXN-900003", symbol: "EURUSD", side: "SELL", volume: "0.50", price: "1.16500", profit: "0.00", commission: "-3.50", swap: "0.00", positionId: "7005310002", executedAt: new Date(now - 4 * 86400_000).toISOString() },
       { externalDealId: "TXN-900004", symbol: "EURUSD", side: "BUY", volume: "0.50", price: "1.16120", profit: "19.00", commission: "-3.50", swap: "0.85", positionId: "7005310002", executedAt: new Date(now - 4 * 86400_000 + 5400_000).toISOString() },
-      // Position 3: BTCUSDT BUY 0.02 — entry + exit (closed, loser)
+      // Position 3: BTCUSDT BUY 0.02 - entry + exit (closed, loser)
       { externalDealId: "TXN-900005", symbol: "BTCUSDT", side: "BUY", volume: "0.02", price: "121400.00", profit: "0.00", commission: "-1.80", swap: "0.00", positionId: "7005310003", executedAt: new Date(now - 3 * 86400_000).toISOString() },
       { externalDealId: "TXN-900006", symbol: "BTCUSDT", side: "SELL", volume: "0.02", price: "120870.00", profit: "-10.60", commission: "-1.80", swap: "-0.40", positionId: "7005310003", executedAt: new Date(now - 3 * 86400_000 + 9600_000).toISOString() },
     ],
   }, { keyId });
   check("push DEALS accepted (6 deals)", deals.status === 200);
 
-  // 6. idempotency — same event id twice
+  // 6. idempotency - same event id twice
   const fixedReplayId = `ea-${MT5_LOGIN}-${Date.now()}-replay-fixed-id`;
   const replay = await push(secret, MT5_LOGIN, "SNAPSHOT", {
     balance: "10250.48",
@@ -310,7 +310,7 @@ async function main() {
   check("positions segment upserted 2", syncBody?.run?.positionsUpserted === 2, `${syncBody?.run?.positionsUpserted}`);
   check("orders segment upserted 1", syncBody?.run?.ordersUpserted === 1, `${syncBody?.run?.ordersUpserted}`);
 
-  // 8. deals → journal trades reconstruction (LAZY — runs on list serving)
+  // 8. deals → journal trades reconstruction (LAZY - runs on list serving)
   const tradesRes = await fetch(`${BASE}/trades?accountId=${account.id}&limit=50`, { headers: auth });
   const tradesBody = await tradesRes.json().catch(() => ({}));
   const tradeList = tradesBody?.trades ?? tradesBody?.items ?? [];

@@ -19,7 +19,7 @@ const HEIGHT = 28;
 const PAD = 3;
 
 /**
- * Tiny inline SVG sparkline for KPI cards — deliberately NOT an ECharts
+ * Tiny inline SVG sparkline for KPI cards - deliberately NOT an ECharts
  * instance (5 extra canvases would be waste). Colors come from theme tokens
  * via getChartTheme(); the parent re-renders on theme switch.
  */

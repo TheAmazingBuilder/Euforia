@@ -55,11 +55,11 @@ import {
 import type { OryonConfigOpError } from "@/lib/oryon/workspace/layouts";
 
 /**
- * Oryon chart context menu (right-click on the chart workspace) — the
+ * Oryon chart context menu (right-click on the chart workspace) - the
  * TradingView-inspired menu, wired ONLY to capabilities that already exist:
  *
  *  - Copy price / price & time  → the chart coordinate under the cursor
- *    (engine.conversions — the SAME math the drawing controller uses),
+ *    (engine.conversions - the SAME math the drawing controller uses),
  *    never the latest market price;
  *  - Add alert at price…        → the existing alerts create dialog,
  *    prefilled with the clicked price;
@@ -70,9 +70,9 @@ import type { OryonConfigOpError } from "@/lib/oryon/workspace/layouts";
  *  - Chart template ▸           → the existing template store (apply with
  *    the same stack-replacement confirmation, save current as template);
  *  - Settings…                  → the chart settings dialog (Symbol /
- *    Status line / Scales & lines / Canvas — real engine options).
+ *    Status line / Scales & lines / Canvas - real engine options).
  *
- * Honesty contract: there is NO trading submenu — this application places
+ * Honesty contract: there is NO trading submenu - this application places
  * no orders and no broker integration exists; fabricating order actions
  * would pretend otherwise. Menu items that map to nothing real are not
  * shown at all.
@@ -80,7 +80,7 @@ import type { OryonConfigOpError } from "@/lib/oryon/workspace/layouts";
  * Event flow: the trigger wraps ONLY the chart container. Right-clicks on
  * a DRAWING are consumed upstream (the interaction controller's capture
  * listener opens the existing per-object property editor), so this menu
- * only ever opens for the empty chart surface — the two menus never race.
+ * only ever opens for the empty chart surface - the two menus never race.
  * The content renders in a Radix portal: never clipped by the chart
  * container, collision-kept inside the viewport, Escape/outside-click
  * close for free, full keyboard navigation.
@@ -102,7 +102,7 @@ export function OryonChartContextMenu({
   dataSymbol: string;
   interval: MarketInterval;
   digits: number;
-  /** True while this panel is the workspace's active chart (level gating —
+  /** True while this panel is the workspace's active chart (level gating -
    *  mirrors the drawing tools' active-chart gate). */
   interactive: boolean;
   /** Panel context for the journal flows (Save Analysis / Snapshot). */
@@ -110,7 +110,7 @@ export function OryonChartContextMenu({
   analysis: OryonPanelAnalysis;
   chartPrefs: OryonPanelChartPrefs;
   onChartPrefsChange: (next: OryonPanelChartPrefs) => void;
-  /** The chart container — becomes the menu's trigger surface. */
+  /** The chart container - becomes the menu's trigger surface. */
   children: React.ReactNode;
 }) {
   const dict = useDict();
@@ -123,7 +123,7 @@ export function OryonChartContextMenu({
   const { session } = useWorkspaceConfigSnapshot();
   const { registry: indicatorRegistry } = useOryonIndicators();
 
-  /** Chart coordinate under the cursor — computed in the contextmenu
+  /** Chart coordinate under the cursor - computed in the contextmenu
    *  handler (refs are read in EVENTS, never during render) and stored as
    *  state the menu content renders from. */
   const [cursor, setCursor] = React.useState<{ price: number | null; timeSec: number | null } | null>(null);
@@ -132,13 +132,13 @@ export function OryonChartContextMenu({
   const [applyTarget, setApplyTarget] = React.useState<{ id: string; name: string } | null>(null);
   const [saveAnalysisOpen, setSaveAnalysisOpen] = React.useState(false);
   const [snapshotOpen, setSnapshotOpen] = React.useState(false);
-  /** Chart reference time captured when the menu OPENED (event-time read —
+  /** Chart reference time captured when the menu OPENED (event-time read -
    *  the journal dialogs store it with the analysis, distinct from save time). */
   const [referenceTimeSec, setReferenceTimeSec] = React.useState<number | null>(null);
 
   const templatesList = useWorkspaceConfigSnapshot().templates;
 
-  /** This symbol's analyses that ARE linked to a journal trade — the
+  /** This symbol's analyses that ARE linked to a journal trade - the
    *  "open linked trade" entries (the journal record stays canonical; the
    *  deep link /trades?trade=<id> opens the existing drawer). Subscribed
    *  through the store snapshot so a save made minutes ago is visible
@@ -167,7 +167,7 @@ export function OryonChartContextMenu({
         timeSec: mounted ? engine.conversions.xToSnappedTimeSec(x) : null,
       });
       setReferenceTimeSec(mounted ? engine.lastCandleTime : null);
-      // No preventDefault/stopPropagation — Radix owns opening + the browser
+      // No preventDefault/stopPropagation - Radix owns opening + the browser
       // default is suppressed by the primitive itself, chart-native behavior
       // everywhere else in the app is untouched.
     },
@@ -185,7 +185,7 @@ export function OryonChartContextMenu({
         }).format(price)
       : null;
 
-  /** Bar time under the cursor — the SAME formatter the legend uses (one
+  /** Bar time under the cursor - the SAME formatter the legend uses (one
    *  honest readout everywhere; the cursor time is bar-snapped). */
   const timeText =
     timeSec !== null ? formatCandleTime(timeSec * 1000, interval) : null;
@@ -204,7 +204,7 @@ export function OryonChartContextMenu({
     [S.copyFailed],
   );
 
-  /** Adds a REAL horizontal level — the exact object shape the rail's hline
+  /** Adds a REAL horizontal level - the exact object shape the rail's hline
    *  tool produces (same default style), into the displayed symbol's store. */
   const addHorizontalLevel = React.useCallback(
     (levelPrice: number) => {
@@ -225,7 +225,7 @@ export function OryonChartContextMenu({
     [drawingRegistry, dataSymbol],
   );
 
-  /** Alert creation — the existing dialog, prefilled with the clicked price. */
+  /** Alert creation - the existing dialog, prefilled with the clicked price. */
   const addAlertAtPrice = React.useCallback(
     (alertPrice: number) => {
       openCreate({ symbol: dataSymbol, price: alertPrice, digits });
@@ -347,7 +347,7 @@ export function OryonChartContextMenu({
           <ContextMenuItem
             data-testid="oryon-ctx-reset"
             onSelect={() => {
-              // Engine access lives in the EVENT — never during render.
+              // Engine access lives in the EVENT - never during render.
               engineRef.current?.goToLatest();
             }}
           >
@@ -461,7 +461,7 @@ export function OryonChartContextMenu({
         </ContextMenuContent>
       </ContextMenu>
 
-      {/* Trade journal flows (Phase 10) — mounted per open so the drafts
+      {/* Trade journal flows (Phase 10) - mounted per open so the drafts
           seed from the CURRENT panel state. */}
       {saveAnalysisOpen ? (
         <OryonSaveAnalysisDialog
@@ -492,7 +492,7 @@ export function OryonChartContextMenu({
         />
       ) : null}
 
-      {/* Settings — the four-section chart dialog (live-applied). Mounted
+      {/* Settings - the four-section chart dialog (live-applied). Mounted
           per open so the draft + cancel snapshot start from CURRENT prefs
           (no open-transition effect, no stale state). */}
       {settingsOpen ? (
@@ -507,7 +507,7 @@ export function OryonChartContextMenu({
         />
       ) : null}
 
-      {/* Template save — same dialog + validation as the toolbar flow. */}
+      {/* Template save - same dialog + validation as the toolbar flow. */}
       <OryonConfigNameDialog
         open={saveOpen}
         onOpenChange={setSaveOpen}
@@ -526,7 +526,7 @@ export function OryonChartContextMenu({
         }}
       />
 
-      {/* Template apply confirmation — replaces the active panel's stack. */}
+      {/* Template apply confirmation - replaces the active panel's stack. */}
       {applyTarget !== null ? (
         <OryonConfigConfirmDialog
           open

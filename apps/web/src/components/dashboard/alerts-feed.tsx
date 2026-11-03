@@ -63,7 +63,7 @@ export function AlertsFeed({ alerts, unreadCount }: AlertsFeedProps) {
       </CardHeader>
       <CardContent>
         {recent.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No alerts — all quiet on the discipline front.</p>
+          <p className="text-sm text-muted-foreground">No alerts - all quiet on the discipline front.</p>
         ) : (
           <ul className="max-h-72 space-y-2 overflow-y-auto pr-1">
             {recent.map((alert) => {
@@ -84,7 +84,7 @@ export function AlertsFeed({ alerts, unreadCount }: AlertsFeedProps) {
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start gap-2">
-                      {/* relative: sr-only "(unread)" is position:absolute —
+                      {/* relative: sr-only "(unread)" is position:absolute -
                           without a positioned parent its static position
                           lands past the truncated text and bleeds ~9px of
                           horizontal scroll on narrow viewports. */}

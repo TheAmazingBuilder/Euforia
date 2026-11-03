@@ -1,11 +1,11 @@
 import type { Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * EN dictionary — ANALYTICS namespace (canonical; FR mirrors it exactly
+ * EN dictionary - ANALYTICS namespace (canonical; FR mirrors it exactly
  * through the `Dictionary` type at fr.ts). Grouped by component concern:
  * view shell, filter bar, per-tab panels (overview/performance/risk,
  * dimensions, behavior), chart internals and the shared fragments the
- * tooltips/stat chips compose. Values are STATIC strings — components
+ * tooltips/stat chips compose. Values are STATIC strings - components
  * compose dynamic parts themselves (the dict.* pattern). EN values are
  * verbatim the strings the module rendered before migration. API-served
  * DATA (preset names, dataset descriptors, anomaly messages, mistake
@@ -22,7 +22,7 @@ export const analyticsDict = {
     winSuffix: "win",
     avgCap: "Avg",
     avgLower: "avg",
-    lowSample: "Low sample — treat with caution",
+    lowSample: "Low sample - treat with caution",
     notRecoveredYet: "Not recovered yet",
     noTrades: "no trades",
     closedTrades: "closed trades",
@@ -159,7 +159,7 @@ export const analyticsDict = {
 
   // ── KPI card chrome (metric-card.tsx) ───────────────────────────────────
   metricCard: {
-    definitionTail: "— definition",
+    definitionTail: "- definition",
     insufficient: "Not enough trades to calculate this metric reliably.",
   },
 
@@ -192,7 +192,7 @@ export const analyticsDict = {
     profitFactorDef: "Gross profit ÷ |gross loss|. Above 1.5 is generally considered healthy; zero-loss datasets return null (infinite) by design.",
     profitFactorSub: "Healthy ≥ 1.50 · Optimal ≥ 2.00",
     expectancy: "Expectancy",
-    expectancyDef: "Average R per closed trade — the mean of all R multiples. The statistical amount you expect to gain or lose per trade at this sample's risk.",
+    expectancyDef: "Average R per closed trade - the mean of all R multiples. The statistical amount you expect to gain or lose per trade at this sample's risk.",
     perTradeSuffix: "per trade",
     perClosedTrade: "per closed trade",
     maxDrawdown: "Max drawdown",
@@ -206,22 +206,22 @@ export const analyticsDict = {
     equityDesc: "Balance of the filtered accounts (starting balance included) with the drawdown overlay.",
     equityEmpty: "Not enough closed trades in this dataset to draw an equity curve.",
     cumulativeRTitle: "Cumulative R",
-    cumulativeRDesc: "R multiples compounded trade by trade — risk-normalized performance.",
+    cumulativeRDesc: "R multiples compounded trade by trade - risk-normalized performance.",
     cumulativeREmpty: "No closed trades to plot.",
     averageR: "Average R",
-    averageRDef: "Arithmetic mean of the R multiples — same as expectancy, shown on the R scale.",
+    averageRDef: "Arithmetic mean of the R multiples - same as expectancy, shown on the R scale.",
     medianR: "Median R",
     medianRDef: "50th percentile of R. When the median sits far from the mean, outliers drive the expectancy.",
     avgDuration: "Avg duration",
     avgDurationDef: "Mean holding time from entry to exit over the filtered closed trades.",
     smallDatasetA: "Small dataset (",
-    smallDatasetB: " trades): ratios on this page are historically observed in this sample only — they are not statistically stable estimates.",
+    smallDatasetB: " trades): ratios on this page are historically observed in this sample only - they are not statistically stable estimates.",
   },
 
   // ── Performance tab (panels-performance.tsx) ────────────────────────────
   performance: {
     rDistTitle: "R-multiple distribution",
-    rDistDesc: "How results spread in R — a fat left tail is where discipline breaks.",
+    rDistDesc: "How results spread in R - a fat left tail is where discipline breaks.",
     rDistAria: "Distribution of trade R multiples",
     noClosedTrades: "No closed trades in this dataset.",
     best: "Best:",
@@ -229,18 +229,18 @@ export const analyticsDict = {
     mean: "Mean:",
     median: "Median:",
     pnlDistTitle: "P&L distribution",
-    pnlDistDescMoney: "Money results net of fees — check whether performance depends on a few exceptional trades.",
+    pnlDistDescMoney: "Money results net of fees - check whether performance depends on a few exceptional trades.",
     pnlDistDescMulti: "Unavailable when the dataset spans several currencies (§30/§31).",
     pnlDistAria: "Distribution of net P&L per trade",
-    pnlDistEmptyMulti: "Multi-currency dataset — P&L histogram is not rendered.",
+    pnlDistEmptyMulti: "Multi-currency dataset - P&L histogram is not rendered.",
     dailyPnlTitle: "Daily P&L",
     dailyPnlDesc: "Realized daily results over the filtered window.",
     dailyPnlEmpty: "No daily activity to plot.",
     durationTitle: "Duration distribution",
-    durationDesc: "Holding-time buckets — compare with your playbook intended timeframe.",
+    durationDesc: "Holding-time buckets - compare with your playbook intended timeframe.",
     durationAria: "Distribution of trade durations",
     rollingTitle: "Rolling metrics (last 10 trades)",
-    rollingDesc: "Windowed win rate and average R — shows form changes without full-history noise.",
+    rollingDesc: "Windowed win rate and average R - shows form changes without full-history noise.",
     rollingEmpty: "Not enough trades to calculate this metric reliably (10+ needed).",
   },
 
@@ -253,16 +253,16 @@ export const analyticsDict = {
     maxRisk: "Max risk",
     maxRiskDef: "Largest single-trade risk in the dataset.",
     riskDeviation: "Risk deviation",
-    riskDeviationDef: "Standard deviation of per-trade risk ÷ mean — how consistent your sizing is. Lower = steadier exposure.",
+    riskDeviationDef: "Standard deviation of per-trade risk ÷ mean - how consistent your sizing is. Lower = steadier exposure.",
     maxDailyRisk: "Max daily risk",
     maxDailyRiskDef: "Largest Σ planned risk committed on a single trading day.",
     maxConcurrent: "Max concurrent",
     maxConcurrentDef: "Highest number of positions open at the same time in the dataset (overlapping entry→exit windows).",
     recoveryFactor: "Recovery factor",
-    recoveryFactorDef: "Net profit ÷ |max drawdown in R| — how much reward the strategy produced per unit of its worst pain. Sign convention: positive when net P&L is positive.",
+    recoveryFactorDef: "Net profit ÷ |max drawdown in R| - how much reward the strategy produced per unit of its worst pain. Sign convention: positive when net P&L is positive.",
     drawdownsTitle: "Drawdown periods",
     drawdownsDesc: "Each major decline: peak → bottom → recovery, with the trades that dug the hole. Click a row for the trade list. Open drawdowns honestly show “not recovered yet”.",
-    drawdownsEmpty: "No drawdown period in this dataset — the equity never declined from a prior peak.",
+    drawdownsEmpty: "No drawdown period in this dataset - the equity never declined from a prior peak.",
     thPeak: "Peak",
     thBottom: "Bottom",
     thDrawdown: "Drawdown",
@@ -308,7 +308,7 @@ export const analyticsDict = {
   dimensions: {
     strategy: {
       title: "Strategy performance",
-      desc: "Factual comparison of playbook strategies and out-of-playbook trades. Click a row to filter the whole module on that strategy. The module deliberately does NOT crown a “best” strategy — sample sizes differ.",
+      desc: "Factual comparison of playbook strategies and out-of-playbook trades. Click a row to filter the whole module on that strategy. The module deliberately does NOT crown a “best” strategy - sample sizes differ.",
       empty: "No strategies in this dataset.",
       thStrategy: "Strategy",
       thTrades: "Trades",
@@ -320,11 +320,11 @@ export const analyticsDict = {
       thAvgHold: "Avg hold",
       thPlanFollowed: "Plan followed",
       rowTitle: "Filter the module on this strategy",
-      methodNote: "PF = gross profit ÷ |gross loss|. Rows below 10 trades are small samples — compare shapes, not decimals.",
+      methodNote: "PF = gross profit ÷ |gross loss|. Rows below 10 trades are small samples - compare shapes, not decimals.",
     },
     market: {
       bySymbolTitle: "By symbol",
-      bySymbolDesc: "Where your edge lives — click a row to filter the whole module on that symbol.",
+      bySymbolDesc: "Where your edge lives - click a row to filter the whole module on that symbol.",
       symbolsEmpty: "No symbols in this dataset.",
       thSymbol: "Symbol",
       thClass: "Class",
@@ -340,24 +340,24 @@ export const analyticsDict = {
     },
     time: {
       heatmapTitle: "Weekday × hour heatmap",
-      heatmapDesc: "Average R by weekday and UTC hour bucket. Cells below 10 trades are visually flagged — small samples are not edges.",
+      heatmapDesc: "Average R by weekday and UTC hour bucket. Cells below 10 trades are visually flagged - small samples are not edges.",
       bySession: "By session",
-      bySessionDesc: "Asia / London / New York — derived from the entry hour (UTC).",
+      bySessionDesc: "Asia / London / New York - derived from the entry hour (UTC).",
       byWeekday: "By weekday",
-      byWeekdayDesc: "Monday first — does your performance have a weekly rhythm?",
+      byWeekdayDesc: "Monday first - does your performance have a weekly rhythm?",
       byHour: "By hour bucket",
       byHourDesc: "Average R across the six UTC hour buckets of the trading day.",
       bucketAriaTail: "average R per bucket with sample sizes",
     },
     psychology: {
       beforeTitle: "Emotion before entry",
-      beforeDesc: "Average R per pre-trade emotion, weakest first — friction surfaces on top.",
+      beforeDesc: "Average R per pre-trade emotion, weakest first - friction surfaces on top.",
       afterTitle: "Emotion after close",
-      afterDesc: "How the trade left you — compare with the before-entry state.",
+      afterDesc: "How the trade left you - compare with the before-entry state.",
       confidenceTitle: "Confidence bands",
       confidenceDesc: "Outcomes by self-reported confidence (1–5) at entry.",
       confidencePrefix: "Confidence",
-      methodNote: "These are observations in this dataset only. Higher confidence historically associated with better (or worse) outcomes is a correlation — it does not prove the emotion causes the result.",
+      methodNote: "These are observations in this dataset only. Higher confidence historically associated with better (or worse) outcomes is a correlation - it does not prove the emotion causes the result.",
     },
   },
 
@@ -370,12 +370,12 @@ export const analyticsDict = {
       violatedWord: "violated",
       unknownWord: "unknown",
       avgMfe: "Avg MFE",
-      avgMfeDef: "Maximum Favorable Excursion — best open profit reached before exit, averaged in R. Requires intratrade excursion data.",
+      avgMfeDef: "Maximum Favorable Excursion - best open profit reached before exit, averaged in R. Requires intratrade excursion data.",
       avgMae: "Avg MAE",
-      avgMaeDef: "Maximum Adverse Excursion — worst open drawdown suffered before exit, averaged in R.",
+      avgMaeDef: "Maximum Adverse Excursion - worst open drawdown suffered before exit, averaged in R.",
       mfeCapture: "MFE capture",
       mfeCaptureDef: "On winners: Σ realized R ÷ Σ MFE R. How much of the available favorable move your exits actually captured.",
-      excursionNote: "MAE/MFE analysis requires intratrade price data — this dataset has no excursion records.",
+      excursionNote: "MAE/MFE analysis requires intratrade price data - this dataset has no excursion records.",
       scatterTitle: "Excursions vs realized R",
       scatterDesc: "Each dot is a trade. MFE high + realized low = gave back profit; MAE deep = stop placement pressure.",
       scatterEmpty: "MAE requires intratrade price data.",
@@ -389,14 +389,14 @@ export const analyticsDict = {
       tradesFlaggedDef: "Closed trades in the dataset carrying at least one mistake from the catalog.",
       tradesInDataset: "trades in dataset",
       sumRFlagged: "Σ R on flagged trades",
-      sumRFlaggedDef: "Sum of R over the flagged trades. A negative total is the observable cost of the mistakes — realized only, no invented counterfactual.",
+      sumRFlaggedDef: "Sum of R over the flagged trades. A negative total is the observable cost of the mistakes - realized only, no invented counterfactual.",
       distinctMistakes: "Distinct mistakes",
       distinctMistakesDef: "How many different mistake types occurred in this dataset.",
       costTitle: "Cost of mistakes",
-      costDesc: "Recomputed on the FILTERED dataset (the dashboard ledger shows a fixed 30-day window). Sorted by |cost|. “Cost” here = realized P&L of the trades carrying the mistake — no counterfactual is claimed.",
-      empty: "No mistakes recorded in this dataset — either a clean run, or no flags were raised on these trades.",
+      costDesc: "Recomputed on the FILTERED dataset (the dashboard ledger shows a fixed 30-day window). Sorted by |cost|. “Cost” here = realized P&L of the trades carrying the mistake - no counterfactual is claimed.",
+      empty: "No mistakes recorded in this dataset - either a clean run, or no flags were raised on these trades.",
       sev: "sev",
-      methodNote: "A positive ΣR on a flagged trade does NOT make the mistake harmless — it means the violating trade happened to win. The flag tracks process, not outcome.",
+      methodNote: "A positive ΣR on a flagged trade does NOT make the mistake harmless - it means the violating trade happened to win. The flag tracks process, not outcome.",
     },
     events: {
       coveragePrefix: "Economic-event analysis requires calendar data covering the trade dates. The calendar in this build spans",
@@ -405,7 +405,7 @@ export const analyticsDict = {
       phasesDesc: "Entry timing relative to the nearest HIGH/MEDIUM release on the instrument quote currency: before (4h→1h), during (±1h), after (1h→4h), or no release nearby.",
       impactTitle: "By impact (±4h window)",
       impactDesc: "Trades entered within four hours of any HIGH or MEDIUM release on their quote currency.",
-      methodNote: "Historical association only — trading around releases is not inherently good or bad; this shows what happened in YOUR sample.",
+      methodNote: "Historical association only - trading around releases is not inherently good or bad; this shows what happened in YOUR sample.",
     },
     advanced: {
       sharpe: "Sharpe",
@@ -428,7 +428,7 @@ export const analyticsDict = {
       statP95: "P95",
       statSkewness: "Skewness",
       streaksTitle: "Streaks",
-      streaksDesc: "Consecutive win/loss runs — what your equity actually puts you through.",
+      streaksDesc: "Consecutive win/loss runs - what your equity actually puts you through.",
       longestWinRun: "Longest win run",
       longestLossRun: "Longest loss run",
     },
@@ -441,11 +441,11 @@ export const analyticsDict = {
       finalR: "Final ΣR (P05 / P50 / P95)",
       maxDD: "Max DD (P50 / P95)",
       worstDD: "Worst simulated DD",
-      methodNote: "Reshuffling the SAME results shows the range of equity paths this edge could have produced — it says nothing about future sequences. A profitable mean with a brutal P95 drawdown is the normal shape of trading; size positions for the bands, not the midpoint.",
+      methodNote: "Reshuffling the SAME results shows the range of equity paths this edge could have produced - it says nothing about future sequences. A profitable mean with a brutal P95 drawdown is the normal shape of trading; size positions for the bands, not the midpoint.",
     },
     reports: {
       title: "Period reports",
-      desc: "Rollups of the FILTERED dataset — daily, weekly (ISO) and monthly. Export gives you the trade-level R sequence as CSV.",
+      desc: "Rollups of the FILTERED dataset - daily, weekly (ISO) and monthly. Export gives you the trade-level R sequence as CSV.",
       ranges: {
         daily: "daily",
         weekly: "weekly",
@@ -469,7 +469,7 @@ export const analyticsDict = {
   // ── A/B comparator (ab-comparator.tsx) ──────────────────────────────────
   abComparator: {
     title: "A/B comparator",
-    desc: "Pick two strategy rows from the SAME filtered dataset — the deltas are factual, not a recommendation. Highlight marks the stronger side per metric; sample sizes stay visible.",
+    desc: "Pick two strategy rows from the SAME filtered dataset - the deltas are factual, not a recommendation. Highlight marks the stronger side per metric; sample sizes stay visible.",
     emptyDesc: "Side-by-side comparison needs at least two strategy rows in the dataset.",
     strategyA: "Strategy A",
     strategyB: "Strategy B",
@@ -487,7 +487,7 @@ export const analyticsDict = {
       avgDurationMin: "Avg hold",
       followedPlanPct: "Plan followed",
     },
-    methodNote: "● marks the stronger side per metric (Avg loss (R): lower is stronger; Max DD (R): closer to zero is stronger). Deltas carry no significance test — with small samples the honest read is “different”, not “better”.",
+    methodNote: "● marks the stronger side per metric (Avg loss (R): lower is stronger; Max DD (R): closer to zero is stronger). Deltas carry no significance test - with small samples the honest read is “different”, not “better”.",
   },
 
   // ── By-strategy table (strategy-table.tsx) ──────────────────────────────
@@ -499,16 +499,16 @@ export const analyticsDict = {
     thWinRate: "Win rate",
     thAvgR: "Avg R",
     thLast20R: "Last-20 R",
-    empty: "No strategy has closed trades yet — capture executions linked to a playbook setup.",
-    footnote: "Last-20 R is the coach's decay window — negative expectancy over the most recent 20 trades surfaces as the playbook banner. Win-rate counts shown as (wins).",
+    empty: "No strategy has closed trades yet - capture executions linked to a playbook setup.",
+    footnote: "Last-20 R is the coach's decay window - negative expectancy over the most recent 20 trades surfaces as the playbook banner. Win-rate counts shown as (wins).",
   },
 
   // ── Quarterly report dialog (quarterly-report-dialog.tsx) ───────────────
   report: {
     title: "Quarterly report",
-    description: "The 13 analytics tabs condensed into one printable page — print it or save it as PDF from the browser dialog.",
+    description: "The 13 analytics tabs condensed into one printable page - print it or save it as PDF from the browser dialog.",
     printBtn: "Print / Save as PDF",
-    sheetHeader: "Euforia — Quarterly trading report",
+    sheetHeader: "Euforia - Quarterly trading report",
     equityAria: "Equity curve over the quarter",
     kpis: {
       closedTrades: "Closed trades",
@@ -555,22 +555,22 @@ export const analyticsDict = {
   exports: {
     title: "Exports",
     description:
-      "Every file is generated from the SAME filtered server dataset as the tabs — realized data only, open positions excluded. Money columns are omitted entirely when the scope spans multiple currencies (no misleading combined totals).",
+      "Every file is generated from the SAME filtered server dataset as the tabs - realized data only, open positions excluded. Money columns are omitted entirely when the scope spans multiple currencies (no misleading combined totals).",
     summaryCsv: "Summary",
     strategiesCsv: "Strategies",
     symbolsCsv: "Symbols",
     monthlyCsv: "Monthly rollup",
     accountsCsv: "Accounts",
     csvSuffix: "CSV",
-    multiCurrencyNote: "Multi-currency scope — money columns omitted; ratio/R/count columns only.",
-    downloadFailed: "Export failed — please retry.",
+    multiCurrencyNote: "Multi-currency scope - money columns omitted; ratio/R/count columns only.",
+    downloadFailed: "Export failed - please retry.",
   },
 
   // ── Performance snapshots (Dashboard Customization Phase 08) ────────────
   snapshots: {
     title: "Performance snapshots",
     description:
-      "A snapshot freezes the current scope's realized performance at capture time — it never changes when trades are edited later. Compare compatible snapshots to see what moved.",
+      "A snapshot freezes the current scope's realized performance at capture time - it never changes when trades are edited later. Compare compatible snapshots to see what moved.",
     createBtn: "Capture current view",
     creating: "Capturing…",
     name: "Name",
@@ -578,14 +578,14 @@ export const analyticsDict = {
     notes: "Notes (optional)",
     notesPlaceholder: "Why this capture matters",
     scopeBeingCaptured: "Scope being captured",
-    empty: "No snapshots yet — capture the current filtered view to pin its numbers.",
+    empty: "No snapshots yet - capture the current filtered view to pin its numbers.",
     loadFailed: "Snapshots could not be loaded.",
     createdToast: "Snapshot captured.",
-    createFailed: "Snapshot capture failed — please retry.",
+    createFailed: "Snapshot capture failed - please retry.",
     renamedToast: "Snapshot updated.",
-    renameFailed: "Snapshot update failed — please retry.",
+    renameFailed: "Snapshot update failed - please retry.",
     deletedToast: "Snapshot deleted.",
-    deleteFailed: "Snapshot deletion failed — please retry.",
+    deleteFailed: "Snapshot deletion failed - please retry.",
     deleteTitle: "Delete snapshot?",
     deleteDescription: "The frozen capture is removed permanently. This cannot be undone.",
     deleteConfirm: "Delete",
@@ -610,9 +610,9 @@ export const analyticsDict = {
     colB: "B",
     colDelta: "Δ (B − A)",
     colDeltaPct: "Δ %",
-    notComparable: "—",
+    notComparable: "-",
     incompatibleTitle: "Compatibility warnings",
-    sameName: "Both entries are named alike — verify you picked the intended pair.",
+    sameName: "Both entries are named alike - verify you picked the intended pair.",
     metricNames: {
       netPnl: "Net P&L",
       winRate: "Win rate",

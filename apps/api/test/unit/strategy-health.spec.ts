@@ -1,6 +1,6 @@
 /**
- * Strategy completeness-health unit tests (Phase 7 — product §20 flags).
- * Factual indicators only — no profitability judgment ever (§82).
+ * Strategy completeness-health unit tests (Phase 7 - product §20 flags).
+ * Factual indicators only - no profitability judgment ever (§82).
  */
 import { describe, expect, it } from "vitest";
 

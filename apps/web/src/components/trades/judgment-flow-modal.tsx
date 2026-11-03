@@ -28,7 +28,7 @@ import { useCurrentBalance } from "@/lib/api/queries";
 const STAGE_COPY: Record<JudgmentStage, { title: string; description: string }> = {
   gate: {
     title: "Judgment Gate",
-    description: "Grade the decision — based only on what you knew at entry.",
+    description: "Grade the decision - based only on what you knew at entry.",
   },
   reveal: {
     title: "The Reveal",
@@ -36,7 +36,7 @@ const STAGE_COPY: Record<JudgmentStage, { title: string; description: string }> 
   },
   reflect: {
     title: "Reflect",
-    description: "Optional — train your detector while it's fresh.",
+    description: "Optional - train your detector while it's fresh.",
   },
 };
 
@@ -47,7 +47,7 @@ export function JudgmentFlowModal() {
 
   /**
    * The reveal payload arrives with the decision response. Kept keyed by the
-   * trade it was graded for — a cached payload can never leak into another
+   * trade it was graded for - a cached payload can never leak into another
    * trade's flow, and a re-opened gate (stage reset) renders the gate, so the
    * former clear-on-close effect is unnecessary.
    */

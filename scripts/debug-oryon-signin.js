@@ -1,4 +1,4 @@
-/** debug-oryon-signin.js — what does the page actually show after sign-in? */
+/** debug-oryon-signin.js - what does the page actually show after sign-in? */
 const { chromium } = require("playwright");
 const fs = require("fs");
 
@@ -18,9 +18,9 @@ const say = (line) => {
   });
 
   await page.goto("http://localhost:3000/", { waitUntil: "load", timeout: 60_000 });
-  say(`after goto / — url: ${page.url()}`);
+  say(`after goto / - url: ${page.url()}`);
   await page.waitForTimeout(2_000);
-  say(`after 2s — url: ${page.url()}`);
+  say(`after 2s - url: ${page.url()}`);
 
   if (page.url().includes("/login")) {
     await page.waitForSelector('[data-testid="login-form"]', { timeout: 20_000 }).catch(() => say("login-form NOT found"));
@@ -38,7 +38,7 @@ const say = (line) => {
     await page.click('[data-testid="login-submit"]');
     say("clicked login-submit");
     await page.waitForTimeout(6_000);
-    say(`after submit — url: ${page.url()}`);
+    say(`after submit - url: ${page.url()}`);
     say(`mfa step visible: ${await page.locator('[data-testid="login-mfa-code"]').isVisible().catch(() => false)}`);
     say(`login error visible: ${await page.locator('[data-testid="login-error"]').isVisible().catch(() => false)}`);
   }

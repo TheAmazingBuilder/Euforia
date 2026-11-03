@@ -1,9 +1,9 @@
 /**
- * Trading Core — THE authoritative financial implementation (Phase 4 §12/§46).
+ * Trading Core - THE authoritative financial implementation (Phase 4 §12/§46).
  *
  * Every money/quantity/R computation in the journal domain flows through
  * these pure functions: trade creation, closing, editing, CSV import and
- * external synchronization all consume the SAME definitions — no controller,
+ * external synchronization all consume the SAME definitions - no controller,
  * service or frontend may re-derive a result (§46: one authoritative
  * implementation). Decimal arithmetic everywhere (§16); wire output is the
  * shared decimal-string format.
@@ -11,7 +11,7 @@
  * Sizing semantics mirror the product contract: risk_percent/risk_amount
  * budgets convert into a quantity via |entry − stop| × contractSize, floored
  * to 0.01 so realized risk never exceeds the budget. Without a stop, a
- * risk-budgeted size cannot be computed — the mock-product fallback of a
+ * risk-budgeted size cannot be computed - the mock-product fallback of a
  * minimal 0.01 unit with the budget recorded as riskAmount applies.
  */
 import { Prisma } from "@prisma/client";
@@ -20,9 +20,9 @@ import { toTradingDateKey } from "../../shared/contracts";
 /**
  * THE canonical weighted-average price (§15/§16): Decimal accumulation,
  * one definition shared by the journal close path (multi-leg partial exits)
- * and the external reconstruction pipeline — no float arithmetic on prices
+ * and the external reconstruction pipeline - no float arithmetic on prices
  * anywhere (MASTER §16: financial computation uses an exact strategy).
- * A null price contributes its volume to the denominator only — mirroring
+ * A null price contributes its volume to the denominator only - mirroring
  * the reconstruction rule for provider rows with a missing price.
  */
 export function weightedAveragePrice(
@@ -76,7 +76,7 @@ export interface TradeResults {
  * Results of a CLOSED trade (§20): the delta-based gross P&L (Δ × quantity ×
  * contractSize), its net after fees and swap, the R-multiple against the
  * risked amount, and MFE/MAE price→R conversions against the initial stop
- * distance. Exit-only — an open trade has no result yet (§11).
+ * distance. Exit-only - an open trade has no result yet (§11).
  */
 export function computeTradeResults(
   financials: TradeFinancials,
@@ -159,7 +159,7 @@ export interface ResolvedSize {
 /**
  * Resolve the position size from the capture input (shared tradeSizeMode
  * contract). `balance` is the account's authoritative anchor (latest
- * snapshot balance, else the starting balance — Accounts stays the source
+ * snapshot balance, else the starting balance - Accounts stays the source
  * of truth, §24). quantity mode keeps the client quantity and derives the
  * risked amount; budget modes derive the quantity from the stop distance.
  */
@@ -196,7 +196,7 @@ export function resolvePositionSize(input: {
       : new Prisma.Decimal(input.size.riskAmount);
 
   if (stopDistance === null || stopDistance.lessThanOrEqualTo(0)) {
-    // Risk-based sizing without a stop: cannot size — minimal unit fallback.
+    // Risk-based sizing without a stop: cannot size - minimal unit fallback.
     return { quantity: "0.01", riskAmount: wire(budget) };
   }
   const perUnit = stopDistance.times(size);
@@ -212,7 +212,7 @@ export function resolvePositionSize(input: {
 }
 
 /**
- * The user-local trading day (§22/§56) — computed SERVER-side from the UTC
+ * The user-local trading day (§22/§56) - computed SERVER-side from the UTC
  * entry timestamp and the user's stored timezone, never from any client
  * clock. Persisted as a DATE column; loud failure on an unknown timezone is
  * intended (a silent wrong day would corrupt every per-day aggregate).

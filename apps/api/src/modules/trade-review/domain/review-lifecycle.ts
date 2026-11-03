@@ -2,13 +2,13 @@
  * Trade Review lifecycle (Phase 6 §10/§32).
  *
  * Only states the product actually exercises:
- *   COMPLETED — the review exists and is active (workspace row "REVIEWED").
- *   ARCHIVED  — the soft-undo behind DELETE /reviews/:tradeId; the row is
+ *   COMPLETED - the review exists and is active (workspace row "REVIEWED").
+ *   ARCHIVED  - the soft-undo behind DELETE /reviews/:tradeId; the row is
  *               preserved for audit/future Analytics but invisible to the
  *               workspace (the trade returns to PENDING).
  *
  * No DRAFT state: the product's upsert flow creates completed reviews
- * directly (§10 — "only implement states that are actually justified").
+ * directly (§10 - "only implement states that are actually justified").
  * No arbitrary mutation: every change of status goes through the explicit
  * transition table below, enforced with conditional updates in the
  * repository (optimistic lifecycle guard, §44).
@@ -26,9 +26,9 @@ export type ReviewStatus = (typeof REVIEW_STATUS)[keyof typeof REVIEW_STATUS];
 /**
  * Explicit transition table:
  *   COMPLETED → ARCHIVED  (archive / undo review)
- *   ARCHIVED  → COMPLETED (re-review after undo — a fresh PUT)
+ *   ARCHIVED  → COMPLETED (re-review after undo - a fresh PUT)
  * Everything else is invalid; same-status self-transitions are NOT lifecycle
- * moves (editing a COMPLETED review keeps it COMPLETED — an update, not a
+ * moves (editing a COMPLETED review keeps it COMPLETED - an update, not a
  * transition).
  */
 const TRANSITIONS: Record<ReviewStatus, readonly ReviewStatus[]> = {
@@ -52,7 +52,7 @@ export function upsertAcceptsState(state: ReviewStatus): boolean {
 }
 
 /**
- * Editing (PATCH) is allowed on COMPLETED reviews only (§32 — the product
+ * Editing (PATCH) is allowed on COMPLETED reviews only (§32 - the product
  * edits completed reviews freely; archived rows are invisible, therefore a
  * PATCH against one is an honest 404 upstream, never a silent resurrection).
  */

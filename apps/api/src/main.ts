@@ -1,12 +1,12 @@
 /**
- * COSMOZ API — production entrypoint (Foundation).
+ * COSMOZ API - production entrypoint (Foundation).
  *
  * Bootstrap order (Phase 1 mandate §34):
- *   1. Configuration (validated env — controlled failure on invalid config)
+ *   1. Configuration (validated env - controlled failure on invalid config)
  *   2. Logger
  *   3. Application + adapter (body limit, trust proxy)
  *   4. HTTP wiring (logging/correlation, helmet, CORS, versioning)
- *   5. Nest lifecycle (module init connects Prisma — DB down fails the boot)
+ *   5. Nest lifecycle (module init connects Prisma - DB down fails the boot)
  *   6. Listen
  */
 import "reflect-metadata";
@@ -19,7 +19,7 @@ import { EnvValidationError } from "./config/env.schema";
 import { getOrCreateRootLogger, NestPinoLogger } from "./infrastructure/logging/logger.factory";
 
 async function bootstrap(): Promise<void> {
-  // 1. Configuration — fail fast, safely (no secret values in output).
+  // 1. Configuration - fail fast, safely (no secret values in output).
   let config: AppConfig;
   try {
     config = loadAppConfig();

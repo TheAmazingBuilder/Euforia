@@ -50,12 +50,12 @@ import {
 } from "@/components/playbook/playbook-labels";
 /**
  * [New Strategy] / [Edit] dialog: identity (§6), the three markdown rule
- * bodies, grade, color, status — PLUS the professional structured blocks
+ * bodies, grade, color, status - PLUS the professional structured blocks
  * (§7–§13): market profile, market conditions, risk frame and invalidations.
  * One component for both modes.
  */
 
-/** Grade machine values — labels resolve through dict.playbook.strategyForm.grades. */
+/** Grade machine values - labels resolve through dict.playbook.strategyForm.grades. */
 const GRADE_VALUES: StrategyGrade[] = ["A_PLUS", "A", "B", "C"];
 
 const STATUS_OPTIONS: readonly StrategyStatus[] = ["ACTIVE", "DRAFT", "PAUSED", "RETIRED"];
@@ -141,7 +141,7 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
   const { dict } = useI18n();
   const V = dict.playbook.strategyForm;
   const S = dict.playbook.shared;
-  // Enum label maps — built from the dict fragments inside the component.
+  // Enum label maps - built from the dict fragments inside the component.
   const STATUS_LABELS = statusLabels(dict.playbook.labels.status);
   const STYLE_LABELS = styleLabels(dict.playbook.labels.style);
   const SESSION_LABELS = sessionLabels(dict.playbook.labels.session);
@@ -152,7 +152,7 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
   const updateStrategy = useUpdateStrategy();
   const [values, setValues] = React.useState<StrategyFormValues>(() => valuesFromStrategy(strategy));
 
-  // Re-hydrate whenever the dialog opens (or the edit target swaps — the
+  // Re-hydrate whenever the dialog opens (or the edit target swaps - the
   // caller also remounts by key). Guarded render-time adjustment per the
   // React docs "You might not need an effect" pattern.
   const [wasOpen, setWasOpen] = React.useState(open);
@@ -170,7 +170,7 @@ export function StrategyFormDialog({ open, onOpenChange, strategy }: StrategyFor
   const submit = async () => {
     if (nameError !== null) return;
 
-    // Structured blocks are only sent when the trader defined something —
+    // Structured blocks are only sent when the trader defined something -
     // a half-empty profile must not erase data on a partial edit.
     const hasProfile =
       values.assetClass !== "" ||

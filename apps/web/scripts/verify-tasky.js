@@ -1,11 +1,11 @@
 /**
- * Tasky probe — the trading kanban (Academy section).
- * Covers: Tasky Board header, 5 seeded columns left→right in a horizontally
- * scrollable board, faithful card anatomy (tag + priority + assignee + due),
- * add/delete card, mouse drag AND touch (pointer) drag between columns,
- * add-list appended to the right, local persistence, mobile 390px, themes.
+ * Tasky probe - the trading kanban (Academy section).
+ * Covers: Tasky board structure, card/list CRUD, edit + duplicate, mouse/touch
+ * drag, server persistence, mobile layout and themes. Uses the demo account
+ * below and cleans up the temporary cards/lists created by this probe.
  */
 const { chromium } = require("playwright");
+const fs = require("node:fs/promises");
 
 const BASE = process.env.PROBE_BASE || "http://localhost:3000";
 let passed = 0;
@@ -16,7 +16,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {
@@ -106,11 +106,36 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     for (const id of columnIds) {
       counts[id] = Number(await page.locator(`[data-testid="tasky-count-${id}"]`).innerText());
     }
-    check(
-      "seed counts 4/3/3/2/3",
-      counts.backlog === 4 && counts.todo === 3 && counts["in-progress"] === 3 && counts["in-review"] === 2 && counts.done === 3,
-      JSON.stringify(counts),
-    );
+    let countsMatchCards = true;
+    for (const id of columnIds) {
+      const rendered = await page.locator(`[data-testid="tasky-column-${id}"] [data-tasky-card]`).count();
+      countsMatchCards = countsMatchCards && counts[id] === rendered;
+    }
+    check("column counters match rendered cards", countsMatchCards, JSON.stringify(counts));
+
+    console.log("\n[1b] JSON and CSV export");
+    const [jsonDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.click('[data-testid="tasky-export-json"]'),
+    ]);
+    check("JSON export filename", /\.json$/i.test(jsonDownload.suggestedFilename()), jsonDownload.suggestedFilename());
+    const jsonPath = await jsonDownload.path();
+    const jsonPayload = JSON.parse(await fs.readFile(jsonPath, "utf8"));
+    check("JSON export contains versioned board snapshot",
+      jsonPayload.format === "euforia-tasky-board" && jsonPayload.version === 1 && Array.isArray(jsonPayload.board?.columns));
+    check("JSON export includes board cards",
+      jsonPayload.board.columns.some((column) => column.cards.some((card) => card.title === "Implement OAuth 2.0 SSO integration")));
+
+    const [csvDownload] = await Promise.all([
+      page.waitForEvent("download"),
+      page.click('[data-testid="tasky-export-csv"]'),
+    ]);
+    check("CSV export filename", /\.csv$/i.test(csvDownload.suggestedFilename()), csvDownload.suggestedFilename());
+    const csvPath = await csvDownload.path();
+    const csvPayload = await fs.readFile(csvPath, "utf8");
+    check("CSV export includes column headers and task rows",
+      csvPayload.includes("list_id,list,card_id,title,category,priority") &&
+      csvPayload.includes("Implement OAuth 2.0 SSO integration"));
 
     console.log("\n[2] Card anatomy (reference fidelity)");
     const c1 = page.locator('[data-testid="tasky-card-c1"]');
@@ -121,20 +146,165 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     check("c1 due Apr 20", /Apr 20/.test(await c1.innerText()));
     check("c1 grip exists", await page.locator('[data-testid="tasky-grip-c1"]').isVisible().catch(() => false));
 
+    console.log("\n[2b] Search, filter and sort");
+    await page.fill('[data-testid="tasky-search"]', "Implement OAuth 2.0 SSO integration");
+    check("search narrows the board to the matching card",
+      await page.locator('[data-testid="tasky-card-c1"]').isVisible().catch(() => false)
+      && /Showing 1 of \\d+ cards/.test(await page.locator('[data-testid="tasky-filter-summary"]').innerText()));
+    await page.selectOption('[data-testid="tasky-priority-filter"]', "Urgent");
+    check("priority filter excludes non-matching cards",
+      await page.locator('[data-testid="tasky-card-c1"]').count() === 0);
+    check("drag is disabled while search/filter/sort is active",
+      await page.locator('[data-testid="tasky-grip-c1"]').getAttribute("aria-disabled") === "true");
+    await page.click('[data-testid="tasky-reset-filters"]');
+    check("reset restores the original board view",
+      await page.locator('[data-testid="tasky-card-c1"]').isVisible().catch(() => false)
+      && await page.locator('[data-testid="tasky-reset-filters"]').isDisabled());
+
+    console.log("\n[2c] Supplementary views");
+    await page.click('[data-testid="tasky-view-mode-calendar"]');
+    check("calendar view is selectable", await page.locator('[data-testid="tasky-calendar-view"]').isVisible().catch(() => false));
+    await page.click('button[aria-label="Next month"]');
+    check("calendar month can advance", await page.locator('[data-testid="tasky-calendar-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-table"]');
+    check("compact table view is selectable", await page.locator('[data-testid="tasky-table"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-timeline"]');
+    check("timeline view is selectable", await page.locator('[data-testid="tasky-timeline-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-dashboard"]');
+    check("dashboard view is selectable", await page.locator('[data-testid="tasky-dashboard-view"]').isVisible().catch(() => false));
+    check("dashboard exposes completion progress", await page.getByRole("progressbar", { name: "Completion progress" }).isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-completed"]');
+    check("completed-task view is selectable", await page.locator('[data-testid="tasky-completed-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-upcoming"]');
+    check("upcoming-task view is selectable", await page.locator('[data-testid="tasky-upcoming-view"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-view-mode-board"]');
+    check("kanban remains the default and is selectable", await page.locator('[data-testid="tasky-board"]').isVisible().catch(() => false));
+
+    console.log("\n[2d] Removed shortcuts surface");
+    check("Shortcuts button is no longer rendered", (await page.locator('[data-testid="tasky-shortcuts-open"]').count()) === 0);
+    check("shortcut reference dialog is no longer rendered", (await page.locator('[data-testid="tasky-shortcuts-dialog"]').count()) === 0);
+    await page.keyboard.press("?");
+    check("question mark does not open a shortcut dialog", (await page.locator('[data-testid="tasky-shortcuts-dialog"]').count()) === 0);
+
     console.log("\n[3] Add + delete card");
+    const todoCountBeforeProbe = Number(await page.locator('[data-testid="tasky-count-todo"]').innerText());
     await page.click('[data-testid="tasky-add-todo"]');
     await page.fill('[data-testid="tasky-add-input-todo"]', "Probe card");
     await page.click('[data-testid="tasky-add-confirm-todo"]');
     await page.waitForTimeout(400);
-    check("todo count 4 after add", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "4");
+    check("todo count increments after add", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe + 1);
     const probeCard = page.locator("article", { hasText: "Probe card" }).first();
     const probeId = await probeCard.getAttribute("data-testid");
     await page.click(`[data-testid="tasky-delete-${probeId?.replace("tasky-card-", "")}"]`);
     await page.waitForTimeout(300);
-    check("todo count 3 after delete", (await page.locator('[data-testid="tasky-count-todo"]').innerText()) === "3");
+    check("todo count restored after delete", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe);
+
+    console.log("\n[3b] Edit + duplicate card");
+    await page.click('[data-testid="tasky-add-todo"]');
+    await page.fill('[data-testid="tasky-add-input-todo"]', "Editable probe");
+    await page.click('[data-testid="tasky-add-confirm-todo"]');
+    const editable = page.locator("article", { hasText: "Editable probe" }).first();
+    const editableTestId = await editable.getAttribute("data-testid");
+    const editableId = editableTestId?.replace("tasky-card-", "");
+    await page.click(`[data-testid="tasky-edit-${editableId}"]`);
+    await page.fill(`[data-testid="tasky-edit-title-${editableId}"]`, "Edited probe");
+    await page.fill(`[data-testid="tasky-edit-tag-${editableId}"]`, "Regression");
+    await page.selectOption(`[data-testid="tasky-edit-priority-${editableId}"]`, "Urgent");
+    await page.fill(`[data-testid="tasky-edit-assignee-${editableId}"]`, "QA");
+    await page.fill(`[data-testid="tasky-edit-due-${editableId}"]`, "2026-12-31");
+    await page.click(`[data-testid="tasky-edit-save-${editableId}"]`);
+    await page.waitForTimeout(400);
+    const editedCard = page.locator(`[data-testid="tasky-card-${editableId}"]`);
+    check("card fields can be edited", /Edited probe/.test(await editedCard.innerText()) && /Regression/.test(await editedCard.innerText()) && /Urgent/.test(await editedCard.innerText()) && /QA/.test(await editedCard.innerText()));
+    await page.click(`[data-testid="tasky-duplicate-${editableId}"]`);
+    const duplicate = page.locator("article", { hasText: "Edited probe (copy)" }).first();
+    const duplicateTestId = await duplicate.getAttribute("data-testid");
+    const duplicateId = duplicateTestId?.replace("tasky-card-", "");
+    check("card can be duplicated", await duplicate.isVisible().catch(() => false));
+    console.log("\n[3c] Card details, description + checklist");
+    await page.click(`[data-testid="tasky-details-${editableId}"]`);
+    await page.locator('[data-testid="tasky-card-details"]').waitFor({ state: "visible" });
+    const saveResponse = page.waitForResponse((response) =>
+      response.url().includes("/tasky/board")
+      && response.request().method() === "PUT"
+      && response.ok()
+      && (response.request().postData() ?? "").includes("Tasky probe comment"),
+    );
+    await page.fill('[data-testid="tasky-card-description"]', "Acceptance criteria and regression notes.");
+    await page.fill('[data-testid="tasky-checklist-add-input"]', "Validate autosave");
+    await page.click('[data-testid="tasky-checklist-add-submit"]');
+    const checklistToggle = page.locator('[data-testid^="tasky-checklist-toggle-"]').first();
+    const checklistTestId = await checklistToggle.getAttribute("data-testid");
+    check("checklist item added", await checklistToggle.isVisible().catch(() => false));
+    await checklistToggle.check();
+    check("checklist item can be completed", await checklistToggle.isChecked());
+
+    await page.fill('[data-testid="tasky-comment-input"]', "Tasky probe comment: review before release.");
+    await page.click('[data-testid="tasky-comment-submit"]');
+    check("comment appears in card details", await page.getByText("Tasky probe comment: review before release.").isVisible().catch(() => false));
+    await page.fill('[data-testid="tasky-link-title-input"]', "Reference link probe");
+    await page.fill('[data-testid="tasky-link-url-input"]', "https://example.com/tasky-probe");
+    await page.click('[data-testid="tasky-link-add-submit"]');
+    const referenceLink = page.getByRole("link", { name: "Reference link probe" });
+    check("reference link added", await referenceLink.isVisible().catch(() => false) && (await referenceLink.getAttribute("href")) === "https://example.com/tasky-probe");
+    check("activity records comment and link", await page.getByText("Added a comment").isVisible().catch(() => false) && await page.getByText("Added link: Reference link probe").isVisible().catch(() => false));
+    await saveResponse;
+    await page.reload({ waitUntil: "domcontentloaded" });
+    await page.waitForTimeout(1000);
+    await page.click(`[data-testid="tasky-details-${editableId}"]`);
+    await page.locator('[data-testid="tasky-card-details"]').waitFor({ state: "visible" });
+    check("description persisted after reload", (await page.locator('[data-testid="tasky-card-description"]').inputValue()) === "Acceptance criteria and regression notes.");
+    const persistedToggle = page.locator(`[data-testid="${checklistTestId}"]`);
+    check("checklist completion persisted after reload", await persistedToggle.isChecked());
+    check("comment persisted after reload", await page.getByText("Tasky probe comment: review before release.").isVisible().catch(() => false));
+    const persistedLink = page.getByRole("link", { name: "Reference link probe" });
+    check("link persisted after reload", await persistedLink.isVisible().catch(() => false) && (await persistedLink.getAttribute("href")) === "https://example.com/tasky-probe");
+    check("activity history persisted after reload", await page.getByText("Added a comment").isVisible().catch(() => false) && await page.getByText("Added link: Reference link probe").isVisible().catch(() => false));
+    await page.keyboard.press("Escape");
+    await page.waitForTimeout(100);
+    await page.click(`[data-testid="tasky-delete-${duplicateId}"]`);
+    await page.click(`[data-testid="tasky-delete-${editableId}"]`);
+    await page.waitForTimeout(500);
+    check("edited and duplicate probe cards cleaned up", Number(await page.locator('[data-testid="tasky-count-todo"]').innerText()) === todoCountBeforeProbe);
+
+    console.log("\n[3b] Automation rule setup");
+    await page.click('[data-testid="tasky-view-mode-automations"]');
+    check("automation panel opens", await page.locator('[data-testid="tasky-automations-panel"]').isVisible().catch(() => false));
+    await page.fill('[data-testid="tasky-automation-name"]', "Automation probe");
+    await page.selectOption('[data-testid="tasky-automation-trigger"]', "CARD_MOVED");
+    await page.selectOption('[data-testid="tasky-automation-column"]', "in-review");
+    await page.selectOption('[data-testid="tasky-automation-action"]', "SET_PRIORITY");
+    await page.selectOption('[data-testid="tasky-automation-priority"]', "Urgent");
+    await page.fill('[data-testid="tasky-automation-message"]', "Probe move notification");
+    await page.click('[data-testid="tasky-automation-create"]');
+    const automation = page.locator('article[data-testid^="tasky-automation-"]').filter({ hasText: "Automation probe" }).first();
+    await automation.waitFor({ state: "visible", timeout: 8000 });
+    const automationTestId = await automation.getAttribute("data-testid");
+    const automationId = automationTestId?.replace("tasky-automation-", "");
+    check("rule is saved", Boolean(automationId && /^[0-9a-f-]{36}$/i.test(automationId)), automationTestId ?? "");
+    await page.click(`[data-testid="tasky-automation-toggle-${automationId}"]`);
+    await page.locator(`[data-testid="tasky-automation-toggle-${automationId}"]`).getByText("Enable").waitFor({ timeout: 8000 });
+    check("rule can be paused", true);
+    await page.click(`[data-testid="tasky-automation-toggle-${automationId}"]`);
+    await page.locator(`[data-testid="tasky-automation-toggle-${automationId}"]`).getByText("Pause").waitFor({ timeout: 8000 });
+    check("rule can be enabled again", true);
+    const dueCheckResponse = page.waitForResponse((response) =>
+      response.url().includes("/tasky/automation-runs/check-due") && response.request().method() === "POST",
+    );
+    await page.click('[data-testid="tasky-check-due-dates"]');
+    const dueCheck = await dueCheckResponse;
+    check("manual due-date check endpoint succeeds", dueCheck.ok(), String(dueCheck.status()));
+    await page.click('[data-testid="tasky-view-mode-board"]');
 
     console.log("\n[4] Mouse drag Backlog → In Review");
-    const grip1 = await page.locator('[data-testid="tasky-grip-c1"]').boundingBox();
+    const backlogBeforeDrag = Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText());
+    await page.click('[data-testid="tasky-add-backlog"]');
+    await page.fill('[data-testid="tasky-add-input-backlog"]', "Mouse drag probe");
+    await page.click('[data-testid="tasky-add-confirm-backlog"]');
+    const mouseProbe = page.locator("article", { hasText: "Mouse drag probe" }).first();
+    const mouseProbeTid = await mouseProbe.getAttribute("data-testid");
+    const mouseProbeId = mouseProbeTid?.replace("tasky-card-", "");
+    const grip1 = await page.locator(`[data-testid="tasky-grip-${mouseProbeId}"]`).boundingBox();
     const targetRev = await columnCenter(page, "in-review");
     await page.mouse.move(grip1.x + grip1.width / 2, grip1.y + grip1.height / 2);
     await page.mouse.down();
@@ -149,37 +319,97 @@ async function touchDrag(page, gripTestid, targetColumnId) {
     await page.mouse.up();
     await page.waitForTimeout(400);
     check(
-      "c1 moved to in-review",
-      (await page.locator('[data-testid="tasky-card-c1"]').getAttribute("data-column")) === "in-review",
+      "card moved to in-review",
+      (await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).getAttribute("data-column")) === "in-review",
     );
-    check("backlog count 3", (await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === "3");
-    check("in-review count 3", (await page.locator('[data-testid="tasky-count-in-review"]').innerText()) === "3");
+    await page.waitForTimeout(800);
+    check(
+      "automation updates the card priority to Urgent",
+      /Urgent/.test(await page.locator(`[data-testid="tasky-card-${mouseProbeId}"]`).innerText().catch(() => "")),
+    );
+    await page.click('[data-testid="tasky-view-mode-automations"]');
+    const automationRun = page.locator('[data-testid^="tasky-automation-run-"]').filter({ hasText: "Mouse drag probe" });
+    await automationRun.first().waitFor({ state: "visible", timeout: 10000 }).catch(() => undefined);
+    check("column move triggered an automation run", await automationRun.count() > 0);
+    await page.click(`[data-testid="tasky-automation-delete-${automationId}"]`);
+    await page.locator(`[data-testid="${automationTestId}"]`).waitFor({ state: "detached", timeout: 8000 });
+    await page.click('[data-testid="tasky-view-mode-board"]');
+    await page.click(`[data-testid="tasky-delete-${mouseProbeId}"]`);
+    await page.waitForTimeout(300);
+    check("mouse drag probe cleaned up", Number(await page.locator('[data-testid="tasky-count-backlog"]').innerText()) === backlogBeforeDrag);
 
     console.log("\n[5] Touch drag (pointerType touch) In Progress → Done");
-    const result = await touchDrag(page, "tasky-grip-c8", "done");
-    check("touch drag executed", result === "ok", String(result));
+    const inProgressBeforeDrag = Number(await page.locator('[data-testid="tasky-count-in-progress"]').innerText());
+    await page.click('[data-testid="tasky-add-in-progress"]');
+    await page.fill('[data-testid="tasky-add-input-in-progress"]', "Touch drag probe");
+    await page.click('[data-testid="tasky-add-confirm-in-progress"]');
+    const touchProbe = page.locator("article", { hasText: "Touch drag probe" }).first();
+    const touchProbeTid = await touchProbe.getAttribute("data-testid");
+    const touchProbeId = touchProbeTid?.replace("tasky-card-", "");
+    const touchResult = await touchDrag(page, `tasky-grip-${touchProbeId}`, "done");
+    check("touch drag executed", touchResult === "ok", String(touchResult));
     await page.waitForTimeout(400);
     check(
-      "c8 moved to done via touch",
-      (await page.locator('[data-testid="tasky-card-c8"]').getAttribute("data-column")) === "done",
+      "card moved to done via touch",
+      (await page.locator(`[data-testid="tasky-card-${touchProbeId}"]`).getAttribute("data-column")) === "done",
     );
+    await page.click(`[data-testid="tasky-delete-${touchProbeId}"]`);
+    await page.waitForTimeout(300);
+    check("touch drag probe cleaned up", Number(await page.locator('[data-testid="tasky-count-in-progress"]').innerText()) === inProgressBeforeDrag);
 
     console.log("\n[6] Add list appended right");
     await page.click('[data-testid="tasky-add-list"]');
-    await page.fill('[data-testid="tasky-add-list-input"]', "Watchlist");
+    await page.fill('[data-testid="tasky-add-list-input"]', "Watchlist probe");
     await page.click('[data-testid="tasky-add-list-confirm"]');
     await page.waitForTimeout(400);
-    const watchColumn = page.locator('[data-tasky-column="Watchlist"]');
-    check("Watchlist column exists", await watchColumn.isVisible().catch(() => false));
+    const watchColumn = page.locator('[data-tasky-column="Watchlist probe"]').last();
+    const watchColumnTestId = await watchColumn.getAttribute("data-testid");
+    const watchColumnId = watchColumnTestId?.replace("tasky-column-", "");
+    check("Watchlist probe column exists", await watchColumn.isVisible().catch(() => false));
     const watchX = await watchColumn.evaluate((el) => el.getBoundingClientRect().left);
     const doneX = await page.locator('[data-testid="tasky-column-done"]').evaluate((el) => el.getBoundingClientRect().left);
-    check("Watchlist sits right of Done", watchX > doneX, `${Math.round(watchX)}>${Math.round(doneX)}`);
+    check("Watchlist probe sits right of Done", watchX > doneX, `${Math.round(watchX)}>${Math.round(doneX)}`);
+
+    console.log("\n[6b] Rename, reorder and delete list");
+    await page.click('[data-testid="tasky-add-list"]');
+    await page.fill('[data-testid="tasky-add-list-input"]', "Probe list");
+    await page.click('[data-testid="tasky-add-list-confirm"]');
+    const probeList = page.locator('[data-tasky-column="Probe list"]');
+    const probeListTestId = await probeList.getAttribute("data-testid");
+    const probeListId = probeListTestId?.replace("tasky-column-", "");
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-rename-${probeListId}"]`);
+    await page.fill(`[data-testid="tasky-rename-list-input-${probeListId}"]`, "Probe renamed list");
+    await page.locator(`[data-testid="tasky-rename-list-form-${probeListId}"] button[type="submit"]`).click();
+    check("list can be renamed", await page.locator('[data-tasky-column="Probe renamed list"]').isVisible().catch(() => false));
+    const renamedList = page.locator(`[data-testid="tasky-column-${probeListId}"]`);
+    const beforeMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-left-${probeListId}"]`);
+    const afterMoveX = await renamedList.evaluate((el) => el.getBoundingClientRect().left);
+    check("list can move left", afterMoveX < beforeMoveX);
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-right-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-delete-${probeListId}"]`);
+    check("list deletion opens the branded confirmation dialog", await page.locator('[data-testid="tasky-list-delete-dialog"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-list-delete-cancel"]');
+    check("cancel keeps the list", await page.locator('[data-tasky-column="Probe renamed list"]').isVisible().catch(() => false));
+    await page.click(`[data-testid="tasky-list-menu-${probeListId}"]`);
+    await page.click(`[data-testid="tasky-list-delete-${probeListId}"]`);
+    await page.click('[data-testid="tasky-list-delete-confirm"]');
+    check("confirmed deletion removes the list", await page.locator('[data-tasky-column="Probe renamed list"]').count() === 0);
 
     console.log("\n[7] Persistence across reload");
     await page.reload({ waitUntil: "domcontentloaded" });
     await page.waitForTimeout(1500);
-    check("c1 still in in-review", (await page.locator('[data-testid="tasky-card-c1"]').getAttribute("data-column")) === "in-review");
-    check("Watchlist persisted", await page.locator('[data-tasky-column="Watchlist"]').isVisible().catch(() => false));
+    check("board is available after reload", await page.locator('[data-testid="tasky-board"]').isVisible().catch(() => false));
+    check("Watchlist probe persisted", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).isVisible().catch(() => false));
+    await page.click(`[data-testid="tasky-list-menu-${watchColumnId}"]`);
+    await page.click(`[data-testid="tasky-list-delete-${watchColumnId}"]`);
+    check("persisted list opens confirmation dialog", await page.locator('[data-testid="tasky-list-delete-dialog"]').isVisible().catch(() => false));
+    await page.click('[data-testid="tasky-list-delete-confirm"]');
+    check("test list cleaned up after persistence check", await page.locator(`[data-testid="tasky-column-${watchColumnId}"]`).count() === 0);
 
     console.log("\n[8] Mobile 390px");
     await page.setViewportSize({ width: 390, height: 844 });

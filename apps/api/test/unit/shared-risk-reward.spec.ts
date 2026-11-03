@@ -1,5 +1,5 @@
 /**
- * Unit — shared Risk/Reward expectancy engine (utils/risk-reward.ts): the
+ * Unit - shared Risk/Reward expectancy engine (utils/risk-reward.ts): the
  * frontend LIVE-ESTIMATE layer behind the TOOLS > Risk/Reward Calculator &
  * Win Rate Cheat Sheet. Pure math, no I/O. Covers the spec §13.1 test matrix
  * (Tests A–L) plus the edge cases introduced by the implementation.
@@ -19,14 +19,14 @@ import {
   RR_EXTRA_RATIOS,
 } from "../../../../packages/shared/src/utils/risk-reward";
 
-// ── Test A — risk amount (percent mode) ──────────────────────────────────────
+// ── Test A - risk amount (percent mode) ──────────────────────────────────────
 
 describe("risk amount", () => {
-  it("A — $1,000 balance at 2% risk → $20", () => {
+  it("A - $1,000 balance at 2% risk → $20", () => {
     expect(computeRiskPerTrade({ mode: "percent", balance: 1000, riskPercent: 2, fixedRiskAmount: 0 })).toBe(20);
   });
 
-  it("H — percent and fixed modes agree on the same monetary risk", () => {
+  it("H - percent and fixed modes agree on the same monetary risk", () => {
     const percent = computeRiskPerTrade({ mode: "percent", balance: 1000, riskPercent: 2, fixedRiskAmount: 0 });
     const fixed = computeRiskPerTrade({ mode: "fixed", balance: 1000, riskPercent: 0, fixedRiskAmount: 20 });
     expect(percent).toBe(20);
@@ -43,10 +43,10 @@ describe("risk amount", () => {
   });
 });
 
-// ── Test B — reward amount ───────────────────────────────────────────────────
+// ── Test B - reward amount ───────────────────────────────────────────────────
 
 describe("reward amount", () => {
-  it("B — $20 risk at reward multiple 3 → $60", () => {
+  it("B - $20 risk at reward multiple 3 → $60", () => {
     expect(computeRewardAmount(20, 3)).toBe(60);
   });
 
@@ -76,14 +76,14 @@ describe("reward multiple from amounts", () => {
   });
 });
 
-// ── Tests C & D — break-even threshold ───────────────────────────────────────
+// ── Tests C & D - break-even threshold ───────────────────────────────────────
 
 describe("break-even win rate", () => {
-  it("C — R = 1 → 50%", () => {
+  it("C - R = 1 → 50%", () => {
     expect(computeBreakEvenWinRate(1)).toBe(0.5);
   });
 
-  it("D — R = 3 → 25%", () => {
+  it("D - R = 3 → 25%", () => {
     expect(computeBreakEvenWinRate(3)).toBe(0.25);
   });
 
@@ -110,10 +110,10 @@ describe("percent of balance", () => {
   });
 });
 
-// ── Tests E–G — matrix cells ─────────────────────────────────────────────────
+// ── Tests E–G - matrix cells ─────────────────────────────────────────────────
 
-describe("expectancy — spec §13.1 matrix cells", () => {
-  it("E — losing cell: $20 risk, R=2, 20% over 100 trades → −$800 (LOSS)", () => {
+describe("expectancy - spec §13.1 matrix cells", () => {
+  it("E - losing cell: $20 risk, R=2, 20% over 100 trades → −$800 (LOSS)", () => {
     // NOTE (spec §13.1 Test E discrepancy): the spec states "Reward multiple: 2"
     // but its printed amounts ($1,200 gross / −$400 net) correspond to R=3.
     // The primary formula P = N×L×[pR − (1−p)] (spec §6) gives −$800 for R=2.
@@ -130,7 +130,7 @@ describe("expectancy — spec §13.1 matrix cells", () => {
     expect(cell!.outcome).toBe("loss");
   });
 
-  it("E' — the spec's literal −$400 vector (R=3): gross $1,200 − losses $1,600 (LOSS)", () => {
+  it("E' - the spec's literal −$400 vector (R=3): gross $1,200 − losses $1,600 (LOSS)", () => {
     const cell = computeExpectancy({ riskAmount: 20, rewardMultiple: 3, winRatePercent: 20, trades: 100 });
     expect(cell).not.toBeNull();
     expect(cell!.grossProfit).toBe(1200); // 20 × $60
@@ -139,7 +139,7 @@ describe("expectancy — spec §13.1 matrix cells", () => {
     expect(cell!.outcome).toBe("loss");
   });
 
-  it("F — break-even cell: $20 risk, R=1, 50% over 100 trades → $0 (BREAK EVEN)", () => {
+  it("F - break-even cell: $20 risk, R=1, 50% over 100 trades → $0 (BREAK EVEN)", () => {
     const cell = computeExpectancy({ riskAmount: 20, rewardMultiple: 1, winRatePercent: 50, trades: 100 });
     expect(cell).not.toBeNull();
     expect(cell!.grossProfit).toBe(1000);
@@ -149,7 +149,7 @@ describe("expectancy — spec §13.1 matrix cells", () => {
     expect(cell!.outcome).toBe("breakeven");
   });
 
-  it("G — profitable cell: $20 risk, R=3, 40% over 100 trades → +$1,200 (PROFIT)", () => {
+  it("G - profitable cell: $20 risk, R=3, 40% over 100 trades → +$1,200 (PROFIT)", () => {
     const cell = computeExpectancy({ riskAmount: 20, rewardMultiple: 3, winRatePercent: 40, trades: 100 });
     expect(cell).not.toBeNull();
     expect(cell!.grossProfit).toBe(2400); // 40 × $60
@@ -170,9 +170,9 @@ describe("expectancy — spec §13.1 matrix cells", () => {
   });
 });
 
-// ── Test I — invalid inputs ──────────────────────────────────────────────────
+// ── Test I - invalid inputs ──────────────────────────────────────────────────
 
-describe("expectancy — invalid inputs", () => {
+describe("expectancy - invalid inputs", () => {
   it("zero risk, invalid multiple, out-of-range win rate, bad trade counts → null", () => {
     expect(computeExpectancy({ riskAmount: 0, rewardMultiple: 2, winRatePercent: 50, trades: 100 })).toBeNull();
     expect(computeExpectancy({ riskAmount: 20, rewardMultiple: 0, winRatePercent: 50, trades: 100 })).toBeNull();
@@ -194,10 +194,10 @@ describe("expectancy — invalid inputs", () => {
   });
 });
 
-// ── Test J — fractional expected wins ────────────────────────────────────────
+// ── Test J - fractional expected wins ────────────────────────────────────────
 
-describe("expectancy — fractional expected wins", () => {
-  it("33.3% of 100 trades keeps 33.3 expected wins — NO premature rounding", () => {
+describe("expectancy - fractional expected wins", () => {
+  it("33.3% of 100 trades keeps 33.3 expected wins - NO premature rounding", () => {
     const cell = computeExpectancy({ riskAmount: 20, rewardMultiple: 2, winRatePercent: 33.3, trades: 100 });
     expect(cell).not.toBeNull();
     expect(cell!.wins).toBeCloseTo(33.3, 10);
@@ -211,15 +211,15 @@ describe("expectancy — fractional expected wins", () => {
     const cell = computeExpectancy({ riskAmount: 20, rewardMultiple: 1, winRatePercent: 100 * (7 / 12), trades: 12 });
     expect(cell).not.toBeNull();
     expect(cell!.wins).toBeCloseTo(7, 10);
-    // 7 winning × $20 − 5 losing × $20 = +$40 — above the 50% break-even at R=1.
+    // 7 winning × $20 − 5 losing × $20 = +$40 - above the 50% break-even at R=1.
     expect(cell!.net).toBeCloseTo(40, 9);
     expect(cell!.outcome).toBe("profit");
   });
 });
 
-// ── Test K — near-zero precision & classification ────────────────────────────
+// ── Test K - near-zero precision & classification ────────────────────────────
 
-describe("expectancy — near-zero classification", () => {
+describe("expectancy - near-zero classification", () => {
   it("theoretical break-even at R=3 / 25% over 100 trades classifies as BREAK EVEN despite float noise", () => {
     const cell = computeExpectancy({ riskAmount: 20, rewardMultiple: 3, winRatePercent: 25, trades: 100 });
     expect(cell).not.toBeNull();
@@ -237,9 +237,9 @@ describe("expectancy — near-zero classification", () => {
   });
 });
 
-// ── Test L — matrix completeness ─────────────────────────────────────────────
+// ── Test L - matrix completeness ─────────────────────────────────────────────
 
-describe("matrix builder — completeness", () => {
+describe("matrix builder - completeness", () => {
   it("every default row × column combination computes with the correct classification", () => {
     const matrix = buildRiskRewardMatrix({
       riskAmount: 20,
@@ -278,7 +278,7 @@ describe("matrix builder — completeness", () => {
     const matrix = buildRiskRewardMatrix({
       riskAmount: 20,
       trades: 100,
-      winRates: [150], // invalid column — must surface as null, not a fake cell
+      winRates: [150], // invalid column - must surface as null, not a fake cell
       rewardMultiples: [1],
     });
     expect(matrix[0]!.cells[0]!.expectancy).toBeNull();

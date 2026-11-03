@@ -1,7 +1,7 @@
 import type { Candle } from "@cosmoz/shared";
 
 /**
- * Oryon chart synchronization — pure time-alignment helpers (Phase 7 §8).
+ * Oryon chart synchronization - pure time-alignment helpers (Phase 7 §8).
  *
  * These functions carry the honest-alignment rules the sync engine enforces
  * across charts whose candles may differ in interval, session coverage or
@@ -10,7 +10,7 @@ import type { Candle } from "@cosmoz/shared";
  *  - visible-range comparison uses a small epsilon (same-second alignment,
  *    no float equality);
  *  - crosshair alignment is TIMESTAMP-based (never pixel positions) and
- *    snaps only onto a bar that actually CONTAINS the source time — a time
+ *    snaps only onto a bar that actually CONTAINS the source time - a time
  *    falling in a session gap (weekend, holiday) or outside the loaded span
  *    returns null, so the target chart never fabricates a candle or implies
  *    an exact match.
@@ -24,7 +24,7 @@ export interface SyncRange {
 
 /**
  * Range equality epsilon (seconds). Programmatic echoes and no-op updates
- * within one second of the applied range are ignored — cheap protection
+ * within one second of the applied range are ignored - cheap protection
  * against synchronization ping-pong without blocking real user pans.
  */
 export const RANGE_EPSILON_SEC = 1;
@@ -39,7 +39,7 @@ export function rangesEqual(a: SyncRange, b: SyncRange): boolean {
 /**
  * Finds the candle that CONTAINS `timeSec` (a bar whose [t, t+interval)
  * bucket covers the time). Returns null when the time falls between bars
- * (session gap), before the first bar, or past the last bar's bucket —
+ * (session gap), before the first bar, or past the last bar's bucket -
  * the honest "this chart cannot represent that timestamp" answer.
  * `candles` MUST be sorted by `t` ascending (the engine's invariant).
  */
@@ -64,7 +64,7 @@ export function findBarContainingTime(
   const bar = candles[lo]!;
   // Containment: the time must fall inside the bar's own bucket. A time
   // sitting in a multi-bar gap resolves to an earlier bar that does NOT
-  // contain it — rejected (never snapped onto an unrelated candle).
+  // contain it - rejected (never snapped onto an unrelated candle).
   if (ms >= bar.t + intervalMs) return null;
   return bar;
 }
@@ -73,7 +73,7 @@ export function findBarContainingTime(
  * How long a programmatic apply's echo-suppression window stays valid.
  * Lightweight Charts fires change listeners synchronously inside apply
  * calls; the window exists only as a belt-and-braces guard against
- * unexpected async emission — short enough that a real user interaction
+ * unexpected async emission - short enough that a real user interaction
  * (≥ a frame later) always propagates.
  */
 export const ECHO_SUPPRESSION_MS = 150;

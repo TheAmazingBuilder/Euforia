@@ -14,7 +14,7 @@ const PLAN = {
     "function AccountStatusScreen({ status }: { status: \"SUSPENDED\" | \"DEACTIVATED\" }) {",
     "export function AuthGate({ children }: { children: React.ReactNode }) {",
   ],
-  "auth-layout.tsx": null, // insert after first "export function AuthLayout(" line (multi-line signature) — handled specially
+  "auth-layout.tsx": null, // insert after first "export function AuthLayout(" line (multi-line signature) - handled specially
   "forgot-password-form.tsx": ["export function ForgotPasswordForm() {"],
   "login-form.tsx": ["export function LoginForm() {"],
   "register-form.tsx": ["export function RegisterForm() {"],
@@ -35,7 +35,7 @@ for (const [file, hooks] of Object.entries(PLAN)) {
   );
   src = src.split("authCopy.").join("auth.");
   if (hooks === null) {
-    // AuthLayout: multi-line signature — insert after the `) {` that closes it.
+    // AuthLayout: multi-line signature - insert after the `) {` that closes it.
     const marker = src.indexOf("export function AuthLayout(");
     const open = src.indexOf(") {", marker);
     const insertAt = open + ") {".length;

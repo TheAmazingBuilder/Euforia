@@ -10,16 +10,15 @@ import { EuforiaLogo } from "@/components/brand/euforia-logo";
 import { useAuth } from "@/components/auth/auth-provider";
 import { useResendVerificationMutation } from "@/lib/api/queries/auth";
 import { apiErrorCode } from "@/lib/api/client";
-import { API_MOCKED } from "@/lib/api/mode";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
- * Centralized protected-route mechanism (spec §34, §36, §7) — applied ONCE
+ * Centralized protected-route mechanism (spec §34, §36, §7) - applied ONCE
  * at the (app) layout, never per page. Handles the full state machine:
  * initializing (splash), unauthenticated (redirect with returnTo), and the
  * account-status gates (PENDING_VERIFICATION / SUSPENDED / DEACTIVATED).
  *
- * This is UX protection only — the backend remains the security boundary
+ * This is UX protection only - the backend remains the security boundary
  * (§32): hiding a page never equals enforcing authorization.
  */
 
@@ -48,8 +47,6 @@ function VerificationRequiredScreen() {
   const resend = useResendVerificationMutation();
   const [resent, setResent] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-
-  const mocked = API_MOCKED;
 
   function requestNew() {
     if (!user?.email) return;
@@ -83,12 +80,6 @@ function VerificationRequiredScreen() {
               )}
             </p>
           </div>
-
-          {mocked ? (
-            <Button asChild variant="outline" className="w-full" data-testid="gate-open-verification">
-              <Link href="/verify-email">{auth.gate.verificationMockOpen}</Link>
-            </Button>
-          ) : null}
 
           {resent ? (
             <p

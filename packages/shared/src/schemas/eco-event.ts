@@ -3,7 +3,7 @@ import { impactSchema } from "../enums";
 import { isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * EcoEvent — economic-calendar entry (Priorité 3, feature 10). A scheduled
+ * EcoEvent - economic-calendar entry (Priorité 3, feature 10). A scheduled
  * macro release that can move the instruments the trader plays (FX, gold,
  * indices). Times are ISO UTC; the UI renders them in the user timezone.
  * `actual` stays null until the release happens (mock: past events filled).
@@ -11,11 +11,11 @@ import { isoDateTimeSchema, uuidSchema } from "./primitives";
 export const ecoEventSchema = z.object({
   id: uuidSchema,
   title: z.string().min(1),
-  /** Currency most affected — ISO 4217 code (USD, EUR, GBP, CAD...). */
+  /** Currency most affected - ISO 4217 code (USD, EUR, GBP, CAD...). */
   currency: z.string().length(3),
   impact: impactSchema,
   scheduledAt: isoDateTimeSchema,
-  /** Released value — null = not yet released. */
+  /** Released value - null = not yet released. */
   actual: z.string().nullable(),
   forecast: z.string().nullable(),
   previous: z.string().nullable(),

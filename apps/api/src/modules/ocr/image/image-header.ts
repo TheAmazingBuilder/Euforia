@@ -1,15 +1,15 @@
 /**
- * Image header parsing (Phase 19 §7/§8) — PURE functions.
+ * Image header parsing (Phase 19 §7/§8) - PURE functions.
  *
  * The client-declared MIME type, filename and extension are NEVER trusted
  * (§7): the format is determined from MAGIC BYTES only, and the dimensions
  * are read straight from the binary structure. Supported formats are exactly
- * the ones the product speaks (§8): PNG, JPEG, WEBP — the same set the
+ * the ones the product speaks (§8): PNG, JPEG, WEBP - the same set the
  * frontend screenshot contract accepts via `image/*` and the FastAPI sidecar
  * validates with Pillow.
  *
  * Header parsing is deliberately dependency-free: no native image library in
- * the API runtime, no decode — verification of decodability/pixel safety
+ * the API runtime, no decode - verification of decodability/pixel safety
  * beyond the header is the SIDE CAR's job (Pillow) plus the pixel-count
  * guard here, which is sufficient to reject decompression bombs cheaply
  * (§38) at the API boundary.
@@ -22,7 +22,7 @@ export interface ImageDimensions {
   height: number;
 }
 
-/** Magic-byte sniffing — returns null for anything the product does not speak.
+/** Magic-byte sniffing - returns null for anything the product does not speak.
  *  PDF statements (engine quality §4.3) are recognized by the %PDF- magic. */
 export function sniffImageMime(bytes: Buffer): SupportedImageMime | null {
   if (bytes.length < 12) return null;
@@ -44,7 +44,7 @@ export function sniffImageMime(bytes: Buffer): SupportedImageMime | null {
   ) {
     return "image/webp";
   }
-  // PDF statement: %PDF- (pages carry no intrinsic pixel size — the sidecar
+  // PDF statement: %PDF- (pages carry no intrinsic pixel size - the sidecar
   // reports the rendered first-page dimensions in the engine metadata).
   if (bytes.toString("latin1", 0, 5) === "%PDF-") {
     return "application/pdf";
@@ -54,7 +54,7 @@ export function sniffImageMime(bytes: Buffer): SupportedImageMime | null {
 
 /**
  * Read pixel dimensions from the binary structure.
- * Returns null when the header is malformed / truncated — the caller treats
+ * Returns null when the header is malformed / truncated - the caller treats
  * that as INVALID_IMAGE (malformed image detection, §7).
  */
 export function parseImageDimensions(bytes: Buffer, mime: SupportedImageMime): ImageDimensions | null {
@@ -66,7 +66,7 @@ export function parseImageDimensions(bytes: Buffer, mime: SupportedImageMime): I
     case "image/webp":
       return parseWebpDimensions(bytes);
     case "application/pdf":
-      // Statements carry no intrinsic pixel size — the sidecar reports the
+      // Statements carry no intrinsic pixel size - the sidecar reports the
       // rendered first-page dimensions (engine quality §4.3).
       return null;
   }

@@ -1,5 +1,5 @@
 /**
- * Unit — Analytics suite engine (Phase 8): the pure aggregation over a
+ * Unit - Analytics suite engine (Phase 8): the pure aggregation over a
  * synthetic normalized dataset. Every assertion pins ONE documented rule of
  * the shared contract (honest nulls, canonical ordering, deterministic
  * Monte Carlo, anomaly thresholds) so regressions change the chart, not the
@@ -117,7 +117,7 @@ describe("summary block", () => {
     expect(suite.summary.winRate).toBe("0.5");
     expect(suite.summary.lossRate).toBe("0.25");
     expect(suite.summary.profitFactor).toBe("2");
-    // expectancyR = mean(2.5, −2, 0, 1.5) = 0.5 — always emitted
+    // expectancyR = mean(2.5, −2, 0, 1.5) = 0.5 - always emitted
     expect(suite.summary.expectancyR).toBe("0.5");
     expect(suite.summary.expectancyMoney).toBe("100");
     expect(suite.summary.avgWinR).toBe("2");
@@ -130,7 +130,7 @@ describe("summary block", () => {
     expect(suite.summary.sortinoNote).toContain("downside");
   });
 
-  it("returns null profit factor when gross loss is 0 — never Infinity (§11)", () => {
+  it("returns null profit factor when gross loss is 0 - never Infinity (§11)", () => {
     const winsOnly = baseDataset().filter((t) => t.pnlNet >= 0);
     const suite = computeAnalyticsSuite(env(winsOnly), ALL, 400);
     expect(suite.summary.grossLoss).toBe("0");
@@ -188,7 +188,7 @@ describe("dataset meta", () => {
     expect(suite.summary.profitFactor).toBeNull();
     expect(suite.equity).toEqual([]);
     expect(suite.summary.maxDrawdownPct).toBeNull();
-    // R-based aggregates stay meaningful — R is currency-free.
+    // R-based aggregates stay meaningful - R is currency-free.
     expect(suite.summary.expectancyR).toBe("0.2");
     expect(suite.cumulativeR).toHaveLength(5);
   });
@@ -338,7 +338,7 @@ describe("drawdown periods (§11)", () => {
     expect(dd.recoveryTrades).toBe(4);
     expect(dd.recoveryDays).toBe(3);
     expect(dd.durationDays).toBe(1); // ddStart (03-03) → trough (03-04)
-    // The recovery trade itself moves above the peak (continue) — it is not a digger.
+    // The recovery trade itself moves above the peak (continue) - it is not a digger.
     expect(dd.trades.map((t) => t.id)).toEqual(["t2", "t3", "t4"]);
   });
 
@@ -596,14 +596,14 @@ describe("reports (§26)", () => {
   });
 });
 
-describe("server-detected anomalies (§24/§49 — measured facts, never verdicts)", () => {
+describe("server-detected anomalies (§24/§49 - measured facts, never verdicts)", () => {
   it("stays silent below a 10-trade sample", () => {
     const suite = computeAnalyticsSuite(env(baseDataset()), ALL, 400);
     expect(suite.meta.anomalies).toEqual([]);
   });
 
   it("raises LOSS_STREAK at 5 consecutive losses (INFO) and ALERT at 8+", () => {
-    // February losses — strictly consecutive, never interleaved with the March dataset.
+    // February losses - strictly consecutive, never interleaved with the March dataset.
     const losses = (n: number) =>
       Array.from({ length: n }, (_, i) =>
         trade({ id: `l${i}`, pnlNet: -50, rMultiple: -0.5, tradingDate: `2026-02-${String(20 + i).padStart(2, "0")}`, symbol: "LOSSMAKER" }),

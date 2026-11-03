@@ -1,5 +1,5 @@
 /**
- * Phase C — LIVE BRIDGE smoke test.
+ * Phase C - LIVE BRIDGE smoke test.
  *
  * Runs the REAL UI against the REAL NestJS API through the same-origin
  * proxy (/api/v1 → http://localhost:4000). No MSW: the build under test was
@@ -11,10 +11,10 @@
  *   2. Pull the verification token from the API structured log (dev mail
  *      transport) and confirm the email through /verify-email?token=…
  *   3. Log in through the UI
- *   4. Walk every authenticated route (15) — assert each renders a heading
+ *   4. Walk every authenticated route (15) - assert each renders a heading
  *      with zero 4xx/5xx on /api/v1 and zero page errors
- *   5. Write through the UI on three domains — discipline rule create,
- *      OCR upload+analyze, nofy note create — then RELOAD to prove the
+ *   5. Write through the UI on three domains - discipline rule create,
+ *      OCR upload+analyze, nofy note create - then RELOAD to prove the
  *      data came from PostgreSQL persistence, not client state
  *   6. Assert the traffic actually hit /api/v1 (live proof, not mock)
  *
@@ -30,8 +30,8 @@ const NAME = "Live Smoke";
 const API_LOG = "/tmp/cosmoz-api.log";
 
 const results = [];
-function ok(label, detail) { results.push({ label, pass: true, detail }); console.log(`  ✓ ${label}${detail ? " — " + detail : ""}`); }
-function fail(label, detail) { results.push({ label, pass: false, detail }); console.log(`  ✗ FAIL ${label}${detail ? " — " + detail : ""}`); }
+function ok(label, detail) { results.push({ label, pass: true, detail }); console.log(`  ✓ ${label}${detail ? " - " + detail : ""}`); }
+function fail(label, detail) { results.push({ label, pass: false, detail }); console.log(`  ✗ FAIL ${label}${detail ? " - " + detail : ""}`); }
 
 (async () => {
   const browser = await chromium.launch();
@@ -46,7 +46,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
     const url = r.url();
     if (url.includes("/api/v1/")) {
       apiV1Hits++;
-      // 401 on /auth/me is the DESIGNED refresh trigger (§9/§56 — not exempt)
+      // 401 on /auth/me is the DESIGNED refresh trigger (§9/§56 - not exempt)
       // and a 401 on /auth/refresh is the normal "no session yet" boot state
       // before login. Everything else ≥400 on /api/v1 is a real problem.
       const isAuthLifecycle =
@@ -87,7 +87,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
     } catch { /* log not flushed yet */ }
   }
   if (!token) {
-    fail("verification token from API log", "no verify-email token found — cannot continue");
+    fail("verification token from API log", "no verify-email token found - cannot continue");
     await browser.close();
     process.exit(1);
   }
@@ -106,7 +106,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
   await page.waitForTimeout(3500);
   const loggedIn = !page.url().includes("/login");
   if (loggedIn) ok("login → redirect", page.url().replace(BASE, "") || "/");
-  else fail("login", "still on /login — check EMAIL_NOT_VERIFIED gate");
+  else fail("login", "still on /login - check EMAIL_NOT_VERIFIED gate");
 
   // ── 4. Walk every authenticated route ─────────────────────────────────────
   console.log("\n[4] Domain walk (all authenticated routes, live API)");
@@ -120,7 +120,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
     await page.goto(`${BASE}${route}`, { waitUntil: "networkidle", timeout: 60000 });
     await page.waitForTimeout(1200);
     const h1 = await page.locator("h1").first().textContent().catch(() => null);
-    // "Sign in to Euforia" = the auth gate — the route did NOT render. This is
+    // "Sign in to Euforia" = the auth gate - the route did NOT render. This is
     // exactly the symptom of a broken boot refresh (mock↔API drift).
     const rendered = h1 && h1.trim().length > 0 && !/sign in/i.test(h1);
     const noNewErrors = pageErrors.length === before;
@@ -147,7 +147,7 @@ function fail(label, detail) { results.push({ label, pass: false, detail }); con
     .locator('section[aria-label="Discipline rules"] h3')
     .count();
   if (persistedAfterReload > 0) ok("rule survives reload (server-persisted)");
-  else fail("rule survives reload", "rules section empty after reload — client-only state?");
+  else fail("rule survives reload", "rules section empty after reload - client-only state?");
 
   console.log("\n[6] Write-through: OCR recognition upload + analyze");
   await page.goto(`${BASE}/recognition`, { waitUntil: "networkidle", timeout: 60000 });

@@ -26,17 +26,17 @@ import { useDict } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon temporal-context bridges (Phase 8 spec §5, §8, §11) — the ONLY
+ * Oryon temporal-context bridges (Phase 8 spec §5, §8, §11) - the ONLY
  * components connecting the workspace to the session/event engines.
  *
  * Render discipline (mirrors the position/alert bridges): both bridges
  * render null and push PURE SPEC into the engine imperatively on rare
  * commits (instrument class, timeframe, loaded window, preference,
- * calendar refetch) — the workspace tree never re-renders for a shading
+ * calendar refetch) - the workspace tree never re-renders for a shading
  * toggle or a marker set, and the chart is never reinitialized (§14).
  *
  * Data reuse (§11): the economic-event query is the app's SHARED
- * useEcoEvents (one TanStack cache entry for every panel) — no per-chart
+ * useEcoEvents (one TanStack cache entry for every panel) - no per-chart
  * event stream exists. Session intervals come from the pure engine with
  * its per-day cache (§14: reuse of derived intervals).
  *
@@ -44,7 +44,7 @@ import { cn } from "@/lib/utils";
  * (containment, never fabricated positions) and only for events within
  * the loaded candle span; importance below the panel's threshold never
  * becomes a marker; a 1D chart shows no shading (a day candle cannot
- * carry an intraday band — the context panel still reports session
+ * carry an intraday band - the context panel still reports session
  * status; documented in the phase report).
  */
 
@@ -56,7 +56,7 @@ function markerColor(impact: EcoEvent["impact"]): string {
   return theme.textMuted;
 }
 
-/** Importance → marker size — importance is never color-only (§15). */
+/** Importance → marker size - importance is never color-only (§15). */
 function markerSize(impact: EcoEvent["impact"]): number {
   if (impact === "HIGH") return 1.8;
   if (impact === "MEDIUM") return 1.3;
@@ -73,7 +73,7 @@ export function OryonContextOverlaysBridge({
 }: {
   engineRef: React.RefObject<OryonChartEngine | null>;
   mounted: boolean;
-  /** Symbol of the data ACTUALLY displayed — overlays follow the data. */
+  /** Symbol of the data ACTUALLY displayed - overlays follow the data. */
   dataSymbol: string;
   interval: MarketInterval;
   candles: Candle[];
@@ -81,14 +81,14 @@ export function OryonContextOverlaysBridge({
 }) {
   // The displayed instrument's asset class decides which session
   // definitions apply (spec §4.1 scope). Resolved through the SHARED
-  // catalog query — one cache entry for the whole workspace.
+  // catalog query - one cache entry for the whole workspace.
   const instruments = useInstruments();
   const assetClass: AssetClass | null =
     instruments.data?.instruments.find((instrument) => instrument.symbol === dataSymbol)?.assetClass ?? null;
 
   const intervalMs = intervalToMs(interval);
 
-  // Session bands — rare commits only (span/prefs/class/timeframe).
+  // Session bands - rare commits only (span/prefs/class/timeframe).
   React.useEffect(() => {
     if (!mounted) return;
     const engine = engineRef.current;
@@ -109,7 +109,7 @@ export function OryonContextOverlaysBridge({
     engine.setSessionBands(computeSessionBands(defs, first, last + intervalMs));
   }, [mounted, context.sessionShading, assetClass, interval, candles, intervalMs, engineRef]);
 
-  // Event markers — shared calendar data, bar-snapped, threshold-filtered.
+  // Event markers - shared calendar data, bar-snapped, threshold-filtered.
   const eco = useEcoEvents();
   const events = React.useMemo(
     () => dedupeEventsById(eco.data?.events ?? []),
@@ -133,7 +133,7 @@ export function OryonContextOverlaysBridge({
       const atMs = new Date(event.scheduledAt).getTime();
       if (!Number.isFinite(atMs)) continue;
       // Containment: the marker lands on the bar CONTAINING the event
-      // instant — never a fabricated position between bars (§8).
+      // instant - never a fabricated position between bars (§8).
       const bar = findBarContainingTime(candles, atMs / 1000, intervalMs);
       if (bar === null) continue;
       specs.push({
@@ -152,9 +152,9 @@ export function OryonContextOverlaysBridge({
 /**
  * Marker detail popover (§8): opens on a marker click, lists EVERY event
  * scheduled inside the clicked bar's bucket (multiple releases at the
- * same slot stack in one card — no overlapping labels), and shows only
+ * same slot stack in one card - no overlapping labels), and shows only
  * what the source actually provides. Missing actual/forecast/previous
- * values render as honest "—" placeholders, never zeros (§6.1).
+ * values render as honest "-" placeholders, never zeros (§6.1).
  */
 export function OryonEventPopover({
   engineRef,
@@ -180,7 +180,7 @@ export function OryonEventPopover({
 
   /** Open state: clicked bar time + anchor point (chart-local CSS px) + the
    *  display-window key it was opened on. A symbol/timeframe switch changes
-   *  the key — the stale popover renders closed WITHOUT an effect-driven
+   *  the key - the stale popover renders closed WITHOUT an effect-driven
    *  setState (purity discipline: derived invalidation, not a reset effect). */
   const [open, setOpen] = React.useState<{
     key: string;
@@ -210,7 +210,7 @@ export function OryonEventPopover({
   }, [open]);
 
   // A popover opened on a previous display window (symbol/timeframe switch,
-  // data reload) is invalid — render closed, never float over foreign data.
+  // data reload) is invalid - render closed, never float over foreign data.
   const effectiveOpen = open !== null && open.key === windowKey ? open : null;
 
   const intervalMs = intervalToMs(interval);
@@ -227,7 +227,7 @@ export function OryonEventPopover({
 
   if (effectiveOpen === null || candles.length === 0) return null;
 
-  // Clamp the card inside the wrapper — never off-panel, never over the
+  // Clamp the card inside the wrapper - never off-panel, never over the
   // whole chart (§15 "tooltips or detail views that do not obscure the
   // entire chart").
   const CARD_WIDTH = 260;
@@ -298,7 +298,7 @@ export function OryonEventPopover({
                     <div key={label} className="rounded-sm bg-surface-raised px-1.5 py-1">
                       <dt className="text-[9px] uppercase tracking-wide text-muted-foreground">{label}</dt>
                       <dd className="tabular-nums text-foreground" data-testid={`oryon-event-${label.toLowerCase()}`}>
-                        {value ?? "—"}
+                        {value ?? "-"}
                       </dd>
                     </div>
                   ))}

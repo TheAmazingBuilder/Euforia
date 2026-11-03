@@ -3,51 +3,51 @@ import type { Candle } from "@cosmoz/shared";
 import { normalizeCandles, type OryonPivot } from "./pivots";
 
 /**
- * Oryon structure-break engine (Phase 9 spec §4.4) — BOS / CHoCH.
+ * Oryon structure-break engine (Phase 9 spec §4.4) - BOS / CHoCH.
  *
  * EXACT ALGORITHM (defined BEFORE the visual layer, spec §4.4):
  *
- * 1. INPUT — CONFIRMED pivots only (provisional candidates never break
+ * 1. INPUT - CONFIRMED pivots only (provisional candidates never break
  *    anything) plus the candle window. Pivots must carry their candle
  *    index; the simulation walks CANDLE indexes, never timestamps, so
  *    session gaps cannot distort causality.
  *
- * 2. STATE — `trend: "bullish" | "bearish" | null` (starts null — no
+ * 2. STATE - `trend: "bullish" | "bearish" | null` (starts null - no
  *    structure exists before the first break) and one ACTIVE level per
  *    kind: the most recent confirmed swing high / low whose confirmation
  *    bar has closed. When a newer pivot of the same kind confirms BEFORE
  *    the older one was broken, the newer level REPLACES it (the most
  *    recent swing is the relevant structure level; the replaced level is
- *    consumed and can never fire later — no stale breaks).
+ *    consumed and can never fire later - no stale breaks).
  *
- * 3. CAUSALITY — a pivot at index p becomes usable at candle j only when
+ * 3. CAUSALITY - a pivot at index p becomes usable at candle j only when
  *    p + rightBars ≤ j (its confirmation window closed at or before j).
  *    No future candle leaks into any decision (spec §4.4).
  *
- * 4. BREAK RULE — strict comparison against the ACTIVE level:
+ * 4. BREAK RULE - strict comparison against the ACTIVE level:
  *      mode "close": close[j] > level (high) / close[j] < level (low)
  *      mode "wick":  high[j]  > level (high) / low[j]   < level (low)
  *    An EQUAL touch (high[j] === level) is NOT a break. A gap over the
- *    level IS a break (the same comparison catches it — no special case).
+ *    level IS a break (the same comparison catches it - no special case).
  *    For a confirmed swing high, no candle inside its own right window can
  *    break it (the pivot condition is strictly greater), so the earliest
  *    possible break is strictly after the confirmation bar.
  *
- * 5. EVENT — on a high break: the event is BOS when `trend` was already
+ * 5. EVENT - on a high break: the event is BOS when `trend` was already
  *    "bullish", CHoCH otherwise (including the very first break of a null
- *    trend — the character changes from "no structure" to bullish); trend
+ *    trend - the character changes from "no structure" to bullish); trend
  *    becomes bullish. Low breaks mirror to bearish. The broken level is
- *    consumed immediately — the same level can NEVER fire twice (§4.4).
+ *    consumed immediately - the same level can NEVER fire twice (§4.4).
  *    If one candle breaks both the active high and the active low, the
  *    HIGH is evaluated first (deterministic tie-break; documented).
  *
- * 6. IDENTITY — `id = type + pivotId + break-bar open time`, derived from
+ * 6. IDENTITY - `id = type + pivotId + break-bar open time`, derived from
  *    the source candles and the rule configuration; stable across
  *    recomputations of the same window (spec §4.4).
  *
  * Honest limits (spec §4.4): this classifies HISTORICAL structure breaks.
  * It predicts nothing, and a viewport/timeframe change can never mark a
- * level broken — only a candle can.
+ * level broken - only a candle can.
  */
 
 export type OryonBreakMode = "close" | "wick";
@@ -64,7 +64,7 @@ export interface OryonBreakEvent {
   readonly pivotId: string;
   /** The broken level (the pivot price). */
   readonly level: number;
-  /** Break candle index + open time (unix seconds) — chart anchor. */
+  /** Break candle index + open time (unix seconds) - chart anchor. */
   readonly index: number;
   readonly timeSec: number;
 }

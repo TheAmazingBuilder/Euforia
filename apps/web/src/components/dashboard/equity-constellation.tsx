@@ -12,13 +12,13 @@ import { getChartTheme } from "@/lib/utils/chart-theme";
 import { withAlpha } from "@/lib/utils/color";
 
 /**
- * The Euforia signature visual: the equity curve as a plotted record — a thin
+ * The Euforia signature visual: the equity curve as a plotted record - a thin
  * ink line on ruled chart paper, trading days marked with the four-point star
  * motif of the Euforia mark, a faint fill under the curve and translucent
  * loss-ink drawdown zones. Quiet, exact, never kitsch (design-tokens.md §1).
  */
 
-/** Four-point sparkle — the same motif as the Euforia constellation logo. */
+/** Four-point sparkle - the same motif as the Euforia constellation logo. */
 const STAR_SYMBOL =
   "path://M8 0C8.75 4.6 11.4 7.25 16 8C11.4 8.75 8.75 11.4 8 16C7.25 11.4 4.6 8.75 0 8C4.6 7.25 7.25 4.6 8 0Z";
 
@@ -56,7 +56,7 @@ export function EquityConstellation({ points, currency }: EquityConstellationPro
     const yData = points.map((point) => Number(point.equity));
 
     // Drawdown zones: contiguous spans below the running peak (display-only
-    // geometry for the markArea shading — stats themselves stay server-side).
+    // geometry for the markArea shading - stats themselves stay server-side).
     const markAreas: Array<[{ xAxis: string }, { xAxis: string }]> = [];
     let runningPeak = yData.length > 0 ? yData[0]! : 0;
     let zoneStart: string | null = null;
@@ -188,7 +188,7 @@ export function EquityConstellation({ points, currency }: EquityConstellationPro
         },
       ],
     };
-    // Rebuild with fresh tokens on theme switch (design-tokens.md §8) —
+    // Rebuild with fresh tokens on theme switch (design-tokens.md §8) -
     // resolvedTheme is an intentional dependency.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [points, currency, resolvedTheme]);

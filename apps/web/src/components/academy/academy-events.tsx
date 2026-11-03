@@ -13,7 +13,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
 
 /**
- * Academy Events — the live-session calendar: workshops, webinars, open
+ * Academy Events - the live-session calendar: workshops, webinars, open
  * Q&A and certification windows. Upcoming cards carry a seat gauge and a
  * one-tap register/leave toggle; past sessions expose the replay chip.
  */
@@ -168,7 +168,7 @@ function EventCard({
   );
 }
 
-/** Module-scope "now" — one snapshot per mount of the panel (mock realism). */
+/** Module-scope "now" - one snapshot per mount of the panel (mock realism). */
 const NOW = new Date();
 
 export function AcademyEventsPanel() {

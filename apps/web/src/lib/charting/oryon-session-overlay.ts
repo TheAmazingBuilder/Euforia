@@ -13,17 +13,17 @@ import type { OryonDrawingConversions } from "./oryon-chart-engine";
 import { getThemeToken } from "@/lib/utils/theme";
 
 /**
- * Oryon session-overlay primitive (Phase 8 spec §5) — the rendering half of
+ * Oryon session-overlay primitive (Phase 8 spec §5) - the rendering half of
  * the session visualization.
  *
  * WHY a series primitive (same argument as the drawing primitive, audit-
  * verified against the installed 5.2.1 typings): LWC calls updateAllViews()
  * + the pane renderer before EVERY internal repaint (pan, zoom, autoscale,
- * autoSize resize, data updates, live ticks) — session shading cannot drift
+ * autoSize resize, data updates, live ticks) - session shading cannot drift
  * from the candles because the library's own paint loop projects it.
  *
  * WHY zOrder "bottom": the typings expose PrimitivePaneViewZOrder = "bottom"
- * | "normal" | "top"; "bottom" renders BEHIND the series — translucent
+ * | "normal" | "top"; "bottom" renders BEHIND the series - translucent
  * session bands sit under the candles (spec §5: "subtle vertical session-
  * background shading", "do not use large opaque rectangles that obscure
  * price action"). Fill alpha ≈ 0.07, a hairline at each band start, and a
@@ -33,14 +33,14 @@ import { getThemeToken } from "@/lib/utils/theme";
  * UTC seconds through the engine's conversion facade (§14).
  */
 
-/** Resolved color lookup — cleared on theme re-apply (engine applyTheme). */
+/** Resolved color lookup - cleared on theme re-apply (engine applyTheme). */
 export type SessionColorResolver = (tokenKey: string) => string;
 
 export interface OryonSessionBandSpec {
   readonly sessionId: string;
   readonly startSec: number;
   readonly endSec: number;
-  /** Theme token KEY — resolved at draw time, never a stored hex. */
+  /** Theme token KEY - resolved at draw time, never a stored hex. */
   readonly colorToken: string;
   readonly label: string;
 }
@@ -79,18 +79,18 @@ class OryonSessionPaneRenderer implements IPrimitivePaneRenderer {
         const width = right - left;
         if (width < 1) continue;
 
-        // Subtle background fill — translucent by construction (§5).
+        // Subtle background fill - translucent by construction (§5).
         const base = this.color(band.colorToken);
         if (base !== "") {
           context.globalAlpha = 0.07;
           context.fillStyle = base;
           context.fillRect(left, 0, width, height);
           context.globalAlpha = 0.22;
-          // Session START marker — a hairline on the band's left edge.
+          // Session START marker - a hairline on the band's left edge.
           context.fillRect(left, 0, Math.max(1, hp), height);
         }
 
-        // Compact label — only when the band holds one without crowding
+        // Compact label - only when the band holds one without crowding
         // (§5 "compact session labels", §15 readability). Text sits on the
         // band's own fill, never over neighbouring candles.
         if (width > labelSize * band.label.length * 0.75 + 12 * hp) {
@@ -117,7 +117,7 @@ export interface SessionOverlayDeps {
 class OryonSessionPaneView implements IPrimitivePaneView {
   constructor(private readonly deps: SessionOverlayDeps) {}
 
-  /** BEHIND the series — the documented background layer (§5). */
+  /** BEHIND the series - the documented background layer (§5). */
   zOrder(): "bottom" {
     return "bottom";
   }
@@ -138,7 +138,7 @@ class OryonSessionPaneView implements IPrimitivePaneView {
 }
 
 /**
- * The attachable primitive. Bands are read through deps at paint time —
+ * The attachable primitive. Bands are read through deps at paint time -
  * setBands() mutates the source array holder and requests a redraw, so a
  * visibility toggle NEVER recreates the chart (spec §5/§14).
  */
@@ -155,7 +155,7 @@ export class OryonSessionOverlayPrimitive implements ISeriesPrimitive<UTCTimesta
   }
 
   updateAllViews(): void {
-    // State is read live in the renderer — nothing to precompute.
+    // State is read live in the renderer - nothing to precompute.
   }
 
   paneViews(): readonly IPrimitivePaneView[] {
@@ -178,7 +178,7 @@ export class OryonSessionOverlayPrimitive implements ISeriesPrimitive<UTCTimesta
 }
 
 /**
- * Engine-facing manager — owns the attach lifecycle so the engine file
+ * Engine-facing manager - owns the attach lifecycle so the engine file
  * stays a thin boundary (mirrors the position/alert overlay managers).
  */
 export class OryonSessionOverlayManager {
@@ -197,7 +197,7 @@ export class OryonSessionOverlayManager {
     return this.bands.length;
   }
 
-  /** (Re)attaches to the given series — no-op when already attached there. */
+  /** (Re)attaches to the given series - no-op when already attached there. */
   attach(series: ISeriesApi<"Candlestick"> | ISeriesApi<"Line">): void {
     if (this.series === series) return;
     this.detach();
@@ -225,7 +225,7 @@ export class OryonSessionOverlayManager {
     try {
       series.detachPrimitive(primitive as unknown as Parameters<ISeriesApi<"Candlestick">["detachPrimitive"]>[0]);
     } catch {
-      // Never attached / already gone — nothing to clean.
+      // Never attached / already gone - nothing to clean.
     }
   }
 
@@ -235,7 +235,7 @@ export class OryonSessionOverlayManager {
   }
 }
 
-/** Theme token resolution with a small cache — cleared on re-apply. */
+/** Theme token resolution with a small cache - cleared on re-apply. */
 export function createSessionColorResolver(): {
   resolve: SessionColorResolver;
   invalidate: () => void;

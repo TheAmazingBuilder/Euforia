@@ -3,7 +3,7 @@ import { alertTypeSchema, severitySchema } from "../enums";
 import { isoDateTimeSchema, jsonValueSchema, uuidSchema } from "./primitives";
 
 /**
- * Alert — data-model.md "Domaine 7". Produced by the discipline engine
+ * Alert - data-model.md "Domaine 7". Produced by the discipline engine
  * (rule violations, tilt warnings, risk budget, streaks...).
  * Read state: `readAt` set = read; `dismissedAt` set = dismissed.
  */

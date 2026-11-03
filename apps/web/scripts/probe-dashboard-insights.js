@@ -1,5 +1,5 @@
 /**
- * Dashboard insights probe — Phase 05 (performance insights, pattern
+ * Dashboard insights probe - Phase 05 (performance insights, pattern
  * analysis & trading behavior), run against the ZERO-ENV mock preview
  * (MSW on, default `next dev`).
  *
@@ -7,7 +7,7 @@
  * render with real mock-suite data (breakdown table, behavioral insights
  * list or honest empty state, streak profile, weekly trend), the breakdown
  * dimension setting applies, suite-fed widgets are NOT badged "not
- * filtered" under active filters (they ARE filtered — Phase 05 §10 closed
+ * filtered" under active filters (they ARE filtered - Phase 05 §10 closed
  * the ALL-window wiring gap), filters change → widgets still render,
  * responsive 390px, console integrity.
  *
@@ -26,7 +26,7 @@ function check(label, ok, extra = "") {
   const tag = ok ? "✓" : "✗";
   if (ok) passed += 1;
   else failed += 1;
-  console.log(`  ${tag} ${label}${extra ? ` — ${extra}` : ""}`);
+  console.log(`  ${tag} ${label}${extra ? ` - ${extra}` : ""}`);
 }
 
 async function login(page) {
@@ -41,7 +41,7 @@ async function login(page) {
 }
 
 /** Wait until the dashboard is interactive (dev-mode cold compiles are
- * slow — never a fixed sleep). */
+ * slow - never a fixed sleep). */
 async function waitDashboardReady(page) {
   await page.waitForSelector('[data-testid="dashboard-customize"]', {
     state: "visible",
@@ -63,7 +63,7 @@ async function saveLayout(page) {
 }
 
 /** Enter edit mode ONCE and add every widget inside the SAME library
- * session — `dashboard-customize` only exists in view mode. */
+ * session - `dashboard-customize` only exists in view mode. */
 async function addWidgetsInOneEditSession(page, keys) {
   await page.click('[data-testid="dashboard-customize"]');
   await page.waitForTimeout(500);
@@ -106,7 +106,7 @@ async function addWidgetsInOneEditSession(page, keys) {
     const rows = await page.locator('[data-testid="performance-breakdown-table"] tbody tr').count();
     check("breakdown has rows from mock suite", rows > 0, `${rows} rows`);
 
-    console.log("\n[2] Behavioral insights — findings or honest silence, never blank");
+    console.log("\n[2] Behavioral insights - findings or honest silence, never blank");
     const insightsList = await page.locator('[data-testid="behavioral-insights-list"]').count();
     const insightsEmpty = await page.locator('[data-testid="behavioral-insights-empty"]').count();
     check("insights render a list or the explicit empty state", insightsList + insightsEmpty === 1);
@@ -137,7 +137,7 @@ async function addWidgetsInOneEditSession(page, keys) {
       await page.waitForTimeout(600);
     }
     // In view mode the gear floats over the grid SECTION (a sibling of the
-    // card, opacity-60 at sm+) — locate it globally, not inside the card.
+    // card, opacity-60 at sm+) - locate it globally, not inside the card.
     const gear = page.locator('[data-testid="dashboard-widget-settings-performance_breakdown"]');
     if (await gear.isVisible().catch(() => false)) {
       await gear.click();

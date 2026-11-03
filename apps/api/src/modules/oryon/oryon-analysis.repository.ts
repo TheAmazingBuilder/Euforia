@@ -1,9 +1,9 @@
 /**
- * Oryon analysis persistence (Phase 10 → serveur) — the multi-device store.
+ * Oryon analysis persistence (Phase 10 → serveur) - the multi-device store.
  *
  * The analysis payload (analysis/drawings/snapshot JSONB) is IMMUTABLE after
  * save: a re-save creates a new record (the wire contract's PATCH surface is
- * metadata-only — title/notes/link). Ownership in every WHERE (IDOR → 404).
+ * metadata-only - title/notes/link). Ownership in every WHERE (IDOR → 404).
  */
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";

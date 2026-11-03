@@ -1,5 +1,5 @@
 /**
- * Verify — Pattern simulator overhaul + indicator coverage + Session Live
+ * Verify - Pattern simulator overhaul + indicator coverage + Session Live
  * Key Levels removal (this round's scope):
  *   Pattern drill : 40-pattern library serves randomized rounds; family/bias
  *                   taxonomy chips; ink picker (5 palettes) re-inks the SAME
@@ -27,7 +27,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   const inkOf = (frame) =>
     frame.evaluate(() => {
       const el = document.querySelector('[data-testid="academy-drill-chart"]');
@@ -39,7 +39,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
       return rect ? getComputedStyle(rect).stroke : null;
     });
 
-  // ══ Academy — pattern simulator ═══════════════════════════════════════════
+  // ══ Academy - pattern simulator ═══════════════════════════════════════════
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
   await page.click('a[href="/academy"]', { timeout: 15_000 });
@@ -57,7 +57,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   const tagTexts = await page.locator('[data-testid="academy-drill-tags"] >> span').allInnerTexts();
   check("Family + bias chips shown", tagTexts.length >= 2, tagTexts.join(" · "));
 
-  // Ink picker — five palettes, classic default
+  // Ink picker - five palettes, classic default
   check("Ink picker renders", await page.locator('[data-testid="academy-ink-picker"]').isVisible());
   const paletteCount = await page.locator('button[data-testid^="academy-ink-"]').count();
   check("Five ink palettes offered", paletteCount === 5, `${paletteCount}`);
@@ -89,14 +89,14 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   check("Next drill serves a fresh round", await page.locator('[data-testid="academy-drill-option-0"]').isVisible());
   check("Palette survives round change", (await inkOf(page)) === "mono");
 
-  // SPA away and back — localStorage persistence
+  // SPA away and back - localStorage persistence
   await page.click('[data-testid="academy-tab-overview"]');
   await page.waitForTimeout(1200);
   await page.click('[data-testid="academy-tab-practice"]');
   await page.waitForTimeout(1600);
   check("Palette persists across SPA navigation", (await inkOf(page)) === "mono", String(await inkOf(page)));
 
-  // ══ Academy — indicator courses coverage ══════════════════════════════════
+  // ══ Academy - indicator courses coverage ══════════════════════════════════
   await page.click('[data-testid="academy-tab-courses"]');
   await page.waitForTimeout(1500);
   await page.click('[data-testid="academy-course-card-crs-indicators-trend-momentum"]');
@@ -138,7 +138,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   check("Lesson: Money Flow (MFI/CMF/A-D)", /Money Flow: MFI, Chaikin & the A\/D Line/.test(volLessons));
   check("Lesson: MA Family Extended", /Moving-Average Family, Extended/.test(volLessons));
 
-  // Glossary — new terms searchable
+  // Glossary - new terms searchable
   await page.click('[data-testid="academy-tab-glossary"]');
   await page.waitForTimeout(1200);
   await page.fill('[data-testid="academy-glossary-search"]', "SuperTrend");
@@ -152,7 +152,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   await page.screenshot({ path: "scripts/shots/patterns-round-academy.png" });
 
-  // ══ Session Live — Key Levels removed from the chart ══════════════════════
+  // ══ Session Live - Key Levels removed from the chart ══════════════════════
   const session = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   const sessionErrors = [];
   session.on("response", (resp) => {

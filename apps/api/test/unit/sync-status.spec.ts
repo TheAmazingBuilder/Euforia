@@ -1,5 +1,5 @@
 /**
- * Unit tests — synchronization status derivation (Phase 3 §15).
+ * Unit tests - synchronization status derivation (Phase 3 §15).
  * Connection lifecycle and synchronization lifecycle are ORTHOGONAL axes.
  */
 import { describe, expect, it } from "vitest";
@@ -104,7 +104,7 @@ describe("deriveSynchronizationStatus", () => {
   });
 });
 
-// ── Phase 05 — per-resource freshness rules (§11) ─────────────────────────────
+// ── Phase 05 - per-resource freshness rules (§11) ─────────────────────────────
 
 describe("deriveResourceFreshness", () => {
   it("NEVER when the resource never persisted", () => {

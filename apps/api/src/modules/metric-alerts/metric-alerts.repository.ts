@@ -1,9 +1,9 @@
 /**
- * Metric alert rules data access (Dashboard Customization Phase 07) — the
+ * Metric alert rules data access (Dashboard Customization Phase 07) - the
  * ONLY place the metric-alerts context touches Prisma (§46 house pattern).
  * Rows live in the dedicated metricAlertRuleRow table; the shared-contract
  * rule document (including the server-managed evaluation state) lives in
- * `data`. Triggered EVENTS are alert rows owned by the discipline inbox —
+ * `data`. Triggered EVENTS are alert rows owned by the discipline inbox -
  * this repository never writes them (one notification system, spec §2).
  */
 import { Injectable } from "@nestjs/common";
@@ -38,7 +38,7 @@ export class MetricAlertRepository {
   }
 
   /**
-   * Insert with the rule document's OWN id — the doc id IS the row id
+   * Insert with the rule document's OWN id - the doc id IS the row id
    * (deterministic event ids and CAS guards key off it; the parse of a
    * stored row must reproduce the same identity).
    */

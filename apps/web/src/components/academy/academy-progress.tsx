@@ -20,7 +20,7 @@ import { useAcademyMilestones, useAcademyProgress } from "@/lib/api/queries";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Progress panel — the honest transcript: a 12-segment ring where each arc
+ * Progress panel - the honest transcript: a 12-segment ring where each arc
  * carries its category's identity hue and fills with its completion, the
  * ruled stat band, and per-category bars in the same hues. No vanity metrics.
  */
@@ -122,7 +122,7 @@ export function AcademyProgressPanel() {
             {V.longestPrefix}
             <span className="font-mono tabular-nums">{progress.streak.longestDays}</span>
             {V.lastActivityPrefix}
-            <span className="font-mono tabular-nums">{progress.streak.lastActivityDate ?? "—"}</span>
+            <span className="font-mono tabular-nums">{progress.streak.lastActivityDate ?? "-"}</span>
           </p>
         </div>
         <div className="stat-cell stat-kpi">
@@ -137,7 +137,7 @@ export function AcademyProgressPanel() {
             <p className="ledger-label">{V.quizAverage}</p>
             <HueChip hue="var(--cat-strategies)" icon={Trophy} />
           </div>
-          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{progress.quizAverage !== null ? `${progress.quizAverage}%` : "—"}</p>
+          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{progress.quizAverage !== null ? `${progress.quizAverage}%` : "-"}</p>
         </div>
         <div className="stat-cell stat-kpi">
           <div className="flex items-start justify-between gap-2">
@@ -151,7 +151,7 @@ export function AcademyProgressPanel() {
             <p className="ledger-label">{V.drillAccuracy}</p>
             <HueChip hue="var(--profit)" icon={CircleCheck} />
           </div>
-          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{drillAccuracy !== null ? `${drillAccuracy}%` : "—"}</p>
+          <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums">{drillAccuracy !== null ? `${drillAccuracy}%` : "-"}</p>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ export function AcademyProgressPanel() {
   );
 }
 
-// ── Milestones — sober achievements with honest progress bars ──────────────
+// ── Milestones - sober achievements with honest progress bars ──────────────
 
 function MilestonesSection() {
   const { data, isLoading } = useAcademyMilestones();

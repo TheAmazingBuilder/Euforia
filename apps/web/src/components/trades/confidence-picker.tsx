@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Confidence picker (1–5) — the conviction self-rating that rides the
+ * Confidence picker (1–5) - the conviction self-rating that rides the
  * trade's psychology columns. Follows the EmotionPicker pattern: structural
  * iteration over raw values, labels/aria through the active dictionary,
  * tokens-only styling, tap-to-toggle (a second tap clears).

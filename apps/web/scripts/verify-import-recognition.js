@@ -1,7 +1,7 @@
 /**
- * Verify — Import & Recognition (OCR V1, PROMPT 3).
+ * Verify - Import & Recognition (OCR V1, PROMPT 3).
  *
- * IMPORTANT: the mock recognition store lives in the browser tab — the
+ * IMPORTANT: the mock recognition store lives in the browser tab - the
  * script navigates with SPA link clicks ONLY (one initial goto, ONE reload
  * for the URL-persistence check on a SEEDED job).
  *
@@ -61,7 +61,7 @@ const txt = (name) => ({ name, mimeType: "text/plain", buffer: Buffer.from("not 
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const shot = (name, opts = {}) =>
@@ -136,7 +136,7 @@ const txt = (name) => ({ name, mimeType: "text/plain", buffer: Buffer.from("not 
   check("A7 Analyzed stat = 6 seeds", analyzedBefore === 6, String(analyzedBefore));
   await shot("a-overview");
 
-  // ══ B. Wizard — upload experience ══════════════════════════════════════
+  // ══ B. Wizard - upload experience ══════════════════════════════════════
   await page.locator('[data-testid="import-header-cta"]').click();
   await page.locator('[data-testid="import-dropzone"]').waitFor({ state: "visible", timeout: 10_000 });
   check("B1 Dropzone visible with aria label",
@@ -361,7 +361,7 @@ const txt = (name) => ({ name, mimeType: "text/plain", buffer: Buffer.from("not 
   check("I3 Status badges present on rows",
     (await page.locator('[data-testid="import-status-badge"]').count()) >= 6);
 
-  // Open a SEEDED job's details (stable across reload — J depends on it)
+  // Open a SEEDED job's details (stable across reload - J depends on it)
   await page.locator('[data-testid="import-history-table"] tr', { hasText: "XAUUSD_mt5_london.png" })
     .locator('[data-testid^="import-history-open-"]').click();
   await page.locator('[data-testid="import-workspace"], [data-testid="import-workspace-processing"], [data-testid="import-workspace-imported"], [data-testid="import-workspace-empty-result"], [data-testid="import-workspace-cancelled"], [data-testid="import-workspace-failed"]')
@@ -410,7 +410,7 @@ const txt = (name) => ({ name, mimeType: "text/plain", buffer: Buffer.from("not 
   check("L1 No unexpected 4xx / page errors", errors.length === 0, errors.slice(0, 3).join(" ; "));
 
   const fails = results.filter((r) => r.startsWith("FAIL")).length;
-  console.log(`\n${results.length - fails}/${results.length} PASS — ${SHOTS}`);
+  console.log(`\n${results.length - fails}/${results.length} PASS - ${SHOTS}`);
   await browser.close();
   process.exit(fails === 0 ? 0 : 1);
 })().catch((err) => {

@@ -1,5 +1,5 @@
 /**
- * Priorité 2 verification — weekly coach report + pre-trade checklist.
+ * Priorité 2 verification - weekly coach report + pre-trade checklist.
  * Probes: /coach tabs (Chat | Weekly report), weekly report content
  * (headline, numbers grid, leaks, one focus), copy button; trade modal
  * pre-flight checklist appears when a playbook setup is picked and freezes
@@ -14,7 +14,7 @@ const OUT = "scripts/shots/p2";
 
 function ok(name, condition, detail = "") {
   const status = condition ? "PASS" : "FAIL";
-  console.log(`${status}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${status}  ${name}${detail ? ` - ${detail}` : ""}`);
   if (!condition) process.exitCode = 1;
 }
 

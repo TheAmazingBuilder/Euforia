@@ -1,5 +1,5 @@
 /**
- * Strategy versioning unit tests (Phase 7 §17) — the freeze-before-mutation
+ * Strategy versioning unit tests (Phase 7 §17) - the freeze-before-mutation
  * semantics are the historical-integrity backbone (§70/§71) and are pure
  * domain logic: cheap to test exhaustively.
  */

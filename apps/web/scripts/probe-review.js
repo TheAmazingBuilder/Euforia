@@ -1,4 +1,4 @@
-/* Probe — reviewed row lesson state inside ReviewDialog */
+/* Probe - reviewed row lesson state inside ReviewDialog */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 

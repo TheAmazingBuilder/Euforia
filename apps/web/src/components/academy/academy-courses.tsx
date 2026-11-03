@@ -22,7 +22,7 @@ import {
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Courses panel — three stacked views: the catalog (12 categories, filters,
+ * Courses panel - three stacked views: the catalog (12 categories, filters,
  * full-text search across courses/lessons/glossary), the course detail
  * (objectives + lesson list + quiz) and the lesson reader. Views are
  * deep-linkable via ?course= and ?lesson=.
@@ -33,7 +33,7 @@ const STATUS = ["ALL", "IN_PROGRESS", "COMPLETED", "NOT_STARTED"] as const;
 const DURATIONS = ["ALL", "SHORT", "MEDIUM", "LONG"] as const;
 const SORTS = ["curriculum", "shortest", "longest", "progress"] as const;
 
-// Machine ids only — labels resolve through dict.academy.courses
+// Machine ids only - labels resolve through dict.academy.courses
 // (status/duration/sort objects).
 type SortId = (typeof SORTS)[number];
 
@@ -61,7 +61,7 @@ export function AcademyCoursesPanel({
   const V = dict.academy.courses;
   const S = dict.academy.shared;
 
-  // Debounce the server search (300ms) — catalog filtering stays client-side.
+  // Debounce the server search (300ms) - catalog filtering stays client-side.
   React.useEffect(() => {
     const timer = window.setTimeout(() => setQuery(searchInput.trim()), 300);
     return () => window.clearTimeout(timer);
@@ -158,7 +158,7 @@ export function AcademyCoursesPanel({
   );
 }
 
-// ── Learning paths — guided cross-track sequences ──────────────────────────
+// ── Learning paths - guided cross-track sequences ──────────────────────────
 
 const PATH_ICONS: Record<string, LucideIcon> = {
   Coins,
@@ -408,7 +408,7 @@ function CourseCard({ course, onOpen }: { course: AcademyCourseCard; onOpen: () 
       className="group flex h-full flex-col overflow-hidden rounded-lg border border-border bg-surface text-left transition-colors hover:bg-muted"
       data-testid={`academy-course-card-${course.id}`}
     >
-      {/* Concept vignette — the chart the course teaches, in the track hue */}
+      {/* Concept vignette - the chart the course teaches, in the track hue */}
       <span className="relative block">
         <CourseArt courseId={course.id} categoryId={course.categoryId} className="aspect-[32/13] w-full" />
         <span
@@ -637,7 +637,7 @@ function CourseDetail({
               {S.minSuffix}
             </p>
           </div>
-          {/* Concept vignette at its natural 32:15 ratio — nothing cropped */}
+          {/* Concept vignette at its natural 32:15 ratio - nothing cropped */}
           <span className="hidden shrink-0 md:block">
             <CourseArt
               courseId={course.id}

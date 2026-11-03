@@ -18,27 +18,27 @@ import {
 import { isCatalogToolId, type OryonCatalogToolId } from "@/lib/oryon/tools/catalog";
 
 /**
- * Oryon drawings context — per-SYMBOL drawing state (Phase 2 + Phase 7
+ * Oryon drawings context - per-SYMBOL drawing state (Phase 2 + Phase 7
  * spec §11 ownership).
  *
  * Phase 7: drawings belong to an INSTRUMENT (the existing per-symbol
- * persistence model — unchanged). With several chart panels open, each
+ * persistence model - unchanged). With several chart panels open, each
  * panel renders the drawings of the symbol IT displays, so the workspace
  * keeps a REGISTRY of drawing stores keyed by symbol: two panels showing
  * the same instrument share one store (same annotations, consistent
  * selection), different instruments never see each other's drawings.
  *
  * The rail (undo/redo, object list) binds to the store the ACTIVE panel's
- * layer publishes (bindActiveStore) — the rail always operates on the
+ * layer publishes (bindActiveStore) - the rail always operates on the
  * drawings actually displayed by the chart the user is looking at.
  *
  * Registry discipline: stores are created lazily per visited symbol,
  * loaded from the validated per-symbol persistence once, and kept in
- * memory (bounded by an LRU cap — evicted stores flush + unsubscribe).
+ * memory (bounded by an LRU cap - evicted stores flush + unsubscribe).
  * Persistence stays per symbol and versioned exactly as Phase 2 shipped.
  *
  * Re-render discipline: consuming components subscribe to their store
- * themselves (useSyncExternalStore) — commits are rare (drag end, style
+ * themselves (useSyncExternalStore) - commits are rare (drag end, style
  * change); pointer drags never touch this context.
  */
 
@@ -66,7 +66,7 @@ export class OryonDrawingStoreRegistry {
     const store = new OryonDrawingStore();
     store.loadAll(loadDrawingsForSymbol(symbol));
     // Per-symbol debounced persistence on every commit (the Phase 2 path,
-    // now owned by the registry — layers render, the registry persists).
+    // now owned by the registry - layers render, the registry persists).
     const unsubscribe = store.subscribe(() => {
       saveDrawingsForSymbol(symbol, store.getSnapshot().drawings);
     });
@@ -84,7 +84,7 @@ export class OryonDrawingStoreRegistry {
     this.entries.clear();
   }
 
-  /** LRU eviction — the oldest-touched store flushes and leaves memory. */
+  /** LRU eviction - the oldest-touched store flushes and leaves memory. */
   private evictIfNeeded(): void {
     while (this.entries.size > MAX_CACHED_SYMBOLS) {
       let oldestKey: string | null = null;
@@ -112,7 +112,7 @@ export interface OryonDrawingsContextValue {
   bindActiveStore: (store: OryonDrawingStore | null) => void;
   activeTool: OryonDrawingTool;
   setActiveTool: (tool: OryonDrawingTool) => void;
-  // ── Toolbar v2 — favorites (catalog-validated, persisted) ───────────────
+  // ── Toolbar v2 - favorites (catalog-validated, persisted) ───────────────
   favorites: readonly OryonCatalogToolId[];
   toggleFavorite: (tool: OryonDrawingTool) => void;
   isFavorite: (tool: OryonDrawingTool) => boolean;
@@ -125,14 +125,14 @@ export interface OryonDrawingsContextValue {
 const OryonDrawingsContext = React.createContext<OryonDrawingsContextValue | null>(null);
 
 export function OryonDrawingsProvider({ children }: { children: React.ReactNode }) {
-  // One registry per workspace mount (lazy state initializer — the
+  // One registry per workspace mount (lazy state initializer - the
   // sanctioned "expensive instance" pattern; never re-created on re-render).
   const [registry] = React.useState(() => new OryonDrawingStoreRegistry());
 
   const [activeStore, setActiveStore] = React.useState<OryonDrawingStore | null>(null);
   const [activeTool, setActiveTool] = React.useState<OryonDrawingTool>("cursor");
 
-  // ── Toolbar v2 — favorites + floating bar (validated, debounced save) ────
+  // ── Toolbar v2 - favorites + floating bar (validated, debounced save) ────
   const [prefs, setPrefs] = React.useState<OryonUiPrefs>(() => loadUiPrefs());
 
   const patchPrefs = React.useCallback((patch: Partial<OryonUiPrefs>) => {
@@ -179,8 +179,8 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
     return () => registry.dispose();
   }, [registry]);
 
-  // Dev-probe handle (dev builds only — the __ORYON_PANELS_DEBUG__ convention):
-  // structural drawing facts for the ACTIVE store — counts by type, selected
+  // Dev-probe handle (dev builds only - the __ORYON_PANELS_DEBUG__ convention):
+  // structural drawing facts for the ACTIVE store - counts by type, selected
   // id and the object list, WITHOUT canvas scraping. Never shipped to prod.
   React.useEffect(() => {
     if (process.env.NODE_ENV === "production") return;
@@ -198,7 +198,7 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
       return {
         total: snap?.drawings.length ?? 0,
         byType,
-        // Full objects — style/rr/dir assertions read the PERSISTED SHAPE,
+        // Full objects - style/rr/dir assertions read the PERSISTED SHAPE,
         // never the canvas. Dev-only handle, mirrors the panels handle.
         drawings: snap?.drawings ?? [],
         selectedId: snap?.selectedId ?? null,
@@ -213,7 +213,7 @@ export function OryonDrawingsProvider({ children }: { children: React.ReactNode 
 
   React.useEffect(() => {
     return () => flushUiPrefs(prefs);
-    // Unmount only — the debounce owns every intermediate state.
+    // Unmount only - the debounce owns every intermediate state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

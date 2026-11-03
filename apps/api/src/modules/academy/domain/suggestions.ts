@@ -1,5 +1,5 @@
 /**
- * Academy journal suggestions — evidence-based course recommendations derived
+ * Academy journal suggestions - evidence-based course recommendations derived
  * from the user's CLOSED trades (Phase 11 §65–§67: Academy stays a pure
  * consumer of the journal through public repository contracts; the rules are
  * deliberately readable so an Analytics-driven engine can replace them later
@@ -7,14 +7,14 @@
  *
  * HONEST SEAMS (Phase 11 §8/§54 honesty + Phase 8 §36 documented gaps): the
  * mock rules also used trade.mfeR and trade.emotionAfter. The canonical
- * backend Trade has NO excursion (mfeR/maeR) and NO emotion columns — those
+ * backend Trade has NO excursion (mfeR/maeR) and NO emotion columns - those
  * two rules CANNOT be evaluated and are therefore absent, never fabricated.
  * The remaining rules run on REAL backend data: rMultiple (Trade),
  * plannedRR (review.planSnapshot.rrRatio ?? plan.rrRatio) and strategy
- * attribution (review.originTradePlanId → plan.strategyId — the Phase 8
+ * attribution (review.originTradePlanId → plan.strategyId - the Phase 8
  * chain). "Outside playbook" = trade with NO resolvable strategyId.
  *
- * Parity source: mocks/academy-engine.ts academySuggestions() — thresholds
+ * Parity source: mocks/academy-engine.ts academySuggestions() - thresholds
  * and course ids verbatim.
  */
 import type { AcademySuggestion } from "../../../shared/contracts";
@@ -24,7 +24,7 @@ import { courseById } from "./catalog";
 export interface SuggestionTradeRow {
   rMultiple: number | null;
   plannedRR: number | null;
-  /** Resolved strategy attribution (Phase 8 chain) — null = outside playbook. */
+  /** Resolved strategy attribution (Phase 8 chain) - null = outside playbook. */
   strategyId: string | null;
 }
 
@@ -48,7 +48,7 @@ export function suggestionRules(closed: readonly SuggestionTradeRow[]): Rule[] {
     rules.push({
       courseId: COURSE_RISK_FUNDAMENTALS,
       weight: fullLosses,
-      reason: `${fullLosses} closed trades hit −1R or worse — worth revisiting stop placement and position sizing in Risk Management.`,
+      reason: `${fullLosses} closed trades hit −1R or worse - worth revisiting stop placement and position sizing in Risk Management.`,
     });
   }
 
@@ -58,7 +58,7 @@ export function suggestionRules(closed: readonly SuggestionTradeRow[]): Rule[] {
     rules.push({
       courseId: COURSE_STRATEGIES_CORE,
       weight: noStrategy,
-      reason: `${noStrategy} trades sat outside your playbook — the 13-field strategy template turns loose setups into testable systems.`,
+      reason: `${noStrategy} trades sat outside your playbook - the 13-field strategy template turns loose setups into testable systems.`,
     });
   }
 
@@ -70,7 +70,7 @@ export function suggestionRules(closed: readonly SuggestionTradeRow[]): Rule[] {
     rules.push({
       courseId: COURSE_ADVANCED_EXECUTION,
       weight: planDrift,
-      reason: `${planDrift} trades planned ≥2R but closed red — Advanced Execution covers the entry-to-exit gap.`,
+      reason: `${planDrift} trades planned ≥2R but closed red - Advanced Execution covers the entry-to-exit gap.`,
     });
   }
 
@@ -103,5 +103,5 @@ export function suggestions(closed: readonly SuggestionTradeRow[]): AcademySugge
 // "Winners given back" (mfeR ≥ +2R but closed < +1R → Trade Management) and
 // "Emotional exits" (emotionAfter ∈ FOMO/REVENGE/FRUSTRATED/EUPHORIC →
 // Trading Psychology) activate automatically when Trade gains excursion and
-// emotion columns (TradeManagement/Behavioral evolution — NOT in Phase 11).
+// emotion columns (TradeManagement/Behavioral evolution - NOT in Phase 11).
 export const DEFERRED_RULE_COURSES = [COURSE_TRADE_MGMT] as const;

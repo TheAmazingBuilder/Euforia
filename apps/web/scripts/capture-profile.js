@@ -1,5 +1,5 @@
 /**
- * Profile redesign captures — the four tabs (personal/account/security/
+ * Profile redesign captures - the four tabs (personal/account/security/
  * notifications) against the reference design shots.
  * Run: node scripts/capture-profile.js   (dev server on :3000)
  */

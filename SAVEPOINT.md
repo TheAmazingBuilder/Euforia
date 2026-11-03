@@ -1,5 +1,8 @@
 # 💾 Savepoint — Cosmoz « Le Registre »
 
+> ⚠️ **Document historique — ne pas utiliser comme runbook actuel.** Ce snapshot date du 13 octobre 2026 et décrit des chemins, migrations et démarrages qui ont depuis évolué. Le runbook courant est `AGENTS.md` et les commandes package/scripts actuelles. Les archives listées ci-dessous ne sont pas nécessairement présentes dans le dépôt. Les anciennes valeurs de clés ont été retirées de cette copie courante ; si elles ont déjà été utilisées hors d'un environnement jetable, il faut les renouveler. Leur retrait du HEAD ne purge pas l'historique Git.
+
+
 > **Fichier de reprise** : snapshot complet du 2026-10-13, créé avant le restart sandbox de minuit.
 > Contient TOUTES les implémentations Oryon du début jusqu'au 13 octobre 2026 (Phase 11 incluse).
 
@@ -68,10 +71,10 @@ cat > /home/z/my-project/apps/api/.env <<'EOF'
 NODE_ENV=development
 PORT=4000
 DATABASE_URL=postgresql://cosmoz@127.0.0.1:5433/cosmoz
-AUTH_JWT_SECRET=cosmoz-local-dev-jwt-secret-0123456789abcdef0123456789
-AUTH_MFA_ENCRYPTION_KEY=h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=
-ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY=Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=
-INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY=u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=
+AUTH_JWT_SECRET=[REMOVED FROM CURRENT REVISION — ROTATE IF EVER USED]
+AUTH_MFA_ENCRYPTION_KEY=[REMOVED FROM CURRENT REVISION — ROTATE IF EVER USED]
+ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY=[REMOVED FROM CURRENT REVISION — ROTATE IF EVER USED]
+INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY=[REMOVED FROM CURRENT REVISION — ROTATE IF EVER USED]
 WEB_APP_URL=http://localhost:3000
 EOF
 ```

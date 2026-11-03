@@ -3,13 +3,13 @@
  *
  * Owns: rule CRUD (server-validated references, duplicate guard), the
  * evaluation orchestration, event persistence through the EXISTING
- * discipline inbox (one notification system — spec §2) and the
+ * discipline inbox (one notification system - spec §2) and the
  * `trade.closed` evaluation trigger (debounced, batched per user).
  *
- * Authority rules (spec §6/§10 — the engine computes NO financial math):
+ * Authority rules (spec §6/§10 - the engine computes NO financial math):
  *   - THRESHOLD metrics come from AnalyticsService.getAnalyticsSuite (the
  *     exact dataset the Analytics page renders), one suite call per
- *     DISTINCT (period, account, strategy) scope — rules sharing a scope
+ *     DISTINCT (period, account, strategy) scope - rules sharing a scope
  *     share one computation (spec §14 batching).
  *   - GOAL rules consume GoalService (the only goal-status authority);
  *     a deleted goal degrades to NO_DATA, never a fabricated status.
@@ -17,14 +17,14 @@
  *     stored transition state.
  *
  * Concurrency: every state write is a compare-and-set on the stored
- * triggerCount (Prisma JSON path filter) — concurrent evaluations of the
+ * triggerCount (Prisma JSON path filter) - concurrent evaluations of the
  * same rule serialize; the deterministic uuid-v5 event id makes a replayed
  * trigger a storage-level no-op (P2002 swallowed in DisciplineService).
  *
  * Honest latency (spec §7): rules evaluate AFTER closed-trade journal
  * writes (debounced METRIC_ALERTS_DEBOUNCE_MS, default 1s) and on the
  * manual evaluate endpoint. There is NO background scheduler and NO
- * real-time streaming — a documented limitation, not real-time alerting.
+ * real-time streaming - a documented limitation, not real-time alerting.
  * The engine can NEVER place/modify/close orders: its only writes are a
  * rule-state JSON document and an inbox alert row.
  */
@@ -118,7 +118,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     // Closed-trade writes are the evaluation trigger (all five write paths
-    // publish trade.closed — manual close, capture-closed, CSV import, OCR
+    // publish trade.closed - manual close, capture-closed, CSV import, OCR
     // bridge, provider reconciliation). Bursts (imports) coalesce into one
     // evaluation per debounce window.
     this.events.subscribe("trade.closed", (event) => {
@@ -137,7 +137,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
     const timer = setTimeout(() => {
       this.pendingTimers.delete(userId);
       void this.evaluateUserRules(userId).catch((error) => {
-        // Listener errors are contained (event-bus contract) — a failed
+        // Listener errors are contained (event-bus contract) - a failed
         // evaluation must never fail the trade write that triggered it.
         console.error("[metric-alerts] post-write evaluation failed", error);
       });
@@ -233,7 +233,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
       throw new ValidationError("Stored rule document is invalid and cannot be edited");
     }
 
-    // Merge — kind NEVER changes (not an accepted field).
+    // Merge - kind NEVER changes (not an accepted field).
     const mergedDraft: unknown =
       current.kind === "THRESHOLD"
         ? {
@@ -292,12 +292,12 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
     }
     // Hard delete (discipline-rules convention). Triggered events survive:
     // each alert payload carries the frozen rule context (name, metric,
-    // threshold, observed value) — the audit history never breaks (§9).
+    // threshold, observed value) - the audit history never breaks (§9).
     await this.repository.deleteForUser(userId, ruleId);
     return { ok: true };
   }
 
-  /** Recent events for one rule — inbox rows whose payload references it. */
+  /** Recent events for one rule - inbox rows whose payload references it. */
   async listRuleEvents(userId: string, ruleId: string): Promise<{ events: Alert[] }> {
     const row = await this.repository.findForUser(userId, ruleId);
     if (row === null) {
@@ -359,7 +359,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Exact-duplicate guard (spec §5) — near duplicates stay allowed. */
+  /** Exact-duplicate guard (spec §5) - near duplicates stay allowed. */
   private async assertNoDuplicate(
     userId: string,
     candidate: MetricAlertRule,
@@ -404,7 +404,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
     let failedScopes = 0;
     let evaluatedRules = 0;
 
-    // ── THRESHOLD rules — group by scope, one suite call per group ──────────
+    // ── THRESHOLD rules - group by scope, one suite call per group ──────────
     const thresholdRules = rules.filter(
       (rule): rule is ThresholdRule => rule.kind === "THRESHOLD",
     );
@@ -426,7 +426,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
         });
       } catch (error) {
         // A failed metric calculation must not evaluate the rule (spec §6)
-        // — and must not crash the whole pass.
+        // - and must not crash the whole pass.
         console.error("[metric-alerts] suite evaluation failed", { userId, scope: key, error });
         failed = true;
         failedScopes += 1;
@@ -447,7 +447,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
       }
     }
 
-    // ── GOAL rules — one authoritative progress pass ─────────────────────────
+    // ── GOAL rules - one authoritative progress pass ─────────────────────────
     const goalRules = rules.filter((rule): rule is GoalRule => rule.kind === "GOAL");
     if (goalRules.length > 0) {
       let progressByGoal: Map<string, number | null>;
@@ -461,7 +461,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
       }
       for (const rule of goalRules) {
         const progressPct = progressByGoal.get(rule.goalId);
-        // A deleted goal is NO_DATA (rule stays quiet) — never a fake status.
+        // A deleted goal is NO_DATA (rule stays quiet) - never a fake status.
         const observation: MetricObservation =
           progressPct === undefined || progressPct === null
             ? { ok: false, reason: "NO_DATA" }
@@ -485,7 +485,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
-  /** The authoritative suite — the SAME engine the Analytics page renders. */
+  /** The authoritative suite - the SAME engine the Analytics page renders. */
   private async fetchSummary(
     userId: string,
     filters: { period: MetricAlertPeriod; accountId?: string; strategyId?: string },
@@ -495,7 +495,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
       ...(filters.accountId ? { accountId: filters.accountId } : {}),
       ...(filters.strategyId ? { strategyId: filters.strategyId } : {}),
     };
-    // sims=100 = the engine's floor — Monte-Carlo volume is irrelevant here;
+    // sims=100 = the engine's floor - Monte-Carlo volume is irrelevant here;
     // the summary is the consumed part and nothing is re-derived.
     return this.analytics.getAnalyticsSuite(userId, suiteFilters, 100);
   }
@@ -530,7 +530,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
           periodEnd: context.periodEnd,
         },
       );
-      // Event first (deterministic id swallows replays), CAS second — a
+      // Event first (deterministic id swallows replays), CAS second - a
       // lost race can only duplicate-suppress, never lose the event.
       inserted = await this.discipline.publishAlert(userId, {
         id: eventId,
@@ -543,10 +543,10 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
       });
     }
 
-    // CAS state write — only if the triggerCount we evaluated against is
+    // CAS state write - only if the triggerCount we evaluated against is
     // still current. Racing evaluations lose cleanly; a replayed trigger
     // never regresses the stored state (the CAS write itself is idempotent
-    // across racers — every racer computed the same nextState).
+    // across racers - every racer computed the same nextState).
     await this.prisma.metricAlertRuleRow.updateMany({
       where: {
         id: rule.id,
@@ -564,7 +564,7 @@ export class MetricAlertsService implements OnModuleInit, OnModuleDestroy {
         } as unknown as Prisma.InputJsonValue,
       },
     });
-    // The counter reports events THIS pass actually inserted — a replayed
+    // The counter reports events THIS pass actually inserted - a replayed
     // publish (racing manual evaluate after an auto-evaluation's publish)
     // counts as zero: the event exists exactly once (deterministic id).
     return tick.outcome === "TRIGGER" && inserted;

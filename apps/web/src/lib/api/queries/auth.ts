@@ -21,7 +21,7 @@ import { apiPaths } from "@/lib/api/endpoints";
 import { queryKeys } from "@/lib/api/keys";
 
 /**
- * Authentication hooks. Identity state is NOT cached forever — /auth/me is
+ * Authentication hooks. Identity state is NOT cached forever - /auth/me is
  * the single source of truth consumed by the AuthProvider; every other hook
  * is a mutation that the provider (or the auth pages) fold into state.
  */
@@ -125,7 +125,7 @@ export function useResetPasswordMutation() {
   });
 }
 
-/** Internal helper for the AuthProvider — folds an AuthSuccess into state. */
+/** Internal helper for the AuthProvider - folds an AuthSuccess into state. */
 export function authSuccessToMe(success: AuthSuccess): AuthMeResponse {
   return { user: success.user, session: success.session };
 }

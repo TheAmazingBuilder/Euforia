@@ -6,12 +6,12 @@
  *   - every query is owner-scoped (§39) and windowed by `days`;
  *   - the funnel counts RECOGNITION STATES (uploads → completed →
  *     review-required → confirmed) plus the exact number of imported
- *     trades, read from Trading Core's externalRef (`ocr:%`) — the trade
+ *     trades, read from Trading Core's externalRef (`ocr:%`) - the trade
  *     table is the source of truth for what actually landed;
  *   - corrections by field come from the corrections-memory ledger (§2.3):
  *     it records what the user CHANGED, which is exactly the signal the
  *     OCR-quality card wants;
- *   - confidence/duration averages read the JSON payloads with jsonb SQL —
+ *   - confidence/duration averages read the JSON payloads with jsonb SQL -
  *     no second write path, no denormalized counters to keep in sync.
  */
 import { Inject, Injectable } from "@nestjs/common";
@@ -43,7 +43,7 @@ export class OcrOpsService {
     const failed = countOf("FAILED");
     const completed = uploads - failed;
 
-    // Imported trades — read from Trading Core (source of truth), owner-
+    // Imported trades - read from Trading Core (source of truth), owner-
     // scoped through the account relation, windowed by trade creation.
     const importedRows = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
       `SELECT COUNT(*) AS count
@@ -57,7 +57,7 @@ export class OcrOpsService {
     );
     const importedTrades = Number(importedRows[0]?.count ?? 0);
 
-    // Corrections by field — from the memory ledger (what the user fixed).
+    // Corrections by field - from the memory ledger (what the user fixed).
     const patternGroups = await this.prisma.ocrCorrectionPattern.groupBy({
       by: ["fieldKey"],
       where: { userId, lastSeenAt: { gte: since } },
@@ -86,7 +86,7 @@ export class OcrOpsService {
     const avgConfidenceRaw = confidenceRows[0]?.avg;
     const avgConfidence = avgConfidenceRaw === null || avgConfidenceRaw === undefined ? null : Number(avgConfidenceRaw);
 
-    // Duration lives in the result payload (jsonb) — averaged in SQL.
+    // Duration lives in the result payload (jsonb) - averaged in SQL.
     const durationRows = await this.prisma.$queryRawUnsafe<{ avg: number | null }[]>(
       `SELECT AVG((r."result"->>'durationMs')::float8) AS avg
          FROM "OcrRecognition" r
@@ -107,7 +107,7 @@ export class OcrOpsService {
       since,
     );
 
-    // V2 §30 — correction rate: the share of confirmed recognitions whose
+    // V2 §30 - correction rate: the share of confirmed recognitions whose
     // user declaration carried at least one correction. Null when nothing
     // was confirmed (no basis to compute a rate, never a fabricated 0).
     const correctedRows = await this.prisma.$queryRawUnsafe<{ count: bigint }[]>(
@@ -124,7 +124,7 @@ export class OcrOpsService {
     const correctedCount = Number(correctedRows[0]?.count ?? 0);
     const correctionRate = confirmed > 0 ? Math.round((correctedCount / confirmed) * 1000) / 1000 : null;
 
-    // V2 §30 — platform + screenshot-type distributions (detected values
+    // V2 §30 - platform + screenshot-type distributions (detected values
     // only; legacy rows without the classification field are not invented).
     const platformRows = await this.prisma.$queryRawUnsafe<{ platform: string; count: bigint }[]>(
       `SELECT r."result"->'classification'->>'platform' AS platform, COUNT(*) AS count

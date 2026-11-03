@@ -1,5 +1,5 @@
 /**
- * Smoke test Phase 15 (Settings) — boots the REAL API against the dev DB,
+ * Smoke test Phase 15 (Settings) - boots the REAL API against the dev DB,
  * walks a user through the Settings bounded context and asserts the
  * contract shapes: preferences doc provisioning, per-domain PATCH,
  * timezone write-through, reset, mass-assignment stripping, validation
@@ -105,7 +105,7 @@ try {
   const auth = { token: login.json.accessToken };
   const userId = login.json.user.id;
 
-  // 3. GET preferences — provisioned defaults, profile tz mirror.
+  // 3. GET preferences - provisioned defaults, profile tz mirror.
   const prefs = await api("GET", "/api/v1/me/preferences", auth);
   assert(prefs.status === 200, "GET /me/preferences 200");
   const domains = ["trading", "risk", "journal", "notifications", "appearance", "dashboard", "academy", "privacy", "localization"];
@@ -113,7 +113,7 @@ try {
   assert(prefs.json.userId === userId, "envelope userId = principal (§10)");
   assert(prefs.json.localization.timezone === "UTC", "tz mirror = profile default UTC (§15)");
 
-  // 4. PATCH localization — timezone write-through.
+  // 4. PATCH localization - timezone write-through.
   const patched = await api("PATCH", "/api/v1/me/preferences/localization", {
     ...auth,
     body: { ...prefs.json.localization, timezone: "Europe/Paris" },
@@ -122,7 +122,7 @@ try {
   const me = await api("GET", "/api/v1/me", auth);
   assert(me.json.timezone === "Europe/Paris", "write-through: profile tz = Europe/Paris (§15)");
 
-  // 5. PATCH appearance — mass-assignment stripped.
+  // 5. PATCH appearance - mass-assignment stripped.
   const appearance = await api("PATCH", "/api/v1/me/preferences/appearance", {
     ...auth,
     body: { theme: "LIGHT", density: "COMPACT", defaultDashboardLayout: "RISK_FIRST", pnlDisplay: "R_MULTIPLE", isAdmin: true, role: "ADMIN" },
@@ -149,9 +149,9 @@ try {
   // 7. Reset.
   const reset = await api("POST", "/api/v1/me/preferences/reset", { ...auth, body: { domain: "appearance" } });
   assert(reset.status === 200 && reset.json.appearance.theme === "DARK_BLUE", "reset restores defaults (§37)");
-  assert(reset.json.localization.timezone === "Europe/Paris", "reset scoped — other domains untouched");
+  assert(reset.json.localization.timezone === "Europe/Paris", "reset scoped - other domains untouched");
 
-  // 8. Deactivate — typed confirmation + sessions revoked.
+  // 8. Deactivate - typed confirmation + sessions revoked.
   const deactivated = await api("POST", "/api/v1/me/deactivate", { ...auth, body: { confirmation: "DEACTIVATE" } });
   assert(deactivated.status === 200 && deactivated.json.status === "DEACTIVATED", "deactivate 200");
   const meAfter = await api("GET", "/api/v1/auth/me", auth);

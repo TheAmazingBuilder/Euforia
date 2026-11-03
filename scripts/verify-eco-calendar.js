@@ -1,5 +1,5 @@
 /**
- * Verify Feature 10 — Economic calendar.
+ * Verify Feature 10 - Economic calendar.
  * Probes: /calendar renders, week strip, day events, impact filters,
  * currency filters, day navigation, risk banner, released values.
  */
@@ -22,7 +22,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // 1. Calendar rendered
   const calendar = page.locator('[data-testid="eco-calendar"]');
@@ -68,7 +68,7 @@ const BASE = "http://localhost:3000";
   await todayBtn.click();
   await page.waitForTimeout(400);
 
-  // 9. Risk banner: only if there are future high events today — visual check
+  // 9. Risk banner: only if there are future high events today - visual check
   const banner = page.locator('[data-testid="risk-banner"]');
   const bannerVisible = await banner.isVisible().catch(() => false);
   check("Risk banner conditional", true, bannerVisible ? "visible (future high events)" : "hidden (no future high events)");

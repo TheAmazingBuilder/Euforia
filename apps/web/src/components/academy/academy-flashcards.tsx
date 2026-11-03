@@ -13,9 +13,9 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Daily review + decision training:
- * 1. Flashcards — Leitner spaced repetition over the glossary and every
+ * 1. Flashcards - Leitner spaced repetition over the glossary and every
  *    lesson's takeaways (10 cards/day; AGAIN/GOOD/EASY grading);
- * 2. Scenario Player — self-paced decision sequences with per-step feedback,
+ * 2. Scenario Player - self-paced decision sequences with per-step feedback,
  *    every decision logged to the practice ledger.
  */
 
@@ -42,7 +42,7 @@ export function Flashcards() {
       {
         onSuccess: () => {
           window.setTimeout(() => {
-            // Reset the card surface as we advance — no effect needed.
+            // Reset the card surface as we advance - no effect needed.
             setFlipped(false);
             setGraded(null);
             if (index + 1 >= (data?.due.length ?? 0)) setSessionDone(true);

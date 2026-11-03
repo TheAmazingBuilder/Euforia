@@ -1,5 +1,5 @@
 /**
- * Unit tests — Trading Core authoritative calculations (Phase 4 §46).
+ * Unit tests - Trading Core authoritative calculations (Phase 4 §46).
  * These functions are THE single financial implementation: their exact
  * outputs are the contract every consumer must observe.
  */
@@ -31,7 +31,7 @@ describe("wire (decimal-string canonicalizer)", () => {
   });
 });
 
-describe("computeTradeResults — the authoritative P&L (§15/§46)", () => {
+describe("computeTradeResults - the authoritative P&L (§15/§46)", () => {
   it("computes BUY gross/net with fees and swap", () => {
     const results = computeTradeResults(
       {
@@ -166,7 +166,7 @@ describe("computeRiskForTrade", () => {
   });
 });
 
-describe("resolvePositionSize — capture sizing (§15 semantics)", () => {
+describe("resolvePositionSize - capture sizing (§15 semantics)", () => {
   it("keeps the client quantity and derives the risked amount", () => {
     const size = resolvePositionSize({
       size: { mode: "quantity", quantity: "0.10" },
@@ -217,7 +217,7 @@ describe("resolvePositionSize — capture sizing (§15 semantics)", () => {
   });
 });
 
-describe("tradingDateOf — server-side trading day (§22/§56)", () => {
+describe("tradingDateOf - server-side trading day (§22/§56)", () => {
   it("localizes a UTC timestamp to the user's trading day", () => {
     // 23:30 UTC is already the NEXT day in Toronto.
     expect(tradingDateOf("2026-09-17T23:30:00.000Z", "America/Toronto").toISOString().slice(0, 10)).toBe("2026-09-17");
@@ -231,9 +231,9 @@ describe("tradingDateOf — server-side trading day (§22/§56)", () => {
   });
 });
 
-describe("weightedAveragePrice — THE canonical decimal aggregation (finalization §15/§16)", () => {
+describe("weightedAveragePrice - THE canonical decimal aggregation (finalization §15/§16)", () => {
   it("keeps FULL FX precision on a multi-leg close (2dp rounding would corrupt P&L)", () => {
-    // (1.0900 × 0.4 + 1.0950 × 0.6) / 1.0 = 1.093 — a 2dp quantizer would
+    // (1.0900 × 0.4 + 1.0950 × 0.6) / 1.0 = 1.093 - a 2dp quantizer would
     // store 1.09 and skew every downstream result by ~$50 per 0.1 lot.
     const avg = weightedAveragePrice([
       { price: new Prisma.Decimal("1.0900"), volume: new Prisma.Decimal("0.40") },
@@ -248,7 +248,7 @@ describe("weightedAveragePrice — THE canonical decimal aggregation (finalizati
       { price: new Prisma.Decimal("0.2"), volume: new Prisma.Decimal("0.3") },
       { price: new Prisma.Decimal("0.3"), volume: new Prisma.Decimal("0.3") },
     ]);
-    // (0.03 + 0.06 + 0.09) / 0.9 = 0.2 exactly — float accumulation of the
+    // (0.03 + 0.06 + 0.09) / 0.9 = 0.2 exactly - float accumulation of the
     // same products lands on 0.19999999999999998.
     expect(avg.toFixed()).toBe("0.2");
   });

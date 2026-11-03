@@ -1,15 +1,39 @@
 import { describe, expect, it } from "vitest";
 import { EnvValidationError, validateEnv } from "../../src/config/env.schema";
+import { loadAppConfig, resetAppConfigCache } from "../../src/config/app-config";
 
 const BASE_ENV = {
   NODE_ENV: "test",
-  DATABASE_URL: "postgresql://cosmoz@127.0.0.1:5433/cosmoz_test",
+  DATABASE_URL: "postgresql://postgres@127.0.0.1:5432/cosmoz_test",
   AUTH_JWT_SECRET: "test-only-jwt-secret-0123456789abcdef0123456789",
   AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
   ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
-  // Integration Hub (B14) — webhook-secret vault key (base64, 32 bytes).
+  // Integration Hub (B14) - webhook-secret vault key (base64, 32 bytes).
   INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=",
 } as const;
+
+describe("mock provider defaults", () => {
+  it("keeps synthetic account and OCR providers disabled in development by default", () => {
+    resetAppConfigCache();
+    const config = loadAppConfig({ ...BASE_ENV, NODE_ENV: "development" });
+    expect(config.accounts.mockProviderEnabled).toBe(false);
+    expect(config.ocr.mockEngineEnabled).toBe(false);
+    resetAppConfigCache();
+  });
+
+  it("allows explicit mock-provider opt-in for development tests", () => {
+    resetAppConfigCache();
+    const config = loadAppConfig({
+      ...BASE_ENV,
+      NODE_ENV: "development",
+      ACCOUNTS_MOCK_PROVIDER: "enabled",
+      OCR_MOCK_ENGINE: "enabled",
+    });
+    expect(config.accounts.mockProviderEnabled).toBe(true);
+    expect(config.ocr.mockEngineEnabled).toBe(true);
+    resetAppConfigCache();
+  });
+});
 
 describe("validateEnv", () => {
   it("applies safe development defaults", () => {
@@ -22,12 +46,14 @@ describe("validateEnv", () => {
     expect(env.TRUST_PROXY).toBe(false);
     expect(env.RATE_LIMIT_WINDOW_SECONDS).toBe(60);
     expect(env.RATE_LIMIT_MAX).toBe(120);
+    expect(env.REDIS_URL).toBeUndefined();
   });
 
   it("accepts a full explicit configuration", () => {
     const env = validateEnv({
       ...BASE_ENV,
       NODE_ENV: "production",
+      WEB_APP_URL: "https://app.euforia.app",
       PORT: "8080",
       CORS_ORIGINS: "https://app.cosmoz.app , https://admin.cosmoz.app/",
       LOG_LEVEL: "warn",
@@ -36,11 +62,15 @@ describe("validateEnv", () => {
       RATE_LIMIT_WINDOW_SECONDS: "30",
       RATE_LIMIT_MAX: "1000",
       MARKET_SERVICE_URL: "https://market.cosmoz.internal",
+      REDIS_URL: "rediss://cache.example.com:6380",
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "test-only-app-password",
     });
     expect(env.PORT).toBe(8080);
     expect(env.CORS_ORIGINS).toEqual(["https://app.cosmoz.app", "https://admin.cosmoz.app"]);
     expect(env.TRUST_PROXY).toBe(true);
     expect(env.MARKET_SERVICE_URL).toBe("https://market.cosmoz.internal");
+    expect(env.REDIS_URL).toBe("rediss://cache.example.com:6380");
   });
 
   it("fails in a controlled way when DATABASE_URL is missing", () => {
@@ -72,7 +102,7 @@ describe("validateEnv", () => {
   });
 
   it("rejects a body limit below the largest image upload cap (§85 coherence)", () => {
-    // Default caps: OCR 6 MB / trades screenshots 6 MB — a 2 MB body limit
+    // Default caps: OCR 6 MB / trades screenshots 6 MB - a 2 MB body limit
     // cannot carry the base64 data URL of a max-size upload, so boot must
     // fail loudly instead of 413-ing at runtime.
     try {
@@ -85,11 +115,36 @@ describe("validateEnv", () => {
     }
   });
 
+  it("requires SMTP credentials together and in production", () => {
+    expect(() => validateEnv({ ...BASE_ENV, SMTP_USER: "mailer@example.com" })).toThrow(/SMTP_APP_PASSWORD/);
+    expect(() => validateEnv({ ...BASE_ENV, NODE_ENV: "production" })).toThrow(/SMTP_USER/);
+  });
+
+  it("rejects insecure HTTP authentication links in production", () => {
+    expect(() => validateEnv({
+      ...BASE_ENV,
+      NODE_ENV: "production",
+      WEB_APP_URL: "http://app.euforia.app",
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "test-only-app-password",
+    })).toThrow(/WEB_APP_URL must use HTTPS in production/);
+  });
+
+  it("normalizes spaces from a Google App Password", () => {
+    const env = validateEnv({
+      ...BASE_ENV,
+      SMTP_USER: "mailer@example.com",
+      SMTP_APP_PASSWORD: "abcd efgh ijkl mnop",
+    });
+    expect(env.SMTP_APP_PASSWORD).toBe("abcdefghijklmnop");
+  });
+
   it("rejects invalid values for numeric and enum settings", () => {
     expect(() => validateEnv({ ...BASE_ENV, PORT: "not-a-port" })).toThrow();
     expect(() => validateEnv({ ...BASE_ENV, LOG_LEVEL: "verbose" })).toThrow();
     expect(() => validateEnv({ ...BASE_ENV, RATE_LIMIT_MAX: "0" })).toThrow();
     expect(() => validateEnv({ ...BASE_ENV, MARKET_SERVICE_URL: "not a url" })).toThrow();
+    expect(() => validateEnv({ ...BASE_ENV, REDIS_URL: "http://localhost:6379" })).toThrow(/REDIS_URL must use/);
   });
 
   it("SECURITY: error messages contain key paths, never secret VALUES", () => {

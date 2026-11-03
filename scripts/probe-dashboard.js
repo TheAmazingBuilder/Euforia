@@ -1,5 +1,5 @@
 /**
- * Probe — bounding boxes of dashboard cards to diagnose the overlap.
+ * Probe - bounding boxes of dashboard cards to diagnose the overlap.
  * Usage: node scripts/probe-dashboard.js
  */
 const { chromium } = require("playwright");

@@ -1,20 +1,20 @@
 /**
- * Identity e2e helpers — real AppModule, real database, captured mail.
+ * Identity e2e helpers - real AppModule, real database, captured mail.
  */
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { MailerService, type MailMessage } from "../../src/modules/identity/mailer.service";
 
 export interface MailCapture {
   messages: MailMessage[];
-  lastVerificationToken(): string;
+  lastVerificationToken(to?: string): string;
   lastResetToken(): string;
   clear(): void;
 }
 
-/** Swap the mailer transport for a capturing one (DI seam on MailerService). */
-export function captureMail(app: NestFastifyApplication): MailCapture {
+/** Shared mail transport capture for every MailerService instance in the E2E app. */
+export function captureMail(_app: NestFastifyApplication): MailCapture {
   const messages: MailMessage[] = [];
-  app.get(MailerService).useTransport({
+  MailerService.useTestTransport({
     send: async (message) => {
       messages.push(message);
     },
@@ -22,8 +22,11 @@ export function captureMail(app: NestFastifyApplication): MailCapture {
   const tokenFrom = (url: string) => new URL(url).searchParams.get("token") as string;
   return {
     messages,
-    lastVerificationToken() {
-      const last = [...messages].reverse().find((m) => m.kind !== "PASSWORD_RESET");
+    lastVerificationToken(to?: string) {
+      const last = [...messages].reverse().find((m) =>
+        (m.kind === "EMAIL_VERIFICATION" || m.kind === "EMAIL_CHANGE") &&
+        (to === undefined || m.to.toLowerCase() === to.toLowerCase()),
+      );
       if (!last) throw new Error("no verification mail captured");
       return tokenFrom(last.actionUrl);
     },
@@ -64,7 +67,7 @@ export function cookieHeader(value: string): Record<string, string> {
   return { cookie: `cosmoz_rt=${value}` };
 }
 
-/** Register + verify + login — returns an authenticated context. */
+/** Register + verify + login - returns an authenticated context. */
 export async function authenticatedUser(
   app: NestFastifyApplication,
   mail: MailCapture,
@@ -88,8 +91,18 @@ export async function authenticatedUser(
   if (registered.statusCode !== 201) {
     throw new Error(`register failed: ${registered.statusCode} ${registered.body}`);
   }
-  const verificationToken = mail.lastVerificationToken();
-  mail.clear();
+  let verificationToken: string;
+  try {
+    // E2E cases can register multiple users concurrently. Match the message
+    // by recipient instead of consuming/clearing a process-wide mailbox: one
+    // user's verification must never steal another user's token.
+    verificationToken = mail.lastVerificationToken(email);
+  } catch {
+    const response = registered.json() as { status?: string; verificationExpiresAt?: string | null; delivery?: string };
+    throw new Error(
+      `register succeeded without a captured verification message (status=${String(response.status)}, delivery=${String(response.delivery)}, expiresAt=${String(response.verificationExpiresAt)}); inspect the test MailerService transport seam`,
+    );
+  }
   const verified = await app.inject({
     method: "POST",
     url: "/api/v1/auth/email/verify",

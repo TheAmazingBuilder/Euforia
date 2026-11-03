@@ -23,7 +23,7 @@ export function useMediaQuery(query: string): boolean | null {
   );
 }
 
-/** Tailwind `lg` breakpoint — desktop modal vs mobile sheet switch. */
+/** Tailwind `lg` breakpoint - desktop modal vs mobile sheet switch. */
 export function useIsDesktop(): boolean | null {
   return useMediaQuery("(min-width: 1024px)");
 }

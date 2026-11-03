@@ -1,5 +1,5 @@
 /**
- * Session application service (B5) — server-assembled "today": the
+ * Session application service (B5) - server-assembled "today": the
  * chronological timeline (entries, exits, stop/target modifications,
  * discipline alerts), the mood strip and the logbook notes. 1:1 behavior
  * parity with the MSW engine (`mocks/handlers/session.ts` + store).
@@ -24,7 +24,7 @@ const TRADING_ERROR = TRADE_ERROR_CODES;
 
 /**
  * Deterministic uuid-derived event ids (contract: sessionEventSchema.id is a
- * UUID — the mock's "entry-${tradeId}" shape violated its own schema). The
+ * UUID - the mock's "entry-${tradeId}" shape violated its own schema). The
  * frontend treats ids as React keys only, so a stable derived UUID keeps
  * both the contract AND idempotent, conflict-free keys per trade.
  */
@@ -56,7 +56,7 @@ export class SessionService {
     return new Date().toISOString();
   }
 
-  /** GET /session/timeline — today's events + moods, oldest first. */
+  /** GET /session/timeline - today's events + moods, oldest first. */
   async timeline(userId: string): Promise<SessionTimelineResponse> {
     const user = await this.identity.findUserById(userId);
     if (user === null) {
@@ -118,7 +118,7 @@ export class SessionService {
       });
     }
 
-    // Discipline alerts raised today (any type — inbox mirrors the banner).
+    // Discipline alerts raised today (any type - inbox mirrors the banner).
     for (const row of alertRows) {
       const data = row.data as unknown as AlertData;
       if (toTradingDateKey(data.createdAt, tz) !== today) continue;
@@ -134,7 +134,7 @@ export class SessionService {
 
     eventsPayload.sort((a, b) => a.at.localeCompare(b.at));
 
-    // Mood strip — entry emotion belongs to the trade's own trading day;
+    // Mood strip - entry emotion belongs to the trade's own trading day;
     // an in-trade/exit tap belongs to the DAY IT WAS TAPPED.
     const moods: SessionTimelineResponse["moods"] = [];
     for (const trade of all) {
@@ -172,7 +172,7 @@ export class SessionService {
 
   // ── Session logbook ───────────────────────────────────────────────────────
 
-  /** GET /session/notes — today's notes, chronological. */
+  /** GET /session/notes - today's notes, chronological. */
   async listNotes(userId: string): Promise<SessionNotesResponse> {
     const today = await this.todayKey(userId);
     const rows = await this.repository.listNoteRows(userId);
@@ -184,7 +184,7 @@ export class SessionService {
     };
   }
 
-  /** POST /session/notes — timestamped in-session note, server day+clock. */
+  /** POST /session/notes - timestamped in-session note, server day+clock. */
   async addNote(userId: string, input: z.infer<typeof createSessionNoteInputSchema>) {
     const today = await this.todayKey(userId);
     const data = { date: today, at: this.nowIso(), text: input.text.trim() };

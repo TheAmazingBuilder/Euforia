@@ -1,5 +1,5 @@
 /**
- * Verify — Academy Phase 1: lesson-reader vignettes + scroll-animated rings.
+ * Verify - Academy Phase 1: lesson-reader vignettes + scroll-animated rings.
  *   Reader : lesson header opens with the course concept vignette (desktop
  *            side card + mobile banner), category dot in the meta line.
  *   Rings  : ProgressRing + SegmentedRing draw on scroll-in (900ms dash
@@ -7,7 +7,7 @@
  *   Safety : mobile 390 no horizontal overflow, light theme re-tint, console
  *            health.
  *
- * IMPORTANT: the MSW store lives in the browser tab — the script navigates
+ * IMPORTANT: the MSW store lives in the browser tab - the script navigates
  * with SPA clicks ONLY (one initial goto), so state persists across pages.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script (CommonJS, never bundled) */
@@ -29,7 +29,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // ── 0. Load + SPA to Academy ───────────────────────────────────────────────
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
@@ -39,7 +39,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   check("Academy view renders", await page.locator('[data-testid="academy-view"]').isVisible());
 
-  // ══ RING ANIMATION (Overview — wiring first; fill checked after a completion) ═
+  // ══ RING ANIMATION (Overview - wiring first; fill checked after a completion) ═
   const ring = page.locator('[data-testid="academy-ring-overall"]').first();
   check("Overall ring gauge present", await ring.isVisible());
 
@@ -114,7 +114,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   check("Segmented ring arcs animate on scroll-in (900ms)", seg !== null && seg.transitions === 12);
   check("Segmented ring arcs carry progress fill", seg !== null && seg.filled >= 1, `filled=${seg ? seg.filled : 0}`);
 
-  // Back to Overview — the overall ring should now show a non-zero arc.
+  // Back to Overview - the overall ring should now show a non-zero arc.
   await page.click('[data-testid="academy-tab-overview"]');
   await page.waitForTimeout(1500);
   const ringFill = await page.locator('[data-testid="academy-ring-overall"]').first().evaluate((el) => {
@@ -124,7 +124,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   });
   check("Ring arc dasharray reflects progress (non-zero fill)", ringFill > 1, `dash=${ringFill}px`);
 
-  // ══ MOBILE 390 — banner vignette + no overflow ═════════════════════════════
+  // ══ MOBILE 390 - banner vignette + no overflow ═════════════════════════════
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForTimeout(600);
   await page.click('[data-testid="academy-tab-courses"]');

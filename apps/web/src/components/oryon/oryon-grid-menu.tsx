@@ -22,7 +22,7 @@ import { useOryonWorkspaceConfig, useWorkspaceConfigSnapshot } from "@/component
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon grid menu (Phase 7 spec §5) — the chart-arrangement selector.
+ * Oryon grid menu (Phase 7 spec §5) - the chart-arrangement selector.
  * Four arrangements, the implemented set: single, side by side, stacked,
  * 2×2. Panel identities survive transitions (charts are not recreated);
  * missing panels are added with deterministic defaults and `single` keeps
@@ -100,7 +100,7 @@ export function OryonGridMenu() {
 }
 
 /**
- * Oryon sync menu (Phase 7 spec §8) — four INDEPENDENT synchronization
+ * Oryon sync menu (Phase 7 spec §8) - four INDEPENDENT synchronization
  * features (time scale, crosshair, instrument, timeframe), each explained
  * in plain copy. Nothing is linked by default; enabling one never enables
  * another. The trigger carries an active state when ANY feature is on, and
@@ -139,7 +139,7 @@ export function OryonSyncMenu() {
           type="button"
           variant="ghost"
           size="icon"
-          aria-label={`${T.syncHint} — ${anyOn ? S.on : S.off}`}
+          aria-label={`${T.syncHint} - ${anyOn ? S.on : S.off}`}
           data-testid="oryon-sync-trigger"
           data-active={anyOn || undefined}
           className={cn(

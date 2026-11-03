@@ -1,11 +1,11 @@
 /**
- * Global exception filter — the SINGLE exit point for every error the API
+ * Global exception filter - the SINGLE exit point for every error the API
  * emits (Phase 1 mandate §14).
  *
  * Responsibilities:
  *   1. Map any thrown value to a stable, safe response (error-mapper.ts).
  *   2. Preserve the correlation id (request id) in the payload.
- *   3. Log: 5xx/unknown with stack at `error`, 4xx at `warn` — request-scoped
+ *   3. Log: 5xx/unknown with stack at `error`, 4xx at `warn` - request-scoped
  *      when pino-http context is available.
  *   4. Never leak secrets, stacks, SQL or infrastructure internals.
  */
@@ -35,7 +35,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const requestId = request?.id !== undefined ? String(request.id) : undefined;
     const payload = requestId !== undefined ? { ...body, requestId } : body;
 
-    // Rate-limit responses carry Retry-After (whole seconds) — the frontend
+    // Rate-limit responses carry Retry-After (whole seconds) - the frontend
     // uses it for countdown copy (mock-parity contract).
     if (exception instanceof RateLimitError && exception.retryAfterSeconds !== undefined) {
       void reply.header("retry-after", String(Math.max(1, exception.retryAfterSeconds)));

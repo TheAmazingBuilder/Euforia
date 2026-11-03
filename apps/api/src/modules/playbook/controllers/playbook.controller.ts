@@ -1,5 +1,5 @@
 /**
- * Playbook controller (Phase 7) — the /playbook surface: module overview
+ * Playbook controller (Phase 7) - the /playbook surface: module overview
  * aggregate, template library and operating rules. All routes
  * authenticated; ownership enforced in the service; static routes declared
  * before parameterized ones (/playbook/rules before /playbook/rules/:id).
@@ -35,7 +35,7 @@ import { PlaybookService } from "../playbook.service";
 export class PlaybookController {
   constructor(private readonly playbook: PlaybookService) {}
 
-  /** ONE aggregate for the module (§5) — server-computed, never client-side. */
+  /** ONE aggregate for the module (§5) - server-computed, never client-side. */
   @Get("overview")
   overview(@CurrentUser() principal: AuthPrincipal): Promise<PlaybookOverviewResponse> {
     return this.playbook.overview(principal.userId);

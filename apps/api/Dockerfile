@@ -34,6 +34,11 @@ COPY --from=build /repo/node_modules node_modules
 COPY --from=build /repo/packages packages/
 COPY apps/api/package.json apps/api/
 WORKDIR /repo/apps/api
+# Runtime uploads and OCR assets are persisted under these private directories.
+# Create them as the unprivileged runtime user before dropping root.
+RUN mkdir -p .data/ocr-storage .data/trades-screenshots .data/tasky-attachments \
+ && chown -R node:node .data
+USER node
 EXPOSE 4000
 # Health check targets the unversioned infrastructure endpoint.
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \

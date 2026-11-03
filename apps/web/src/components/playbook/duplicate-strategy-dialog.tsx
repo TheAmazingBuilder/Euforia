@@ -27,7 +27,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 
 /**
  * Duplicate Strategy quick action (§5): pick a source, get a fresh DRAFT copy
- * — definition deep-copied, grade reset, setups + checklists duplicated,
+ * - definition deep-copied, grade reset, setups + checklists duplicated,
  * history does NOT follow. The copy starts unproven, on purpose.
  */
 export function DuplicateStrategyDialog({

@@ -6,7 +6,7 @@
  * rejected) BEFORE any domain logic sees them (§54: "FastAPI output must
  * pass strict NestJS validation").
  *
- * Versioned (§33): contractVersion "1" — the engine echoes the request id
+ * Versioned (§33): contractVersion "1" - the engine echoes the request id
  * and version so stale/mismatched answers are detectable.
  */
 import { z } from "zod";
@@ -21,14 +21,14 @@ import {
 export const OCR_CONTRACT_VERSION = "1";
 
 /**
- * The V1 fixed extraction profile (recognition V1 backend — every job on
+ * The V1 fixed extraction profile (recognition V1 backend - every job on
  * this surface extracts a trade summary; the profile enum stays for the
  * sidecar's routing vocabulary).
  */
 export const OCR_EXTRACTION_PROFILE: EngineExtractionProfile = "TRADE_SUMMARY";
 
 /**
- * Extraction profiles (Recognition V1.1 — Account & Chart expansion).
+ * Extraction profiles (Recognition V1.1 - Account & Chart expansion).
  * The requested profile flows from the controller into the engine request;
  * the sidecar routes its extraction vocabulary accordingly and the Nest
  * side re-validates the output against the SAME profile (defense in depth).
@@ -45,18 +45,18 @@ export interface EngineRecognizeRequest {
   metadata: {
     mime: string;
     sizeBytes: number;
-    /** V2 — null for PDF statements (the sidecar renders pages instead). */
+    /** V2 - null for PDF statements (the sidecar renders pages instead). */
     width: number | null;
     height: number | null;
     checksumSha256: string;
   };
-  /** Fixed enum — never free user text (§26). */
+  /** Fixed enum - never free user text (§26). */
   extractionProfile: EngineExtractionProfile;
-  /** Soft processing budget in milliseconds — the sidecar honors it best-effort. */
+  /** Soft processing budget in milliseconds - the sidecar honors it best-effort. */
   deadlineMs: number;
-  /** Re-OCR by crop (engine quality §2.4) — validated against the asset dims. */
+  /** Re-OCR by crop (engine quality §2.4) - validated against the asset dims. */
   crop?: { x: number; y: number; width: number; height: number };
-  /** V2 §24 — PIXEL-rect re-read of a user-selected zone (recrop). */
+  /** V2 §24 - PIXEL-rect re-read of a user-selected zone (recrop). */
   cropRegion?: { x: number; y: number; width: number; height: number };
 }
 
@@ -67,7 +67,7 @@ const engineCandidateSchema = z.object({
   confidence: z.number().min(0).max(1),
 });
 
-/** One engine-extracted field — the shared shape for flat fields and trades. */
+/** One engine-extracted field - the shared shape for flat fields and trades. */
 const engineFieldSchema = z.object({
   field: ocrFieldKeySchema,
   rawValue: z.string().max(512).nullable(),
@@ -77,7 +77,7 @@ const engineFieldSchema = z.object({
   notes: z.array(z.string().max(256)).max(8),
 });
 
-/** V2 — one grouped trade read by the engine's row clustering (§2.2). */
+/** V2 - one grouped trade read by the engine's row clustering (§2.2). */
 export const engineTradeSchema = z.object({
   /** 0-based screenshot page the trade was read from (documents merge pages). */
   pageIndex: z.number().int().nonnegative(),
@@ -94,12 +94,12 @@ export const engineResponseSchema = z.object({
       type: ocrScreenshotTypeSchema,
       confidence: z.number().min(0).max(1),
       alternatives: z.array(engineCandidateSchema).max(4),
-      /** V2 §18 — detected platform (default keeps older sidecars parsing). */
+      /** V2 §18 - detected platform (default keeps older sidecars parsing). */
       platform: ocrPlatformSchema.default("UNKNOWN"),
     })
     .nullable(),
   fields: z.array(engineFieldSchema).max(64),
-  /** V2 — grouped trades, when the engine supplied them (row clustering). */
+  /** V2 - grouped trades, when the engine supplied them (row clustering). */
   trades: z.array(engineTradeSchema).max(20).optional(),
   /** Multi-trade drafts from account-history screenshots (engine quality §2.2). */
   tradeCandidates: z
@@ -110,7 +110,7 @@ export const engineResponseSchema = z.object({
     )
     .max(20)
     .default([]),
-  /** 64-bit dHash fingerprint — duplicate detection input (engine quality §2.1). */
+  /** 64-bit dHash fingerprint - duplicate detection input (engine quality §2.1). */
   perceptualHash: z
     .string()
     .regex(/^[0-9a-f]{16}$/)
@@ -138,7 +138,7 @@ export const engineResponseSchema = z.object({
 });
 export type EngineResponse = z.infer<typeof engineResponseSchema>;
 
-/** Strict parse of the sidecar's per-page document answer (§54 — untrusted). */
+/** Strict parse of the sidecar's per-page document answer (§54 - untrusted). */
 export const engineDocumentResponseSchema = z.object({
   requestId: z.string().min(1).max(128),
   contractVersion: z.string().min(1).max(8),
@@ -171,7 +171,7 @@ export type EngineEngineInfo = {
   contractVersion: string;
 };
 
-// ── Document pipeline (V2 — PDF statements) ─────────────────────────────────
+// ── Document pipeline (V2 - PDF statements) ─────────────────────────────────
 
 /** One rendered page of a document recognition (per-page extraction). */
 export interface EngineDocumentPage {
@@ -216,7 +216,7 @@ export interface OcrEngine {
   readonly info: EngineEngineInfo;
   /**
    * Document (PDF statement) capability flag (V2 document pipeline). Engines
-   * that cannot recognize documents stay `false`/omit the member — the
+   * that cannot recognize documents stay `false`/omit the member - the
    * pipeline then fails the job honestly (SCREENSHOT_UNSUPPORTED), never a
    * fabricated partial read.
    */
@@ -231,7 +231,7 @@ export const OCR_ENGINE = Symbol("OCR_ENGINE");
 /**
  * TRANSIENT engine failures (§34 retryable): connection refused, 5xx,
  * timeout, worker interruption. NON-transient: the sidecar refused the
- * image (4xx) or produced a structurally invalid payload — retrying cannot
+ * image (4xx) or produced a structurally invalid payload - retrying cannot
  * change the outcome.
  */
 export class EngineTransientError extends Error {
@@ -255,7 +255,7 @@ export class EngineUnprocessableError extends Error {
   }
 }
 
-/** Structurally invalid payload — a contract violation, never retried (§34). */
+/** Structurally invalid payload - a contract violation, never retried (§34). */
 export class EngineMalformedResponseError extends Error {
   constructor(message: string) {
     super(message);

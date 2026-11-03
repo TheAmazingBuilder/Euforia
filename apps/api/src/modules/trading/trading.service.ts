@@ -1,16 +1,16 @@
 /**
- * Trading Core application service (Phase 4) — journal trade use cases.
+ * Trading Core application service (Phase 4) - journal trade use cases.
  *
  * Ownership is ALWAYS derived from the authenticated principal (§23/§24):
  * the userId comes from the JWT guard, never from the client, and every
- * account/trade lookup is ownership-scoped (foreign ids are honest 404s —
+ * account/trade lookup is ownership-scoped (foreign ids are honest 404s -
  * the established IDOR convention).
  *
  * Source-aware editability (§30): broker-derived execution data on
  * EXTERNAL_SYNC trades is authoritative and read-only through the API;
  * journal metadata is editable. Manual trades are fully editable (they are
  * user-provided data) and their results are recomputed server-side on every
- * edit — client-supplied P&L is never accepted (§46).
+ * edit - client-supplied P&L is never accepted (§46).
  */
 import { Inject, Injectable, Optional } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -86,7 +86,7 @@ export class TradingService {
     private readonly identityRepository: IdentityRepository,
     @Inject(ROOT_LOGGER) private readonly logger?: RootLogger,
     /**
-     * Phase 10: optional by design — the bus is a leaf capability; when
+     * Phase 10: optional by design - the bus is a leaf capability; when
      * absent (never in the wired AppModule), the core journals silently.
      */
     @Optional() @Inject(DOMAIN_EVENT_BUS) private readonly events?: DomainEventBus,
@@ -124,7 +124,7 @@ export class TradingService {
     return { trade: toTradeDetail(trade) };
   }
 
-  // ── Manual trades (§29 — honest provenance) ───────────────────────────────
+  // ── Manual trades (§29 - honest provenance) ───────────────────────────────
 
   async createManual(
     userId: string,
@@ -134,7 +134,7 @@ export class TradingService {
     const user = await this.loadUser(userId);
 
     // The journal backfills the denormalized symbol column AND the
-    // instrumentId FK from the catalog — an unknown symbol is an honest 422,
+    // instrumentId FK from the catalog - an unknown symbol is an honest 422,
     // never an invented instrument row (§20).
     const instrumentId = await this.repository.findInstrumentIdBySymbol(input.symbol);
     if (instrumentId === null) {
@@ -227,7 +227,7 @@ export class TradingService {
       executions,
     });
     this.logger?.info({ userId, accountId: account.id, tradeId: row.id }, "manual trade created");
-    // Phase 10 §17: canonical domain event — Session Live subscribes to
+    // Phase 10 §17: canonical domain event - Session Live subscribes to
     // surface "trade detected" inside an active session (source "Journal").
     // Fire-and-forget: a consumer failure never affects the capture path.
     this.events?.emit("trade.created", {
@@ -407,7 +407,7 @@ export class TradingService {
         if (input.quantity !== undefined) executions[entryIndex(executions, "ENTRY")]!.volume = new Prisma.Decimal(input.quantity);
         if (input.direction !== undefined) executions[entryIndex(executions, "ENTRY")]!.side = input.direction;
       }
-      // Exit-field edits apply to the SINGLE exit execution only — partial
+      // Exit-field edits apply to the SINGLE exit execution only - partial
       // exit legs are immutable journal history (honest limitation).
       if ((input.exitPrice !== undefined || input.exitAt !== undefined || input.exitReason !== undefined || input.fees !== undefined || input.swap !== undefined)) {
         if (exitExecutions.length !== 1) {
@@ -470,7 +470,7 @@ export class TradingService {
     return { trade: toTradeDetail(await this.repository.findTradeForUser(trade.id, userId) as TradeWithExecutions) };
   }
 
-  /** Soft delete (§57) — journal history is archived, never destroyed. */
+  /** Soft delete (§57) - journal history is archived, never destroyed. */
   async delete(userId: string, tradeId: string) {
     const trade = await this.mustGetTrade(userId, tradeId);
     const deletedAt = new Date();
@@ -483,7 +483,7 @@ export class TradingService {
   /**
    * Reconcile one account's synchronized external activity into journal
    * trades. Consumes ONLY the Accounts context's public contract (persisted
-   * normalized deals/positions) — never provider adapters (§26).
+   * normalized deals/positions) - never provider adapters (§26).
    */
   async reconcileAccount(userId: string, accountId: string, requestId: string | null) {
     const account = await this.mustGetAccount(userId, accountId);
@@ -517,7 +517,7 @@ export class TradingService {
     const timezone = user?.timezone;
     const tradesToCreate = [];
     let skippedUnpriced = 0;
-    // Journal writes backfill the instrumentId FK — resolve each planned
+    // Journal writes backfill the instrumentId FK - resolve each planned
     // symbol ONCE (reconciliation passes see the same symbols repeatedly).
     const instrumentIdsBySymbol = new Map<string, string | null>();
     let skippedUnknownSymbol = 0;
@@ -529,14 +529,14 @@ export class TradingService {
       }
       if (instrumentId === null) {
         // Unknown catalog symbol: journaling without an instrument row is
-        // impossible (FK) and inventing one is forbidden — skip honestly;
+        // impossible (FK) and inventing one is forbidden - skip honestly;
         // the deals stay unjournaled and are re-planned on the next pass.
         skippedUnknownSymbol += 1;
         continue;
       }
       const aggregates = aggregateExecutions(planned.executions, { riskAmount: null });
       if (aggregates.entryPrice === null || aggregates.entryAt === null) {
-        // Pathological provider data: no priced entry at all — journal the
+        // Pathological provider data: no priced entry at all - journal the
         // deals is impossible without inventing a price. Skip honestly (§20).
         skippedUnpriced += 1;
         continue;
@@ -776,7 +776,7 @@ export class TradingService {
     };
   }
 
-  // ── Bulk import (§2/§8 — source=IMPORT, content-based idempotency) ───────
+  // ── Bulk import (§2/§8 - source=IMPORT, content-based idempotency) ───────
 
   async importTrades(userId: string, input: JournalImportTradesInput) {
     const account = await this.mustGetAccount(userId, input.accountId);
@@ -784,7 +784,7 @@ export class TradingService {
 
     let imported = 0;
     let skippedDuplicates = 0;
-    // Journal writes backfill the instrumentId FK — resolve each distinct
+    // Journal writes backfill the instrumentId FK - resolve each distinct
     // row symbol once; unknown catalog symbols skip honestly (logged below).
     const instrumentIdsBySymbol = new Map<string, string | null>();
     let skippedUnknownSymbol = 0;
@@ -808,7 +808,7 @@ export class TradingService {
       }
       if (instrumentId === null) {
         // Unknown catalog symbol: the row cannot be journaled without an
-        // instrument row (FK) and inventing one is forbidden — skip honestly.
+        // instrument row (FK) and inventing one is forbidden - skip honestly.
         skippedUnknownSymbol += 1;
         continue;
       }
@@ -897,7 +897,7 @@ export class TradingService {
           exitReason: null,
           fees: aggregates.fees,
           swap: aggregates.swap,
-          // Broker-file P&L is informational — results are always recomputed.
+          // Broker-file P&L is informational - results are always recomputed.
           pnlGross: aggregates.pnlGross,
           pnlNet: aggregates.pnlNet,
           rMultiple: null,

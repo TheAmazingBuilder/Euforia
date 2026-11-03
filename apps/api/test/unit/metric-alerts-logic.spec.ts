@@ -1,5 +1,5 @@
 /**
- * Unit — metric alert rules PURE evaluation logic (Phase 07). No Nest, no
+ * Unit - metric alert rules PURE evaluation logic (Phase 07). No Nest, no
  * DB: the transition machine, observation extraction, cooldown policy,
  * event identity determinism, unit formatting and semantic validation.
  */
@@ -196,7 +196,7 @@ describe("evaluateRuleTick", () => {
     expect(suppressed.outcome).toBe("QUIET");
     if (suppressed.outcome !== "QUIET") throw new Error("expected quiet");
     expect(suppressed.reason).toBe("COOLDOWN");
-    // The suppressed trigger still commits the transition — after the
+    // The suppressed trigger still commits the transition - after the
     // cooldown a NEW false→true is required (documented policy, spec §6).
     expect(suppressed.nextState.lastConditionMet).toBe(true);
 

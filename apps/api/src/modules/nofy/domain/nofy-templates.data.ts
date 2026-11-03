@@ -1,13 +1,13 @@
 /**
- * Nofy built-in templates (Phase 12 §23) — the product's five starter
+ * Nofy built-in templates (Phase 12 §23) - the product's five starter
  * structures, ported VERBATIM from the mock engine (the parity reference,
  * same block order, texts and tones). Code-owned immutable content: the
- * Phase 7 playbook-templates / Phase 11 academy-content precedent — the
+ * Phase 7 playbook-templates / Phase 11 academy-content precedent - the
  * product has no template CMS and no template draft/publish lifecycle, so
  * no database rows exist for them. Only USER templates are persisted.
  *
  * These are NOT educational content (Academy owns that): they are the
- * trader's personal-workspace scaffolding — idea framing, market reads,
+ * trader's personal-workspace scaffolding - idea framing, market reads,
  * strategy definitions, trade reviews and lesson consolidation.
  */
 import type { NofyBlock, NofyTemplate } from "../../../shared/contracts";
@@ -16,7 +16,7 @@ import { newBlockId } from "./nofy-content";
 
 const BUILT_IN_AT = "2026-01-01T00:00:00.000Z";
 
-/** Authoring helper — terse seed blocks (mock parity). */
+/** Authoring helper - terse seed blocks (mock parity). */
 function blk(type: NofyBlock["type"], text: string, extra: Partial<NofyBlock> = {}): NofyBlock {
   return { id: newBlockId(), type, text, ...extra };
 }
@@ -82,8 +82,8 @@ export const NOFY_BUILT_IN_TEMPLATES: NofyBuiltInTemplate[] = [
       blk("bullet", "Level one"),
       blk("bullet", "Level two"),
       blk("h2", "Scenarios"),
-      blk("callout", "Bullish case — what confirms it.", { tone: "tip" }),
-      blk("callout", "Bearish case — what confirms it.", { tone: "warn" }),
+      blk("callout", "Bullish case - what confirms it.", { tone: "tip" }),
+      blk("callout", "Bearish case - what confirms it.", { tone: "warn" }),
       blk("h2", "Invalidation"),
       blk("paragraph", "The read is wrong if…"),
     ],

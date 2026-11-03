@@ -1,5 +1,5 @@
 /**
- * Audit harness — captures ALL main routes (full page) for the
+ * Audit harness - captures ALL main routes (full page) for the
  * "professional interactions" quality pass.
  * Usage: node scripts/audit-current.js
  */
@@ -40,7 +40,7 @@ async function settle(page) {
   }
   await page.close();
 
-  // Mobile 390 — key routes.
+  // Mobile 390 - key routes.
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   for (const [route, name] of [["/", "dashboard"], ["/trades", "trades"], ["/session", "session"]]) {
     await mobile.goto(`${BASE}${route}`);

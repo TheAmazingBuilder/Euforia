@@ -1,13 +1,13 @@
 /**
  * Performance snapshots bounded context (Dashboard Customization Phase 08)
- * — point-in-time captures of the analytics-suite summary for a named
+ * - point-in-time captures of the analytics-suite summary for a named
  * scope + period, with comparison done client-side from the pure shared
  * engine (comparePerformanceSnapshots).
  *
  * Dependency graph (acyclic):
- *   SnapshotsModule → SnapshotsRepository (own Prisma boundary —
+ *   SnapshotsModule → SnapshotsRepository (own Prisma boundary -
  *                     performanceSnapshotRow)
- *                   → AnalyticsModule (the authoritative suite — this
+ *                   → AnalyticsModule (the authoritative suite - this
  *                     module computes NO financial math, spec §2)
  *                   → AccountsModule / PlaybookModule (scope-reference
  *                     validation on write, spec §11)

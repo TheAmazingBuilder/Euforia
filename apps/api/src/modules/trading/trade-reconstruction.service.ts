@@ -3,16 +3,16 @@
  *
  * Turns ALREADY-SYNCHRONIZED external activity (normalized deals + positions
  * owned by the Accounts context) into a PLAN of canonical journal trades.
- * This module is PURE: no database access, no Nest lifecycle — the Trading
+ * This module is PURE: no database access, no Nest lifecycle - the Trading
  * Core service applies the plan inside one transaction.
  *
- * Canonical grouping (provider-semantics driven, §17 — NOT a universal
+ * Canonical grouping (provider-semantics driven, §17 - NOT a universal
  * algorithm; documented V1 semantics for MT5-style deal streams):
  *
- *   1. Balance operations (symbol null) never become trades (§2 — not
+ *   1. Balance operations (symbol null) never become trades (§2 - not
  *      trading activity).
  *   2. Deals linked by the provider to a position (externalPositionId) are
- *      grouped by that linkage — MT5 semantics: every deal realizes one
+ *      grouped by that linkage - MT5 semantics: every deal realizes one
  *      position. The group's position side is the trade's direction; deals
  *      sharing the position side are ENTRY legs (scale-in), opposing-side
  *      deals are EXIT legs (partial or full close). For groups attached to
@@ -23,15 +23,15 @@
  *      an ENTRY. The walk is prefix-deterministic (causal), so append-only
  *      provider streams re-synchronize idempotently (§27/§55).
  *   4. Open positions with NO journal trade yet produce OPEN trades whose
- *      entry facts come from the position row (live floating state —
- *      profit/current price — is NOT copied: the provider stays
+ *      entry facts come from the position row (live floating state -
+ *      profit/current price - is NOT copied: the provider stays
  *      authoritative for live state, §11).
  *
  * Idempotency: already-journaled deals (an execution with the same
  * (accountId, externalDealId) exists) are never re-planned; deals mapped to
  * a user-deleted (soft-deleted) trade are skipped WITHOUT resurrecting it.
  * Provider CORRECTIONS are detected by comparing deal facts against the
- * journaled execution — changed deals update their execution and the parent
+ * journaled execution - changed deals update their execution and the parent
  * trade is flagged for re-aggregation (§28).
  */
 import { Prisma } from "@prisma/client";
@@ -241,7 +241,7 @@ export function buildReconstructionPlan(input: {
       trades.find((t) => t.externalPositionId === positionId && t.deletedAt === null) ??
       undefined;
     if (existing) {
-      // Role classification anchored on the STORED direction — stable across
+      // Role classification anchored on the STORED direction - stable across
       // syncs regardless of arrival order (§55 determinism).
       const executions = groupDeals.map((deal) =>
         toPlannedExecution(deal, deal.side === existing.direction ? "ENTRY" : "EXIT"),
@@ -251,7 +251,7 @@ export function buildReconstructionPlan(input: {
       continue;
     }
     if (deletedTradeIds.has(tradeIdForPosition(trades, positionId))) {
-      // The user deleted the journal trade for this position — do not resurrect.
+      // The user deleted the journal trade for this position - do not resurrect.
       continue;
     }
     const positionSide = (groupDeals[0]?.side ?? "BUY") as "BUY" | "SELL";
@@ -287,7 +287,7 @@ export function buildReconstructionPlan(input: {
   // ── 4. Open positions without a journal trade → OPEN trades (§11) ────────
   for (const position of input.positions) {
     // Any existing trade for this position (deleted or not) means the
-    // position is already journaled — a deleted trade is NOT resurrected.
+    // position is already journaled - a deleted trade is NOT resurrected.
     const alreadyJournaled =
       trades.some((t) => t.externalPositionId === position.externalPositionId) ||
       plan.tradesToCreate.some((p) => p.externalPositionId === position.externalPositionId);
@@ -382,7 +382,7 @@ export function fifoGroupUnlinked(deals: ReconstructionDeal[]): FifoGroup[] {
     const execution = toPlannedExecution(deal, openEntry ? "EXIT" : "ENTRY");
 
     if (openEntry) {
-      // Reduces open volume — an exit leg of the group that owns the entry.
+      // Reduces open volume - an exit leg of the group that owns the entry.
       openEntry.remaining = openEntry.remaining.minus(deal.volume);
       openEntry.group.executions.push(execution);
     } else if (
@@ -390,7 +390,7 @@ export function fifoGroupUnlinked(deals: ReconstructionDeal[]): FifoGroup[] {
       book.current.direction === (deal.side as "BUY" | "SELL") &&
       totalRemaining(book.current, book.entries).greaterThan(0)
     ) {
-      // Same side while the current group is still open — scale-in (§19).
+      // Same side while the current group is still open - scale-in (§19).
       book.current.executions.push(execution);
       book.entries.push({ group: book.current, remaining: deal.volume });
     } else {

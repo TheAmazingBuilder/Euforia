@@ -38,7 +38,7 @@ export function setSidebarCollapsed(collapsed: boolean): void {
 
 /**
  * Session-only marker: the current collapse was performed automatically FOR
- * the Oryon workspace (never persisted — a reload mid-Oryon keeps the stored
+ * the Oryon workspace (never persisted - a reload mid-Oryon keeps the stored
  * value, which is already "1"). Cleared by any manual toggle so the user's
  * explicit choice always wins.
  */
@@ -58,7 +58,7 @@ export function collapseSidebarForRoute(): void {
 
 /**
  * Leaving Oryon restores the pre-Oryon width, but only when the collapse was
- * the automatic one — a manual toggle during the session is respected.
+ * the automatic one - a manual toggle during the session is respected.
  */
 export function restoreSidebarAfterRoute(): void {
   if (autoCollapsedForRoute) {

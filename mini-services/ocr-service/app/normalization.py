@@ -3,7 +3,7 @@
 Mirrors the NestJS domain semantics (apps/api/src/modules/ocr/ocr.logic.ts):
   - ambiguous decimals STAY ambiguous ("1.234" → AMBIGUOUS, never 1234, §14);
   - symbols keep raw + normalized, no broker merge (§15);
-  - wall-clock timestamps carry TIMEZONE_UNKNOWN — no silent timezone
+  - wall-clock timestamps carry TIMEZONE_UNKNOWN - no silent timezone
     assumption (§16).
 
 The sidecar emits rawValue + normalizedValue + notes; the Nest side owns
@@ -35,7 +35,7 @@ _DECIMAL_CHARS = re.compile(r"^[0-9.,+\-]+$")
 
 
 def normalize_decimal(raw: str) -> Normalized:
-    """Exact decimal semantics — identical rules to the Nest side (§14)."""
+    """Exact decimal semantics - identical rules to the Nest side (§14)."""
     notes: List[str] = []
     text = raw.strip()
     stripped = re.sub(r"^[^0-9.,+\-]+", "", text)
@@ -78,7 +78,7 @@ def _canonical(text: str) -> Optional[str]:
         return None
     if value != value or value in (float("inf"), float("-inf")):
         return None
-    # Decimal STRING on the wire — never a float number (§14).
+    # Decimal STRING on the wire - never a float number (§14).
     text_clean = text.lstrip("+")
     if "." in text_clean:
         text_clean = text_clean.rstrip("0").rstrip(".")
@@ -117,7 +117,7 @@ def normalize_timestamp(raw: str) -> Normalized:
             notes=[TIMEZONE_UNKNOWN],
         )
     if _OFFSET_TS.match(text):
-        # Explicit offset — evidence-based conversion to UTC (§16).
+        # Explicit offset - evidence-based conversion to UTC (§16).
         parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
         if parsed.tzinfo is None:
             return Normalized(raw=raw, value=None)

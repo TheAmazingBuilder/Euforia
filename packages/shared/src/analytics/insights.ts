@@ -1,5 +1,5 @@
 /**
- * Phase 05 — Performance insights, pattern analysis & trading behavior.
+ * Phase 05 - Performance insights, pattern analysis & trading behavior.
  *
  * ONE deterministic engine, consumed by BOTH the API analytics suite
  * (authoritative computation) and the MSW mirror (mock parity) so the two
@@ -10,7 +10,7 @@
  *   its observation count. Correlation is never presented as causation.
  * - Small samples are SUPPRESSED (MIN_OBSERVATIONS per compared group),
  *   never dressed up as findings.
- * - Reliability labels are transparent observation-count bands — they are
+ * - Reliability labels are transparent observation-count bands - they are
  *   NOT statistical confidence levels and no test is claimed.
  * - Money aggregates are null unless the scope is single-currency; R-based,
  *   count and rate metrics survive multi-currency scopes.
@@ -23,7 +23,7 @@ import { dateKeySchema, decimalStringSchema } from "../schemas/primitives";
 
 // ── Wire contracts ──────────────────────────────────────────────────────────
 
-/** One holding-duration bucket (spec §4 — duration dimension). */
+/** One holding-duration bucket (spec §4 - duration dimension). */
 export const analyticsDurationBucketSchema = z.object({
   label: z.string().min(1),
   minMinutes: z.number().int().min(0),
@@ -33,14 +33,14 @@ export const analyticsDurationBucketSchema = z.object({
   wins: z.number().int().min(0),
   winRate: decimalStringSchema.nullable(),
   avgR: decimalStringSchema.nullable(),
-  /** null when the scope mixes currencies — never a raw cross-currency sum. */
+  /** null when the scope mixes currencies - never a raw cross-currency sum. */
   netPnl: decimalStringSchema.nullable(),
 });
 export type AnalyticsDurationBucket = z.infer<typeof analyticsDurationBucketSchema>;
 
 export const analyticsDurationsSchema = z.object({
   buckets: z.array(analyticsDurationBucketSchema),
-  /** Trades without an exit timestamp cannot be bucketed — counted, not hidden. */
+  /** Trades without an exit timestamp cannot be bucketed - counted, not hidden. */
   excludedMissingTimestamp: z.number().int().min(0),
 });
 export type AnalyticsDurations = z.infer<typeof analyticsDurationsSchema>;
@@ -71,7 +71,7 @@ export const analyticsStreakProfileSchema = z.object({
 });
 export type AnalyticsStreakProfile = z.infer<typeof analyticsStreakProfileSchema>;
 
-/** A typed metric value — the UI formats it; the engine never pre-formats. */
+/** A typed metric value - the UI formats it; the engine never pre-formats. */
 export const tradingInsightMetricSchema = z.object({
   label: z.string().min(1),
   kind: z.enum(["R", "MONEY", "PERCENT", "COUNT"]),
@@ -100,7 +100,7 @@ export const tradingInsightCategorySchema = z.enum([
 export type TradingInsightCategory = z.infer<typeof tradingInsightCategorySchema>;
 
 export const tradingInsightSchema = z.object({
-  /** Stable identifier — one insight per category, deterministic across replays. */
+  /** Stable identifier - one insight per category, deterministic across replays. */
   id: z.string().min(1),
   category: tradingInsightCategorySchema,
   title: z.string().min(1),
@@ -116,7 +116,7 @@ export type TradingInsight = z.infer<typeof tradingInsightSchema>;
 
 export const analyticsInsightsSchema = z.object({
   insights: z.array(tradingInsightSchema),
-  /** The rules behind the labels, verbatim — the UI shows them as footnotes. */
+  /** The rules behind the labels, verbatim - the UI shows them as footnotes. */
   methodology: z.array(z.string()),
 });
 export type AnalyticsInsights = z.infer<typeof analyticsInsightsSchema>;
@@ -127,7 +127,7 @@ export type AnalyticsInsights = z.infer<typeof analyticsInsightsSchema>;
  * One CLOSED trade, canonical journal values only. Callers (API suite and
  * MSW mirror) map their own row shapes onto this interface; the engine
  * never re-derives P&L or R (Phase 8 §2 law).
- * Rows MUST arrive in chronological order (trading day, then exit time) —
+ * Rows MUST arrive in chronological order (trading day, then exit time) -
  * the same order the suite engine already sorts into.
  */
 export interface InsightsEngineRow {
@@ -135,16 +135,16 @@ export interface InsightsEngineRow {
   instrumentSymbol: string;
   assetClass: string;
   strategyId: string | null;
-  /** Journal direction — "BUY" | "SELL". Any other value is excluded from
+  /** Journal direction - "BUY" | "SELL". Any other value is excluded from
    * directional analysis (spec §5 exclusion rule). */
   direction: string;
   /** User-timezone trading-day key (journal convention). */
   tradingDate: string;
   entryAtMs: number;
   exitAtMs: number | null;
-  /** Pre-parsed pnlNet — missing = 0 (canonical rule). */
+  /** Pre-parsed pnlNet - missing = 0 (canonical rule). */
   pnlNet: number;
-  /** Pre-parsed rMultiple — missing = 0 (canonical rule). */
+  /** Pre-parsed rMultiple - missing = 0 (canonical rule). */
   rMultiple: number;
   /** Parsed riskAmount > 0 in account currency, else null. */
   riskMoney: number | null;
@@ -152,7 +152,7 @@ export interface InsightsEngineRow {
 
 // ── Documented thresholds (spec §8: transparent rules) ──────────────────────
 
-/** Minimum observations per compared group — below this, nothing is emitted. */
+/** Minimum observations per compared group - below this, nothing is emitted. */
 export const INSIGHT_MIN_OBSERVATIONS = 5;
 /** Deterioration halves need a sturdier footing than pair comparisons. */
 export const INSIGHT_MIN_HALF = 10;
@@ -256,7 +256,7 @@ export function computeStreakProfile(rows: readonly InsightsEngineRow[]): Analyt
       currentLoss = 0;
       currentWin += 1;
     }
-    // Breakeven (pnlNet === 0): transparent — neither extends nor breaks a run
+    // Breakeven (pnlNet === 0): transparent - neither extends nor breaks a run
     // (same documented convention as advanced.streaks).
   });
   if (currentLoss > 0) {
@@ -272,7 +272,7 @@ export function computeStreakProfile(rows: readonly InsightsEngineRow[]): Analyt
 
   // Follow-window: the AFTER_STREAK_WINDOW trades after each qualifying streak
   // end; a trade already attributed to an earlier (overlapping) window stays
-  // attributed — every trade is counted exactly once.
+  // attributed - every trade is counted exactly once.
   const followIndices = new Set<number>();
   for (const end of streakEnds) {
     for (let offset = 1; offset <= AFTER_STREAK_WINDOW; offset += 1) {
@@ -307,7 +307,7 @@ export function computeStreakProfile(rows: readonly InsightsEngineRow[]): Analyt
 // ── Insight generation (§8) ─────────────────────────────────────────────────
 
 interface CandidateInsight extends TradingInsight {
-  /** Internal ranking input (transparent, capped at 1) — not on the wire. */
+  /** Internal ranking input (transparent, capped at 1) - not on the wire. */
   magnitude: number;
 }
 
@@ -327,7 +327,7 @@ function directional(rows: readonly InsightsEngineRow[]): CandidateInsight | nul
   const longs = rows.filter((row) => row.direction === "BUY");
   const shorts = rows.filter((row) => row.direction === "SELL");
   // Trades with any other direction value are excluded from the directional
-  // comparison (spec §5) — the journal schema currently makes that impossible
+  // comparison (spec §5) - the journal schema currently makes that impossible
   // (direction is BUY|SELL), the guard keeps the rule explicit and tested.
   const excluded = rows.length - longs.length - shorts.length;
   if (excluded > 0 && (longs.length < INSIGHT_MIN_OBSERVATIONS || shorts.length < INSIGHT_MIN_OBSERVATIONS)) {
@@ -350,7 +350,7 @@ function directional(rows: readonly InsightsEngineRow[]): CandidateInsight | nul
     category: "DIRECTIONAL",
     title: `${better} trades outperformed ${worse} trades in this scope`,
     description:
-      "Side-by-side directional comparison over the same scope, filters and metric definitions. An observed difference in this window — not evidence it will persist.",
+      "Side-by-side directional comparison over the same scope, filters and metric definitions. An observed difference in this window - not evidence it will persist.",
     metrics: [
       { label: `${better} avg R`, kind: "R", value: round2(betterAvg) },
       { label: `${worse} avg R`, kind: "R", value: round2(worseAvg) },
@@ -387,7 +387,7 @@ function timePattern(rows: readonly InsightsEngineRow[]): CandidateInsight | nul
   return {
     id: "TIME_PATTERN",
     category: "TIME_PATTERN",
-    title: `Weekday comparison — ${label(best.day)} vs ${label(worst.day)}`,
+    title: `Weekday comparison - ${label(best.day)} vs ${label(worst.day)}`,
     description:
       "Best and worst weekdays by average R within the current scope, using the journal's user-timezone trading-day convention. Weekday buckets with fewer than 5 trades are excluded.",
     metrics: [
@@ -457,7 +457,7 @@ function overtrading(rows: readonly InsightsEngineRow[]): CandidateInsight | nul
   const busyAvgR = avgROf(busy);
   const normalAvgR = avgROf(normal);
   if (busyAvgR === null || normalAvgR === null) return null;
-  // Spec §7A: a high count is NOT inherently bad — only reported when the
+  // Spec §7A: a high count is NOT inherently bad - only reported when the
   // trader's own history shows busier days performing below their normal days.
   if (busyAvgR >= normalAvgR) return null;
   return {
@@ -506,7 +506,7 @@ function lossFollowing(rows: readonly InsightsEngineRow[]): CandidateInsight | n
     id: "LOSS_FOLLOWING",
     category: "LOSS_FOLLOWING",
     title: "Trades opened shortly after a realized loss fared worse than the rest",
-    description: `A "loss-following trade cluster": trades entered within ${LOSS_FOLLOWING_WINDOW_MIN} minutes of a losing trade's exit, compared with all other trades in the scope. An observed sequence — not proof of revenge intent or any psychological state.`,
+    description: `A "loss-following trade cluster": trades entered within ${LOSS_FOLLOWING_WINDOW_MIN} minutes of a losing trade's exit, compared with all other trades in the scope. An observed sequence - not proof of revenge intent or any psychological state.`,
     metrics: [
       { label: "Loss-following avg R", kind: "R", value: round2(quickAvgR) },
       { label: "Other trades avg R", kind: "R", value: round2(othersAvgR) },
@@ -543,7 +543,7 @@ function riskBehavior(rows: readonly InsightsEngineRow[], singleCurrency: boolea
     category: "RISK_BEHAVIOR",
     title: "Position risk after losses ran above position risk after wins",
     description:
-      "Compares the risk amount entered on the trade following a loss with the trade following a win, within the same scope. Observed sizing pattern — not a rule violation unless an explicit limit exists and was breached.",
+      "Compares the risk amount entered on the trade following a loss with the trade following a win, within the same scope. Observed sizing pattern - not a rule violation unless an explicit limit exists and was breached.",
     metrics: [
       { label: "Avg risk after a loss", kind: "MONEY", value: round2(lossAvg) },
       { label: "Avg risk after a win", kind: "MONEY", value: round2(winAvg) },
@@ -579,7 +579,7 @@ function deterioration(rows: readonly InsightsEngineRow[]): CandidateInsight | n
     id: "DETERIORATION",
     category: "DETERIORATION",
     title: "Second half of this window tracked below the first half",
-    description: `The analyzed range is split into two equal chronological halves and compared on identical metric definitions. ${notes.join(" ")} A measured change inside this window — not a forecast.`,
+    description: `The analyzed range is split into two equal chronological halves and compared on identical metric definitions. ${notes.join(" ")} A measured change inside this window - not a forecast.`,
     metrics: [
       { label: "First-half avg R", kind: "R", value: round2(firstAvgR) },
       { label: "Second-half avg R", kind: "R", value: round2(secondAvgR) },
@@ -610,7 +610,7 @@ function duration(rows: readonly InsightsEngineRow[]): CandidateInsight | null {
   return {
     id: "DURATION",
     category: "DURATION",
-    title: `Holding time — ${best.label} vs ${worst.label}`,
+    title: `Holding time - ${best.label} vs ${worst.label}`,
     description:
       "Best and worst holding-duration buckets by average R within the current scope (entry → exit timestamps). Trades without an exit timestamp are excluded.",
     metrics: [
@@ -629,7 +629,7 @@ function duration(rows: readonly InsightsEngineRow[]): CandidateInsight | null {
 
 /** Transparent ranking: evidence weight first, then effect size (capped at a
  * 1R-equivalent), then observations, then the stable id. The ranking orders
- * findings for review — it does NOT predict future performance. */
+ * findings for review - it does NOT predict future performance. */
 function rank(a: CandidateInsight, b: CandidateInsight): number {
   const weight = (reliability: TradingInsightReliability): number =>
     reliability === "STRONG_EVIDENCE" ? 3 : reliability === "REPEATED_PATTERN" ? 2 : 1;
@@ -664,7 +664,7 @@ export function deriveInsights(
   return {
     insights,
     methodology: [
-      `Findings need at least ${INSIGHT_MIN_OBSERVATIONS} observations per compared group — smaller samples are suppressed, not reported.`,
+      `Findings need at least ${INSIGHT_MIN_OBSERVATIONS} observations per compared group - smaller samples are suppressed, not reported.`,
       `Reliability labels count observations only: ≥ ${INSIGHT_STRONG_AT} strong evidence, ≥ ${INSIGHT_REPEATED_AT} repeated pattern, otherwise early observation. These are NOT statistical confidence levels.`,
       `Loss streaks: consecutive net-negative trades; breakeven trades neither extend nor break a run. Follow-up windows look at the ${AFTER_STREAK_WINDOW} trades after ≥ ${AFTER_STREAK_MIN}-loss streaks.`,
       `The loss-following rule looks at trades entered within ${LOSS_FOLLOWING_WINDOW_MIN} minutes of a losing trade's exit. Observed sequences are not diagnoses.`,

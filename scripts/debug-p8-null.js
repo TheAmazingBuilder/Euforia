@@ -34,7 +34,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3001";
   await page.evaluate(() => document.querySelectorAll("nextjs-portal").forEach((n) => n.remove()));
   await page.waitForTimeout(3_000);
 
-  // Quad grid — the P7 flow that produced the errors.
+  // Quad grid - the P7 flow that produced the errors.
   await page.click('[data-testid="oryon-grid-trigger"]');
   await page.waitForTimeout(300);
   await page.click('[data-testid="oryon-grid-item-quad"]');

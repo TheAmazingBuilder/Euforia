@@ -1,5 +1,5 @@
 /**
- * Playbook data access (B10) — the ONLY place the playbook context touches
+ * Playbook data access (B10) - the ONLY place the playbook context touches
  * Prisma. Rows land in playbookRow with a `kind`
  * (STRATEGY | SETUP | CHECKLIST | RULE | VERSION); the row id IS the
  * entity id (version snapshots get their own uuid).
@@ -17,14 +17,14 @@ export interface PlaybookRow {
 
 /**
  * Normalized-generation row shapes per the playbook migration
- * (prisma/migrations/20261003160138_playbook — Strategy, Setup,
+ * (prisma/migrations/20261003160138_playbook - Strategy, Setup,
  * ChecklistTemplate, PlaybookRule, StrategyVersionSnapshot tables).
  * The wired row-store reads PlaybookRow; these type-only exports exist so
  * the Phase-7 contract mappers type-check against the normalized shapes
  * they were written for. Field types mirror the migration DDL.
  */
 
-/** Strategy row (migration 20261003160138) — markdown bodies + JSONB blocks. */
+/** Strategy row (migration 20261003160138) - markdown bodies + JSONB blocks. */
 export interface StrategyRow {
   id: string;
   userId: string;
@@ -73,7 +73,7 @@ export interface SetupRow {
   updatedAt: Date;
 }
 
-/** ChecklistTemplate row (migration 20261003160138) — JSONB items payload. */
+/** ChecklistTemplate row (migration 20261003160138) - JSONB items payload. */
 export interface ChecklistRow {
   id: string;
   userId: string;
@@ -100,7 +100,7 @@ export interface PlaybookRuleRow {
   updatedAt: Date;
 }
 
-/** StrategyVersionSnapshot row (migration 20261003160138) — frozen Strategy JSON. */
+/** StrategyVersionSnapshot row (migration 20261003160138) - frozen Strategy JSON. */
 export interface StrategySnapshotRow {
   id: string;
   strategyId: string;
@@ -175,7 +175,7 @@ export class PlaybookRepository {
   }
 
   async deleteByDataField(userId: string, kind: string, field: string, value: string): Promise<void> {
-    // Json-path filtering is Postgres-specific; the dev scale is small —
+    // Json-path filtering is Postgres-specific; the dev scale is small -
     // filter in JS for honest cross-engine behavior.
     const rows = await this.listByKind(userId, kind);
     for (const row of rows) {

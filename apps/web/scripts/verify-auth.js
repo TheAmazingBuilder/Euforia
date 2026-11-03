@@ -1,5 +1,5 @@
 /**
- * Verify — Complete authentication system (P0 + MFA challenge).
+ * Verify - Complete authentication system (P0 + MFA challenge).
  *
  * Covers:
  *   A. Unauthenticated gate: / redirects to /login?returnTo=%2F (splash, no
@@ -18,7 +18,7 @@
  *   H. Recovery-code login path (unused code from enrollment).
  *   I. Token lifecycle: expire access token (dev hook) → protected API call
  *      auto-refreshes (single refresh request for 3 parallel queries) and
- *      the page keeps working — no logout.
+ *      the page keeps working - no logout.
  *   J. Session revocation: Security → logout all → real local logout.
  *   K. Forgot/reset password: generic success, mocked reset link, new
  *      password works on the next login.
@@ -38,7 +38,7 @@ const DEMO_PASSWORD = "cosmoz-demo-2026";
 
 const results = [];
 const check = (name, ok, extra = "") => {
-  results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   console.log(results[results.length - 1]);
 };
 
@@ -82,7 +82,7 @@ function trackRefreshes(page) {
   page.on("response", (resp) => {
     if (resp.status() >= 400 && !NOISE.some((re) => re.test(resp.url()))) {
       // Auth-domain 4xx are expected flows (invalid creds, rate limits,
-      // unauthenticated /auth/me) — do not pollute the error report.
+      // unauthenticated /auth/me) - do not pollute the error report.
       if (resp.url().includes("/api/auth/")) return;
       // The single-flight test intentionally triggers guarded 401s.
       if (expectGuarded401s && resp.status() === 401) return;
@@ -92,7 +92,7 @@ function trackRefreshes(page) {
   page.on("pageerror", (err) => errors.push(String(err)));
 
   // ══ A. Unauthenticated gate ══════════════════════════════════════════════
-  console.log("— A. Unauthenticated gate");
+  console.log("- A. Unauthenticated gate");
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await page.locator('[data-testid="auth-splash"]').waitFor({ state: "visible", timeout: 20_000 }).catch(() => {});
   await page.waitForURL(/\/login\?returnTo=%2F/, { timeout: 20_000 });
@@ -103,7 +103,7 @@ function trackRefreshes(page) {
   check("Login form visible (premium split shell)", await page.locator('[data-testid="login-form"]').isVisible());
 
   // ══ B. Invalid credentials ═══════════════════════════════════════════════
-  console.log("— B. Invalid credentials");
+  console.log("- B. Invalid credentials");
   await loginAs(page, DEMO_EMAIL, "wrong-password-123");
   await page.locator('[data-testid="login-error"]').waitFor({ state: "visible", timeout: 8_000 });
   const errText = await page.locator('[data-testid="login-error"]').innerText();
@@ -111,7 +111,7 @@ function trackRefreshes(page) {
   await page.screenshot({ path: `${SHOTS}/B-invalid-credentials.png` });
 
   // ══ C. Rate limiting (throwaway email keeps the demo account clean) ══════
-  console.log("— C. Rate limiting");
+  console.log("- C. Rate limiting");
   for (let i = 0; i < 6; i += 1) {
     await loginAs(page, "ratelimit@cosmoz.app", "wrong-password-123");
     await wait(350);
@@ -122,7 +122,7 @@ function trackRefreshes(page) {
   await page.screenshot({ path: `${SHOTS}/C-rate-limited.png` });
 
   // ══ D. Registration (validation + success) ═══════════════════════════════
-  console.log("— D. Registration");
+  console.log("- D. Registration");
   await page.locator('[data-testid="login-to-register"]').click();
   await page.locator('[data-testid="register-form"]').waitFor({ state: "visible", timeout: 10_000 });
 
@@ -148,7 +148,7 @@ function trackRefreshes(page) {
   await page.screenshot({ path: `${SHOTS}/D-register-pending.png` });
 
   // ══ E. Email verification ════════════════════════════════════════════════
-  console.log("— E. Email verification");
+  console.log("- E. Email verification");
   await page.locator('[data-testid="register-open-verification"]').click();
   await page.locator('[data-testid="verify-email"]').waitFor({ state: "visible", timeout: 10_000 });
   await page.locator('[data-testid="verify-state-success"], [data-testid="verify-state-verifying"]').waitFor({ state: "visible", timeout: 10_000 });
@@ -157,7 +157,7 @@ function trackRefreshes(page) {
   await page.screenshot({ path: `${SHOTS}/E-verify-success.png` });
 
   // ══ F. Login as registered user → protected app → logout ═════════════════
-  console.log("— F. Registered login + protected navigation");
+  console.log("- F. Registered login + protected navigation");
   await page.locator('[data-testid="verify-continue"]').click();
   await page.locator('[data-testid="login-form"]').waitFor({ state: "visible", timeout: 10_000 });
 
@@ -183,10 +183,10 @@ function trackRefreshes(page) {
   check("Reload with dead mock engine → clean login redirect (no crash)", true);
 
   // ══ G. Demo login → MFA enrollment → MFA challenge ═══════════════════════
-  console.log("— G. MFA enrollment + challenge");
+  console.log("- G. MFA enrollment + challenge");
   await page.locator("#login-email").waitFor({ state: "visible", timeout: 15_000 });
   await page.locator('[data-testid="login-demo-hint"] button').click();
-  // The Fill handler awaits a dynamic import — wait for the fields to populate.
+  // The Fill handler awaits a dynamic import - wait for the fields to populate.
   await page.waitForFunction(
     () => (document.querySelector("#login-email")?.value ?? "").length > 0,
     { timeout: 10_000 },
@@ -253,7 +253,7 @@ function trackRefreshes(page) {
   await page.screenshot({ path: `${SHOTS}/G-mfa-login.png` });
 
   // ══ H. Recovery-code login path ══════════════════════════════════════════
-  console.log("— H. Recovery-code login");
+  console.log("- H. Recovery-code login");
   await page.locator('[data-testid="sidebar-logout"]').click();
   await page.waitForURL(/\/login/, { timeout: 15_000 });
   await loginAs(page, DEMO_EMAIL, DEMO_PASSWORD);
@@ -268,8 +268,8 @@ function trackRefreshes(page) {
     check("Recovery code captured during enrollment", false, "no code found");
   }
 
-  // ══ I. Token lifecycle — single-flight refresh ═══════════════════════════
-  console.log("— I. Access-token refresh (single flight)");
+  // ══ I. Token lifecycle - single-flight refresh ═══════════════════════════
+  console.log("- I. Access-token refresh (single flight)");
   // Let the recovery-login navigation fully settle first.
   await wait(2500);
   const refreshUrls = trackRefreshes(page);
@@ -291,7 +291,7 @@ function trackRefreshes(page) {
   expectGuarded401s = true;
   await page.evaluate(() => window.__cosmoz_auth?.expireAccessToken());
   // Re-fetch the guarded queries (profile + trades) in PARALLEL through the
-  // real queryClient — both 401, both retried after ONE shared refresh.
+  // real queryClient - both 401, both retried after ONE shared refresh.
   await page.evaluate(() => window.__cosmoz_auth?.refetchGuarded());
   await wait(3000);
   expectGuarded401s = false;
@@ -303,7 +303,7 @@ function trackRefreshes(page) {
   check("Still authenticated after refresh cycle", await page.locator('[data-testid="topbar"]').isVisible());
 
   // ══ J. Session revocation → real logout ═════════════════════════════════
-  console.log("— J. Session revocation");
+  console.log("- J. Session revocation");
   await page.locator('a[href="/security"]').first().click();
   await page.locator('[data-testid="security-tablist"]').waitFor({ state: "visible", timeout: 20_000 });
   await page.locator('[data-testid="security-tab-sessions"]').click();
@@ -316,8 +316,8 @@ function trackRefreshes(page) {
   await page.screenshot({ path: `${SHOTS}/J-revoked-login.png` });
 
   // ══ K. Forgot / reset password ═══════════════════════════════════════════
-  console.log("— K. Forgot + reset password");
-  // Fresh engine (goto a public auth page) — demo password back to default.
+  console.log("- K. Forgot + reset password");
+  // Fresh engine (goto a public auth page) - demo password back to default.
   await page.goto(`${BASE}/forgot-password`, { waitUntil: "domcontentloaded" });
   await page.locator("#forgot-email").waitFor({ state: "visible", timeout: 20_000 });
   await page.locator("#forgot-email").fill(DEMO_EMAIL);
@@ -340,7 +340,7 @@ function trackRefreshes(page) {
   await page.locator('[data-testid="reset-continue"]').click();
   await wait(1500);
   // The demo user's stateless refresh cookie may restore the session on a
-  // fresh engine — sign out first so the credential checks are clean.
+  // fresh engine - sign out first so the credential checks are clean.
   if (!page.url().includes("/login")) {
     await page.locator('[data-testid="sidebar-logout"]').click();
     await page.waitForURL(/\/login/, { timeout: 15_000 });
@@ -355,8 +355,8 @@ function trackRefreshes(page) {
   await page.locator('[data-testid="topbar"]').waitFor({ state: "visible", timeout: 20_000 });
   check("New password signs in", !page.url().includes("/login"));
 
-  // ══ L. Visual QA — mobile login + MFA ════════════════════════════════════
-  console.log("— L. Visual QA");
+  // ══ L. Visual QA - mobile login + MFA ════════════════════════════════════
+  console.log("- L. Visual QA");
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
   await mobile.locator("#login-email").waitFor({ state: "visible", timeout: 20_000 });
@@ -364,7 +364,7 @@ function trackRefreshes(page) {
   const overflow = await mobile.evaluate(
     () => document.documentElement.scrollWidth > document.documentElement.clientWidth + 1,
   );
-  check("Mobile login — no horizontal overflow", !overflow);
+  check("Mobile login - no horizontal overflow", !overflow);
   await mobile.close();
 
   // Session-expired reason banner (desktop, fresh public page)
@@ -376,7 +376,7 @@ function trackRefreshes(page) {
   // ══ Report ═══════════════════════════════════════════════════════════════
   console.log("\n══════════════════════════════════");
   const failed = results.filter((r) => r.startsWith("FAIL"));
-  console.log(`TOTAL: ${results.length} — FAILED: ${failed.length}`);
+  console.log(`TOTAL: ${results.length} - FAILED: ${failed.length}`);
   if (errors.length) {
     console.log("\nUnexpected console/network errors:");
     for (const e of [...new Set(errors)].slice(0, 12)) console.log("  ", e);

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Post-traitement docx — commutateurs de format des pieds de page (WPS) + purge pgNumType vides.
+"""Post-traitement docx - commutateurs de format des pieds de page (WPS) + purge pgNumType vides.
 
 Règles toc.md :
   - pied de page romain (section TDM)   : instrText  PAGE \\* ROMAN \\* MERGEFORMAT
@@ -58,7 +58,7 @@ for i, rid in enumerate(footer_rids[:2]):
     print(f"{fpath} → PAGE \\* {fmt} ({n} champ(s))")
 
 if len(patched) < 2:
-    print("ERREUR : moins de deux pieds de page patchés — vérifier les sections")
+    print("ERREUR : moins de deux pieds de page patchés - vérifier les sections")
     sys.exit(1)
 
 # 4. Purge des pgNumType vides (couverture)

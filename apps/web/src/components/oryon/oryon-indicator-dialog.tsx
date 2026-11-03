@@ -32,7 +32,7 @@ import { useIndicatorSnapshot, useOryonIndicators } from "./oryon-indicators-con
 import { useWorkspaceConfigSnapshot } from "./oryon-workspace-context";
 
 /**
- * Oryon indicator dialog — search / add / configure / manage (Phase 3 §4F
+ * Oryon indicator dialog - search / add / configure / manage (Phase 3 §4F
  * + Phase 7 §11/§12 ownership).
  *
  * Phase 7: the dialog operates on the ACTIVE chart panel's indicator store
@@ -48,10 +48,10 @@ import { useWorkspaceConfigSnapshot } from "./oryon-workspace-context";
  *    the LAST VALID configuration is retained (spec §9). Cancel discards.
  *
  * Keyboard: Radix dialog focus trap, autofocus on the search field, visible
- * focus rings from the UI primitives. No emoji — lucide icons only.
+ * focus rings from the UI primitives. No emoji - lucide icons only.
  */
 
-/** The ACTIVE panel's indicator store — the dialog's single target. */
+/** The ACTIVE panel's indicator store - the dialog's single target. */
 function useActiveIndicatorStore(): OryonIndicatorStore {
   const { registry } = useOryonIndicators();
   const { session } = useWorkspaceConfigSnapshot();
@@ -247,7 +247,7 @@ function SettingsMode({ id }: { id: string }) {
   const meta = instance !== null ? INDICATOR_REGISTRY[instance.type] : null;
 
   // Draft state is seeded ONCE from the instance at mount. The dialog remounts
-  // this editor per instance (key={id}) and Radix unmounts it on close — a
+  // this editor per instance (key={id}) and Radix unmounts it on close - a
   // re-seed effect would fight the "cancel discards everything" contract.
   const [params, setParams] = React.useState<DraftParams>(() => {
     const next: DraftParams = {};
@@ -273,7 +273,7 @@ function SettingsMode({ id }: { id: string }) {
 
   const apply = () => {
     setError(null);
-    // Strict numeric parse — integers enforced by spec step.
+    // Strict numeric parse - integers enforced by spec step.
     const parsed: Record<string, number> = {};
     for (const spec of meta.params) {
       const raw = params[spec.key];

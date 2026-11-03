@@ -1,8 +1,8 @@
 /**
- * e2e — OCR V2 decision layer (V2 spec §4/§15/§16/§23/§58): structured
+ * e2e - OCR V2 decision layer (V2 spec §4/§15/§16/§23/§58): structured
  * issues + quality score + timeline on the DTO, content-based trade
  * duplicate detection (different screenshot, same trade), and the explicit
- * duplicate acknowledgments that gate confirmation (V2 §58 — the user
+ * duplicate acknowledgments that gate confirmation (V2 §58 - the user
  * decides, never a silent double import, never a silent discard).
  *
  * Real AppModule + real DB + the deterministic mock engine (same discipline
@@ -64,9 +64,9 @@ async function confirm(a: UserCtx, id: string, payload: Record<string, unknown>)
   });
 }
 
-// ── V2 §15/§16/§23 — DTO derivations ─────────────────────────────────────────
+// ── V2 §15/§16/§23 - DTO derivations ─────────────────────────────────────────
 
-describe("recognition DTO — issues, quality score, timeline", () => {
+describe("recognition DTO - issues, quality score, timeline", () => {
   it("surfaces quality score, issues and a real timeline for a clean recognition", async () => {
     const a = await user();
     const recognition = await upload(a.authHeader, pngDataUrl(makeOcrFixturePng({ nonce: 21 })));
@@ -80,7 +80,7 @@ describe("recognition DTO — issues, quality score, timeline", () => {
       consistency: expect.any(Number),
     });
 
-    // The deterministic engine emits coherent values — none of the domain
+    // The deterministic engine emits coherent values - none of the domain
     // validation issues may fire on its output.
     const codes = recognition.issues.map((issue) => issue.code);
     expect(codes).not.toContain("INVALID_PRICE_RELATIONSHIP");
@@ -91,7 +91,7 @@ describe("recognition DTO — issues, quality score, timeline", () => {
     expect(codes).not.toContain("POSSIBLE_TRADE_DUPLICATE");
 
     // UNKNOWN_SYMBOL mirrors the REAL catalog: the issue fires exactly when
-    // the recognized symbol is not in the instruments list (V2 §16 — the
+    // the recognized symbol is not in the instruments list (V2 §16 - the
     // derivation is honest about what the catalog resolves).
     const symbol = recognition.fields.find((f) => f.field === "symbol")?.normalizedValue;
     expect(symbol).toBeTruthy();
@@ -113,14 +113,14 @@ describe("recognition DTO — issues, quality score, timeline", () => {
   });
 });
 
-// ── V2 §4 — content-based trade duplicate detection ─────────────────────────
+// ── V2 §4 - content-based trade duplicate detection ─────────────────────────
 
-describe("trade duplicate detection — different screenshot, same trade", () => {
+describe("trade duplicate detection - different screenshot, same trade", () => {
   it("flags a recognition whose values match an existing trade", async () => {
     const a = await user();
 
     // 0. Pick a fixture nonce whose deterministic-engine symbol is actually
-    // tradable (the seed — and therefore the symbol — is a pure function of
+    // tradable (the seed - and therefore the symbol - is a pure function of
     // the checksum: same math as the engine, no brute-force uploads).
     const instrumentsRes = await app.inject({
       method: "GET",
@@ -155,7 +155,7 @@ describe("trade duplicate detection — different screenshot, same trade", () =>
     expect(direction === "BUY" || direction === "SELL").toBe(true);
     expect(entryPrice).toBeTruthy();
 
-    // 2. Remove the recognition (the asset goes with it — last ref).
+    // 2. Remove the recognition (the asset goes with it - last ref).
     await app.inject({
       method: "DELETE",
       url: `/api/v1/ocr/recognitions/${first.id}`,
@@ -163,7 +163,7 @@ describe("trade duplicate detection — different screenshot, same trade", () =>
     });
 
     // 3. Create the "existing trade" through the canonical trades API with
-    // the SAME core values (one MOCK account connected first — the trades
+    // the SAME core values (one MOCK account connected first - the trades
     // e2e house pattern; the account must exist before the trade). 
     const connected = await app.inject({
       method: "POST",
@@ -198,7 +198,7 @@ describe("trade duplicate detection — different screenshot, same trade", () =>
         entryPrice,
         entryAt:
           openTime !== undefined && openTime !== null
-            ? `${openTime}Z` // wall clock read as UTC — inside the ±48h window, §16
+            ? `${openTime}Z` // wall clock read as UTC - inside the ±48h window, §16
             : "2026-01-05T09:30:00.000Z",
         size: { mode: "quantity", quantity: "0.10" },
         outOfPlaybook: true,
@@ -207,7 +207,7 @@ describe("trade duplicate detection — different screenshot, same trade", () =>
     expect(createRes.statusCode).toBe(201);
     const trade = createRes.json() as { id: string };
 
-    // 4. Re-upload the SAME screenshot — a fresh recognition (the previous
+    // 4. Re-upload the SAME screenshot - a fresh recognition (the previous
     // row was deleted) whose values now collide with the live trade.
     const second = await upload(a.authHeader, pngDataUrl(bytes));
     expect(second.possibleTradeDuplicate).not.toBeNull();
@@ -224,7 +224,7 @@ describe("trade duplicate detection — different screenshot, same trade", () =>
     expect(blocked.statusCode).toBe(409);
     expect((blocked.json() as { code: string }).code).toBe("OCR_TRADE_DUPLICATE_UNACKNOWLEDGED");
 
-    // …and proceeds once the user acknowledges (V2 §58 — Import Anyway).
+    // …and proceeds once the user acknowledges (V2 §58 - Import Anyway).
     const acknowledged = await confirm(a, second.id, { acknowledgeDuplicateTrade: true });
     expect(acknowledged.statusCode).toBe(200);
     expect(ocrRecognitionResponseSchema.parse(acknowledged.json()).recognition.status).toBe(
@@ -233,7 +233,7 @@ describe("trade duplicate detection — different screenshot, same trade", () =>
   });
 });
 
-// ── V2 §58 — screenshot duplicate acknowledgment ─────────────────────────────
+// ── V2 §58 - screenshot duplicate acknowledgment ─────────────────────────────
 
 describe("screenshot duplicate acknowledgment", () => {
   it("blocks confirmation until the near-duplicate flag is acknowledged", async () => {
@@ -241,7 +241,7 @@ describe("screenshot duplicate acknowledgment", () => {
     const recognition = await upload(a.authHeader, pngDataUrl(makeOcrFixturePng({ nonce: 44 })));
 
     // Simulate the advisory flag the pHash path stores (the deterministic
-    // engine never emits a hash — the flag semantics are what is under test).
+    // engine never emits a hash - the flag semantics are what is under test).
     await prisma.ocrRecognition.update({
       where: { id: recognition.id },
       data: {

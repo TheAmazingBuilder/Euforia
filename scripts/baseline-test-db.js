@@ -1,10 +1,10 @@
 /**
  * Baseline the cosmoz_test database (Prisma "baselining an existing database"):
  *   1. drop + recreate cosmoz_test
- *   2. prisma db push — builds the CURRENT schema.prisma state (the migration
+ *   2. prisma db push - builds the CURRENT schema.prisma state (the migration
  *      history is order-inverted for a from-scratch deploy: 20261003145823_
  *      trade_review references "Trade", created by 20261004120000_trade_
- *      journal_core — a recovery-session artifact; the dev DB predates this)
+ *      journal_core - a recovery-session artifact; the dev DB predates this)
  *   3. mark every migration directory as applied in _prisma_migrations so
  *      `migrate deploy` (vitest globalSetup) is a no-op and future migrations
  *      apply normally on top.

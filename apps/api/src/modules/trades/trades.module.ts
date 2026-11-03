@@ -1,5 +1,5 @@
 /**
- * Trading Core bounded context (Phase 4) — the canonical journal domain.
+ * Trading Core bounded context (Phase 4) - the canonical journal domain.
  *
  * The journal trade is a FIRST-CLASS business object distinct from both the
  * broker position and the broker deal (§1): Euforia owns its identity (§7),
@@ -8,10 +8,10 @@
  * (trade-calculations, §46).
  *
  * Reuse over reinvention (§3): the error taxonomy, ZodValidationPipe, auth
- * guard, shared wire contracts (@cosmoz/shared — the same schemas the
+ * guard, shared wire contracts (@cosmoz/shared - the same schemas the
  * frontend and MSW mocks validate against), the magic-byte image sniffing
  * helper (OCR's pure utility) and the Accounts repository's narrow read
- * contract (ADR-0003) are all consumed — nothing is rebuilt. NO TradeExecution
+ * contract (ADR-0003) are all consumed - nothing is rebuilt. NO TradeExecution
  * table exists on purpose: the broker executions ARE Phase 3's TradingDeal
  * rows, read through the Accounts module boundary (§26).
  *
@@ -54,7 +54,7 @@ const screenshotStorageProvider = {
   // Narrow read contract (ADR-0003 house pattern): contexts that legitimately
   // reference journal infrastructure (ghosts validate instrument ids against
   // the catalog; discipline aggregates consume journal facts) consume the
-  // repository — never the service internals.
+  // repository - never the service internals.
   exports: [TradesRepository, TradesService],
 })
 export class TradesModule {}

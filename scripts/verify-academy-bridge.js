@@ -1,5 +1,5 @@
 /**
- * Verify — Academy Batch E (journal → academy bridge):
+ * Verify - Academy Batch E (journal → academy bridge):
  *   Overview "From your journal" section renders evidence-based suggestions
  *   with reasons; clicking deep-links into the suggested lesson; console
  *   health + regression of the continue card.
@@ -22,7 +22,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);

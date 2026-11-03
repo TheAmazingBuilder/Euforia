@@ -1,7 +1,7 @@
 import { toDecimalString, parseDecimal } from "./money";
 
 /**
- * Risk & position math — pure, deterministic.
+ * Risk & position math - pure, deterministic.
  *
  * All inputs accept decimal strings (the wire format) or numbers; outputs
  * that represent money/quantities are canonical decimal strings. These are
@@ -32,8 +32,8 @@ function roundTo(value: number, decimals: number): number {
  * BUY:  risk = entry − stop, reward = target − entry.
  * SELL: risk = stop − entry, reward = entry − target.
  * Returns null when the stop is on the wrong side of entry (risk ≤ 0) or an
- * input is unparsable. The reward may be ≤ 0 (bad setup) — that is returned
- * as a negative ratio so the form can flag it ("R:R 1:0.3 — intended?").
+ * input is unparsable. The reward may be ≤ 0 (bad setup) - that is returned
+ * as a negative ratio so the form can flag it ("R:R 1:0.3 - intended?").
  */
 export function computeRR(
   entry: NumericInput,
@@ -138,7 +138,7 @@ export interface PnlForExitInput {
 /**
  * Net P&L of a single exit: Δ × quantity × contractSize − fees − swap.
  * BUY: Δ = exit − entry; SELL: Δ = entry − exit.
- * Returns a decimal string, or null on invalid input. Display estimate only —
+ * Returns a decimal string, or null on invalid input. Display estimate only -
  * the server recomputes and stores the authoritative pnlGross/pnlNet.
  */
 export function pnlForExit(input: PnlForExitInput): string | null {

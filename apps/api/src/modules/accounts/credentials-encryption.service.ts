@@ -19,14 +19,14 @@ export class CredentialsEncryptionService {
     return encryptWithAesGcm(this.config.accounts.credentialsEncryptionKey, plaintext);
   }
 
-  /** `null` on any failure — callers treat it as INVALID_CREDENTIALS state. */
+  /** `null` on any failure - callers treat it as INVALID_CREDENTIALS state. */
   decrypt(payload: string): string | null {
     if (!payload) return null;
     return decryptWithAesGcm(this.config.accounts.credentialsEncryptionKey, payload);
   }
 
   /**
-   * Masked display hint — last 4 characters only. Never enough to
+   * Masked display hint - last 4 characters only. Never enough to
    * authenticate, safe for UI, never includes the full secret.
    */
   static hint(secret: string): string {

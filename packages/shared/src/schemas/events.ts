@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Events contracts — the independent calendar module (Academy section).
+ * Events contracts - the independent calendar module (Academy section).
  * A month-grid personal calendar: colored calendars grouped in the sidebar
  * (MY / FAVORITES / OTHER), timed events as pills and all-day/multi-day
  * events as full-width bars. The mock engine generates dates RELATIVE TO
@@ -28,7 +28,7 @@ export type EventCalendarGroup = z.infer<typeof eventCalendarGroupSchema>;
 export type EventCalendar = {
   id: string;
   name: string;
-  /** Identity ink — the client maps it to a semantic CSS var. */
+  /** Identity ink - the client maps it to a semantic CSS var. */
   color: EventCalendarColor;
   group: EventCalendarGroup;
   /** Stable order inside its group. */
@@ -39,9 +39,9 @@ export type CalendarEvent = {
   id: string;
   calendarId: string;
   title: string;
-  /** ISO instant — start. */
+  /** ISO instant - start. */
   start: string;
-  /** ISO instant — null for single-day events. */
+  /** ISO instant - null for single-day events. */
   end: string | null;
   /** All-day bars render full-width without a clock prefix. */
   allDay: boolean;

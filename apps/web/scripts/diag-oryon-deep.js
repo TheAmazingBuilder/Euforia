@@ -1,5 +1,5 @@
 /**
- * diag-oryon-deep.js — capture the /candles payloads THE BROWSER receives,
+ * diag-oryon-deep.js - capture the /candles payloads THE BROWSER receives,
  * dump the engine's internal series state, and trace setBars calls.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node diagnostic helper */

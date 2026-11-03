@@ -1,5 +1,5 @@
 /**
- * Verify — Playbook module upgrades (4 user-selected features).
+ * Verify - Playbook module upgrades (4 user-selected features).
  *  1. Live compliance score: % of the last 20 closed trades matched to the
  *     declared setup (server-computed, MATCHED only, unreviewed not judged)
  *  2. Strategy version diff: edit a definition → v1 frozen → visual diff
@@ -24,7 +24,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const waitForToast = async (text, timeout = 5000) => {
     try {
@@ -59,14 +59,14 @@ const BASE = "http://localhost:3000";
   check(
     "Score equals matched/reviewed (MATCHED only)",
     compliance.scorePct === null
-      ? scoreText.includes("—")
+      ? scoreText.includes("-")
       : scoreText.includes(`${expectedScore}%`),
     `ui=${scoreText} server=${compliance.scorePct}`,
   );
   check(
     "Unreviewed trades reported, not judged",
     compliance.unreviewed === 0 ||
-      ((await complianceCard.textContent()) ?? "").includes("not reviewed yet — not judged"),
+      ((await complianceCard.textContent()) ?? "").includes("not reviewed yet - not judged"),
     `unreviewed=${compliance.unreviewed}`,
   );
   await page.screenshot({ path: "scripts/shots/playbook-upgrades-compliance.png" });
@@ -113,7 +113,7 @@ const BASE = "http://localhost:3000";
     instrumentFilter.slice(0, 30),
   );
 
-  // ── 2. Version diff — create v2, then compare ──────────────────────────────
+  // ── 2. Version diff - create v2, then compare ──────────────────────────────
   await page.goto(`${BASE}/playbook?tab=strategies`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(900);
   await page.locator('button[aria-haspopup="dialog"]:has(h3)').first().click();
@@ -122,7 +122,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(700);
   const versionsDialog = page.locator('[data-testid="strategy-versions-dialog"]');
   check("Version history dialog opens", await versionsDialog.isVisible());
-  // Fresh store: no prior version yet — the honest empty state.
+  // Fresh store: no prior version yet - the honest empty state.
   check(
     "Empty history state is honest (no prior version yet)",
     ((await versionsDialog.textContent()) ?? "").includes("No prior version yet") ||
@@ -131,7 +131,7 @@ const BASE = "http://localhost:3000";
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
-  // Edit the description — the definition change freezes the current version.
+  // Edit the description - the definition change freezes the current version.
   await page.locator('[data-testid="playbook-edit-strategy"]').click().catch(async () => {
     await page.getByRole("button", { name: "Edit" }).click();
   });

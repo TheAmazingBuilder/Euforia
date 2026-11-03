@@ -3,36 +3,42 @@ packages:
   - "packages/*"
 
 allowBuilds:
-  # msw's postinstall only installs its CLI helper — not needed at runtime
-  # (msw is consumed as a library by the browser worker).
-  msw: false
   sharp: false
   unrs-resolver: true
   # Prisma engine download + client postinstall generation (apps/api).
   prisma: true
   "@prisma/engines": true
   "@prisma/client": true
-  # Embedded PostgreSQL binaries (apps/api dev/test database — no docker in sandbox).
-  "@embedded-postgres/linux-x64": true
   # esbuild binary setup (vitest).
   esbuild: true
   # SWC native binding (vitest decorator-metadata plugin).
   "@swc/core": true
-  "@embedded-postgres/darwin-arm64": true
-  "@embedded-postgres/darwin-x64": true
-  "@embedded-postgres/linux-arm": true
-  "@embedded-postgres/linux-arm64": true
-  "@embedded-postgres/linux-ia32": true
-  "@embedded-postgres/linux-ppc64": true
-  "@embedded-postgres/windows-x64": true
 
-# Security pins (MASTER QA audit + security audit 2026-10-19 partie 2 §2.38):
-# every line forces the patched version of a known advisory, transitive or not.
+# Security pins (audit task 02): every line forces the patched version of a
+# known advisory, transitive or not.
 overrides:
   fastify: 5.12.7
-  # GHSA-v888 (deepmerge-ts stack exhaustion) — transitive via @prisma/config.
+  # GHSA-v888 (deepmerge-ts stack exhaustion) - transitive via @prisma/config.
   deepmerge-ts: 8.0.0
-  # GHSA-68fv (source-map-js event-loop DoS) — transitive via postcss/tailwind.
+  # GHSA-68fv (source-map-js event-loop DoS) - transitive via postcss/tailwind.
   source-map-js: 1.2.2
-  # GHSA-wq5f (sharp librsvg CVE-2026-96889) — transitive via next.
+  # GHSA-wq5f (sharp librsvg CVE-2026-96889) - transitive via next.
   sharp: 0.35.5
+  # Task 02 audit: critical/high Next.js advisories (GHSA-qxg6-89mg-rqv8 et al.)
+  next: ">=16.4.1"
+  # zod <4.6.6 (high)
+  zod: ">=4.6.6"
+  # fast-uri scheme injection (low/moderate/high paths)
+  fast-uri: ">=3.1.9"
+  # vitest/@vitest/mocker path traversal (moderate) + tinypool (critical)
+  vitest: ">=4.1.12"
+  "@vitest/mocker": ">=4.1.12"
+  tinypool: ">=2.1.2"
+  # vite dev-server advisories
+  vite: ">=7.3.7"
+  # MCP SDK (transitive via shadcn CLI)
+  "@modelcontextprotocol/sdk": ">=1.32.0"
+  hono: ">=4.13.11"
+  undici: ">=7.30.1"
+  body-parser: ">=2.4.0"
+  ip-address: ">=10.7.4"

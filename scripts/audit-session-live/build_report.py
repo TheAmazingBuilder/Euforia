@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Audit Session Live V1 — corps du rapport (ReportLab) + merge couverture.
-Palette fixe Template 07 Crystal Blue (cover.md) — cobalt, famille bleue unique."""
+"""Audit Session Live V1 - corps du rapport (ReportLab) + merge couverture.
+Palette fixe Template 07 Crystal Blue (cover.md) - cobalt, famille bleue unique."""
 import os, sys, hashlib
 
 PDF_SKILL_DIR = "/home/z/my-project/skills/pdf"
@@ -20,7 +20,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from PIL import Image as PILImage
 
-# ---------- Fonts (registered set only — FreeSerif pour le français) ----------
+# ---------- Fonts (registered set only - FreeSerif pour le français) ----------
 FONT_DIR = "/usr/share/fonts"
 pdfmetrics.registerFont(TTFont("NotoSerifSC", f"{FONT_DIR}/truetype/noto-serif-sc/NotoSerifSC-Regular.ttf"))
 pdfmetrics.registerFont(TTFont("NotoSerifSC-Bold", f"{FONT_DIR}/truetype/noto-serif-sc/NotoSerifSC-Bold.ttf"))
@@ -63,7 +63,7 @@ MARGIN = 1.0 * inch
 PAGE_W, PAGE_H = A4
 AVAIL_W = PAGE_W - 2 * MARGIN
 AVAIL_H = PAGE_H - 2 * MARGIN
-DOC_TITLE = "Audit de conformité Session Live V1 — COSMOZ"
+DOC_TITLE = "Audit de conformité Session Live V1 - COSMOZ"
 
 class AuditDoc(SimpleDocTemplate):
     """TOC cliquable + pagination en zones (TOC = romain, corps = arabe reset)."""
@@ -155,7 +155,7 @@ def safe_keep(elements):
     return list(elements)
 
 def heading(num, text):
-    """Retourne [paragraphe_titre, filet] — le CondPageBreak est posé à part."""
+    """Retourne [paragraphe_titre, filet] - le CondPageBreak est posé à part."""
     label = f"{num}. {text}"
     key = "h_" + hashlib.md5(label.encode()).hexdigest()[:8]
     p = Paragraph(f'<a name="{key}"/><b>{label}</b>', h1)
@@ -203,7 +203,7 @@ def embed_image(path, max_w, max_h):
 story = []
 
 def fr(text):
-    """Lie le tiret cadratin au mot précédent (jamais de — en début de ligne)."""
+    """Lie le tiret cadratin au mot précédent (jamais de - en début de ligne)."""
     return text.replace(" \u2014 ", "\u00a0\u2014 ")
 
 _Paragraph = Paragraph
@@ -243,7 +243,7 @@ t1 = mk_table(
 story.append(Spacer(1, 10))
 story.append(t1)
 story.append(Spacer(1, 6))
-story.append(Paragraph("Tableau 1 — Inventaire des fichiers audités par couche.", caption))
+story.append(Paragraph("Tableau 1 - Inventaire des fichiers audités par couche.", caption))
 story.append(Spacer(1, 8))
 story.append(Paragraph(
     "Deux observations structurelles ressortent déjà de cette lecture. D'une part, la séparation des "
@@ -273,7 +273,7 @@ t2 = mk_table(
 story.append(Spacer(1, 10))
 story.append(t2)
 story.append(Spacer(1, 6))
-story.append(Paragraph("Tableau 2 — Changements effectués pendant l'audit.", caption))
+story.append(Paragraph("Tableau 2 - Changements effectués pendant l'audit.", caption))
 story.append(Spacer(1, 8))
 story.append(Paragraph(
     "Aucune autre ligne du module session n'a été touchée : ni les composants, ni le client temps réel, "
@@ -308,7 +308,7 @@ p1 = Paragraph(
 section_start(4, "Architecture finale", p1)
 diagram_img = embed_image(DIAGRAM, AVAIL_W, 320)
 story.append(Spacer(1, 14))
-story.extend(safe_keep([diagram_img, Paragraph("Figure 1 — Architecture Session Live V1 : flux Binance/Simulated vers la station UI, couches transverses.", caption)]))
+story.extend(safe_keep([diagram_img, Paragraph("Figure 1 - Architecture Session Live V1 : flux Binance/Simulated vers la station UI, couches transverses.", caption)]))
 story.append(Spacer(1, 10))
 story.append(Paragraph(
     "Trois propriétés structurelles méritent d'être soulignées. D'abord le découplage des providers : le "
@@ -350,7 +350,7 @@ t5 = mk_table(
 story.append(Spacer(1, 10))
 story.append(t5)
 story.append(Spacer(1, 6))
-story.append(Paragraph("Tableau 3 — Matrice de conformité synthétique (15 critères du cahier des charges V1).", caption))
+story.append(Paragraph("Tableau 3 - Matrice de conformité synthétique (15 critères du cahier des charges V1).", caption))
 story.append(Spacer(1, 12))
 callout = Table(
     [[Paragraph("<b>12 / 15</b>", stat_big)],
@@ -406,7 +406,7 @@ t6 = mk_table(
 story.append(Spacer(1, 10))
 story.append(t6)
 story.append(Spacer(1, 6))
-story.append(Paragraph("Tableau 4 — Campagne de tests : statique, runtime, mobile et qualité.", caption))
+story.append(Paragraph("Tableau 4 - Campagne de tests : statique, runtime, mobile et qualité.", caption))
 story.append(Spacer(1, 8))
 story.append(Paragraph(
     "Le test de coupure mérite un mot, car il valide la promesse centrale de la protection stale data. "
@@ -456,7 +456,7 @@ for i, b in enumerate([
 doc = AuditDoc(BODY_PDF, pagesize=A4,
                leftMargin=MARGIN, rightMargin=MARGIN, topMargin=MARGIN, bottomMargin=MARGIN,
                title=DOC_TITLE, author="Z.ai", creator="Z.ai",
-               subject="Audit de conformité Session Live V1 — lecture seule, stale data, mapping symboles")
+               subject="Audit de conformité Session Live V1 - lecture seule, stale data, mapping symboles")
 doc.multiBuild(story, onFirstPage=on_page, onLaterPages=on_page)
 print("body ->", BODY_PDF)
 
@@ -475,7 +475,7 @@ writer.add_page(normalize(PdfReader(COVER_PDF).pages[0]))
 for p in PdfReader(BODY_PDF).pages:
     writer.add_page(normalize(p))
 writer.add_metadata({"/Title": DOC_TITLE, "/Author": "Z.ai", "/Creator": "Z.ai",
-                     "/Subject": "Audit de conformité Session Live V1 — COSMOZ, Le Registre"})
+                     "/Subject": "Audit de conformité Session Live V1 - COSMOZ, Le Registre"})
 with open(FINAL_PDF, "wb") as f:
     writer.write(f)
 print("final ->", FINAL_PDF)

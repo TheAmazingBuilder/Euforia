@@ -38,7 +38,7 @@ import {
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Academy Overview — the learning dashboard: where you left off, the numbers
+ * Academy Overview - the learning dashboard: where you left off, the numbers
  * that matter, recommendations, recent activity, bookmarks and the category
  * map. Every track carries its identity hue; each category card opens with
  * the chart vignette of what it teaches. Copy stays in plain probabilistic
@@ -67,7 +67,7 @@ export function AcademyOverviewPanel({
     <div className="space-y-6" data-testid="academy-overview">
       <ContinueLearning data={overview} onOpenLesson={onOpenLesson} onOpenCourse={onOpenCourse} />
 
-      {/* Stat band — one ruled strip, ledger style, hue-tinted identity chips */}
+      {/* Stat band - one ruled strip, ledger style, hue-tinted identity chips */}
       <section aria-label={V.progressAria}>
         <AcademySectionTitle className="mb-2">{V.progressTitle}</AcademySectionTitle>
         <div className="stat-strip" data-testid="academy-stats">
@@ -131,7 +131,7 @@ export function AcademyOverviewPanel({
               <HueChip hue="var(--cat-pa)" icon={Trophy} />
             </div>
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-quiz">
-              {overview.progress.quizAverage !== null ? `${overview.progress.quizAverage}%` : "—"}
+              {overview.progress.quizAverage !== null ? `${overview.progress.quizAverage}%` : "-"}
             </p>
           </div>
           <div className="stat-cell stat-kpi">
@@ -142,13 +142,13 @@ export function AcademyOverviewPanel({
             <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums" data-testid="academy-stat-practice">
               {overview.progress.practiceAttempts > 0
                 ? `${Math.round((overview.progress.practiceCorrect / overview.progress.practiceAttempts) * 100)}%`
-                : "—"}
+                : "-"}
             </p>
           </div>
         </div>
       </section>
 
-      {/* Weekly plan — the habit loop: lessons / drills / quizzes this week */}
+      {/* Weekly plan - the habit loop: lessons / drills / quizzes this week */}
       <WeeklyPlanCard plan={overview.weeklyPlan} onGoPractice={onGoPractice} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -289,7 +289,7 @@ export function AcademyOverviewPanel({
   );
 }
 
-// ── Weekly plan — three honest bars against weekly targets ─────────────────
+// ── Weekly plan - three honest bars against weekly targets ─────────────────
 
 function WeeklyPlanCard({
   plan,
@@ -350,7 +350,7 @@ function cnWeekChip(complete: boolean): string {
     : "inline-flex items-center rounded-sm border border-border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider text-muted-foreground";
 }
 
-// ── Journal → Academy — the bridge between trading and learning ───────────
+// ── Journal → Academy - the bridge between trading and learning ───────────
 
 function JournalSuggestions({
   onOpenLesson,
@@ -468,7 +468,7 @@ function ContinueLearning({
           </Button>
         </div>
       )}
-      {/* Resume reading — the unfinished lesson you last had open, when it
+      {/* Resume reading - the unfinished lesson you last had open, when it
           differs from the curriculum's next-up pointer (no duplicate rows). */}
       {data.resume && item && data.resume.lessonId !== item.lessonId ? (
         <div

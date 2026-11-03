@@ -1,5 +1,5 @@
 /**
- * Oryon analyses controller (Phase 10 → serveur) — /oryon/analyses.
+ * Oryon analyses controller (Phase 10 → serveur) - /oryon/analyses.
  *
  * House conventions: global JwtAuthGuard, ZodValidationPipe on bodies,
  * ownership from the authenticated principal only (§34/§35), thin adapter.
@@ -31,7 +31,7 @@ export class OryonAnalysisController {
     @CurrentUser() principal: AuthPrincipal,
     @Body(new ZodValidationPipe(createOryonChartAnalysisInputSchema)) input: unknown,
   ): Promise<OryonAnalysisMutatedResponse> {
-    // The create contract omits id/timestamps/schemaVersion — the server owns
+    // The create contract omits id/timestamps/schemaVersion - the server owns
     // them; the optional tradeId link rides the same shape.
     const payload = input as Parameters<OryonAnalysisService["create"]>[1];
     return this.analyses.create(principal.userId, {

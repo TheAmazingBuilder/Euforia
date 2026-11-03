@@ -1,10 +1,10 @@
 /**
- * Settings presentation boundary (Phase 15 §12) — the preferences doc API.
+ * Settings presentation boundary (Phase 15 §12) - the preferences doc API.
  *
  * Routes are wire-compatible with the previous implementation inside the
  * Identity /me controller (frontend parity, §34): GET /me/preferences,
  * PATCH /me/preferences/:domain, POST /me/preferences/reset. The doc is a
- * per-user singleton aggregate — no POST/DELETE /settings, no :userId route
+ * per-user singleton aggregate - no POST/DELETE /settings, no :userId route
  * (§10: ownership always comes from the authenticated principal).
  *
  * Auth: the global JWT guard applies (no @Public here). Validation: the

@@ -1,5 +1,5 @@
 /**
- * e2e — Oryon chart analyses on the server (Phase 10 → serveur).
+ * e2e - Oryon chart analyses on the server (Phase 10 → serveur).
  *
  * The multi-device store: create (contract-parsed payload, server-owned
  * ids/timestamps), get/list/patch/delete, the canonical-trade link
@@ -64,7 +64,7 @@ function analysisPayload(overrides: Record<string, unknown> = {}) {
     snapshot: null,
     referenceTimeSec: 1_760_300_000,
     analysis: ANALYSIS_CONFIG,
-    drawings: [], // a drawing needs the full oryonDrawingSchema — the payload shape is what matters
+    drawings: [], // a drawing needs the full oryonDrawingSchema - the payload shape is what matters
     ...overrides,
   };
 }
@@ -102,19 +102,19 @@ describe("oryon analyses CRUD", () => {
     expect(list.analyses.some((a) => a.id === first.id)).toBe(true);
   });
 
-  it("patches metadata only — title/notes/link; the payload stays immutable", async () => {
+  it("patches metadata only - title/notes/link; the payload stays immutable", async () => {
     const user = await authenticatedUser(app, mail);
     const analysis = await createAnalysis(user.authHeader);
     const patched = await app.inject({
       method: "PUT",
       url: `/api/v1/oryon/analyses/${analysis.id}`,
       headers: { ...user.authHeader, "content-type": "application/json" },
-      payload: { title: "Structure review — refined", notes: "Updated after the session." },
+      payload: { title: "Structure review - refined", notes: "Updated after the session." },
     });
     expect(patched.statusCode).toBe(200);
-    expect(patched.json().analysis.title).toBe("Structure review — refined");
+    expect(patched.json().analysis.title).toBe("Structure review - refined");
     // untouched structurally: the stored payload round-trips with the schema
-    // defaults filled (pivotStyle/showBreakLines) — same semantics, more keys.
+    // defaults filled (pivotStyle/showBreakLines) - same semantics, more keys.
     const wire = patched.json().analysis as { analysis: { structure: { enabled: boolean; leftBars: number }; levels: { prevDayHighLow: boolean } } };
     expect(wire.analysis.structure.enabled).toBe(ANALYSIS_CONFIG.structure.enabled);
     expect(wire.analysis.levels.prevDayHighLow).toBe(ANALYSIS_CONFIG.levels.prevDayHighLow);
@@ -140,7 +140,7 @@ describe("oryon analyses CRUD", () => {
     });
     const tradeId = (created.json() as { id: string }).id;
 
-    const analysis = await createAnalysis(user.authHeader); // EURUSD — same symbol
+    const analysis = await createAnalysis(user.authHeader); // EURUSD - same symbol
     const linked = await app.inject({
       method: "PUT",
       url: `/api/v1/oryon/analyses/${analysis.id}`,
@@ -178,7 +178,7 @@ describe("oryon analyses CRUD", () => {
     });
     expect(foreignLink.statusCode).toBe(404);
 
-    // User A's analysis is invisible to B (404, never 403 — house IDOR rule).
+    // User A's analysis is invisible to B (404, never 403 - house IDOR rule).
     const foreignGet = await app.inject({ method: "GET", url: `/api/v1/oryon/analyses/${analysisA.id}`, headers: userB.authHeader });
     expect(foreignGet.statusCode).toBe(404);
     const foreignPatch = await app.inject({

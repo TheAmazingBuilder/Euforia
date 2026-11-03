@@ -1,5 +1,5 @@
 /**
- * Charts module probe — browser-verified interactivity (skill mandate).
+ * Charts module probe - browser-verified interactivity (skill mandate).
  *
  * Golden path: login → sidebar TRADING → Charts → canvas renders with
  * candles → legend/badges visible → timeframe switch → range button →
@@ -38,7 +38,7 @@ function isNoise(message) {
   const results = [];
   const check = (name, ok, detail = "") => {
     results.push({ name, ok, detail });
-    console.log(`${ok ? "PASS" : "FAIL"} — ${name}${detail ? ` (${detail})` : ""}`);
+    console.log(`${ok ? "PASS" : "FAIL"} - ${name}${detail ? ` (${detail})` : ""}`);
   };
 
   await page.goto(`${BASE}/login`, { waitUntil: "domcontentloaded" });
@@ -77,7 +77,7 @@ function isNoise(message) {
 
   await page.screenshot({ path: "scripts/shots/charts-initial.png", fullPage: false });
 
-  // Timeframe switch — click 1H tab, data refetches, canvas still painted.
+  // Timeframe switch - click 1H tab, data refetches, canvas still painted.
   await page.getByRole("tab", { name: "1h" }).click();
   await page.waitForTimeout(1200);
   check("timeframe switch 1h", (await canvas.isVisible()) === true);
@@ -88,7 +88,7 @@ function isNoise(message) {
   await page.getByRole("tab", { name: "5m", exact: true }).click();
   await page.waitForTimeout(1200);
 
-  // Range bar — click 1M (uses the imperative handle).
+  // Range bar - click 1M (uses the imperative handle).
   await page.getByRole("button", { name: "1M", exact: true }).click();
   await page.waitForTimeout(700);
   await page.getByRole("button", { name: "ALL", exact: true }).click();

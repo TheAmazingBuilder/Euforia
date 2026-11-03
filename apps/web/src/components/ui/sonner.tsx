@@ -36,7 +36,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       }}
       style={
         {
-          // Euforia exposes RAW theme vars (--surface*, --text-*, --border) —
+          // Euforia exposes RAW theme vars (--surface*, --text-*, --border) -
           // there is no --popover/--radius on :root (only --color-* Tailwind
           // aliases inside @theme). Binding to the raw vars keeps every toast
           // OPAQUE and legible across all three themes (fix: toasts used to
@@ -51,7 +51,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         classNames: {
           toast: "cn-toast",
         },
-        // Elevate above the app chrome — hairline border + real shadow so a
+        // Elevate above the app chrome - hairline border + real shadow so a
         // toast is always readable, whatever sits underneath it.
         style: {
           border: "1px solid var(--border)",

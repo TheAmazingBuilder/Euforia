@@ -6,14 +6,14 @@ import { normalizeSavedViews } from "./saved-views";
 import type { CustomizationSnapshot } from "./types";
 
 /**
- * Persistence adapter (Phase 01 §13, extended by Phase 03 §10/§12) — the
+ * Persistence adapter (Phase 01 §13, extended by Phase 03 §10/§12) - the
  * ONLY place that maps between the stored dashboard preferences domain and
  * the customization / filter state.
  *
  * Storage mechanism: the EXISTING server-backed preferences API
- * (PATCH /me/preferences/dashboard — per-user ownership enforced server
+ * (PATCH /me/preferences/dashboard - per-user ownership enforced server
  * side). Nothing here touches browser storage; no secrets pass through.
- * Layouts and saved views are configuration only — trade data is never
+ * Layouts and saved views are configuration only - trade data is never
  * serialized here.
  */
 
@@ -42,19 +42,19 @@ export function preferencesFromSnapshot(
     widgetOrder: widgetOrderOf(active!),
     activeLayoutId: active!.id,
     layouts: snapshot.layouts,
-    // Phase 06 — workspace layer keys travel with every domain PATCH (the
+    // Phase 06 - workspace layer keys travel with every domain PATCH (the
     // dashboard domain is replaced wholesale; omitted keys would be wiped).
     ...(snapshot.defaultLayoutId ? { defaultLayoutId: snapshot.defaultLayoutId } : {}),
     ...(snapshot.userTemplates.length > 0 ? { userTemplates: snapshot.userTemplates } : {}),
   };
 }
 
-// ── Phase 03 — saved analytical views + active filter context ───────────────
+// ── Phase 03 - saved analytical views + active filter context ───────────────
 
 /**
  * Stored document → the saved-views collection. Every item is validated
  * individually (one malformed view never destroys the collection), ids and
- * names deduplicated, capped at 30 — the saved-views model owns the rules.
+ * names deduplicated, capped at 30 - the saved-views model owns the rules.
  */
 export function savedViewsFromPreferences(
   dashboard: DashboardPreferences | undefined,
@@ -64,7 +64,7 @@ export function savedViewsFromPreferences(
 
 /**
  * Stored document → the last applied active filter context. Absent or
- * malformed documents degrade to the DEFAULT (unfiltered) state — a stale
+ * malformed documents degrade to the DEFAULT (unfiltered) state - a stale
  * or corrupted `activeFilters` key can never lock the dashboard behind a
  * broken filter (spec §12 "avoid destroying valid views", same spirit).
  */

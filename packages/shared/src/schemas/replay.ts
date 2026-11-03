@@ -4,13 +4,13 @@ import { marketIntervalSchema } from "./market";
 import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
- * Replay domain — the first-class historical replay module (REPLAY MASTER
+ * Replay domain - the first-class historical replay module (REPLAY MASTER
  * PROMPT). A ReplaySession plays a HISTORICAL market window candle by
  * candle while the trader records decisions, simulated trades and notes.
  *
  * Product rules encoded here (master prompt §2, §24, §31, §37):
  *  - A replay simulation is NOT a real trade. Nothing in this module can
- *    reach a broker — there is no execution path by construction.
+ *    reach a broker - there is no execution path by construction.
  *  - Replay performance stays separate from real trading performance and
  *    is always labeled SIMULATED.
  *  - Replay market times are historical coordinates (epoch ms, like candle
@@ -20,19 +20,19 @@ import { decimalStringSchema, isoDateTimeSchema, uuidSchema } from "./primitives
 
 // ── Enums ────────────────────────────────────────────────────────────────────
 
-/** Session lifecycle (§32) — deliberately minimal. */
+/** Session lifecycle (§32) - deliberately minimal. */
 export const replayStatusSchema = z.enum(["DRAFT", "IN_PROGRESS", "COMPLETED", "ARCHIVED"]);
 export type ReplayStatus = z.infer<typeof replayStatusSchema>;
 
-/** Client playback state (§17) — coarse, checkpointed on pause/leave. */
+/** Client playback state (§17) - coarse, checkpointed on pause/leave. */
 export const replayPlaybackStateSchema = z.enum(["READY", "PLAYING", "PAUSED", "COMPLETED"]);
 export type ReplayPlaybackState = z.infer<typeof replayPlaybackStateSchema>;
 
-/** Trade direction — simulation vocabulary mirrors the journal (BUY/SELL). */
+/** Trade direction - simulation vocabulary mirrors the journal (BUY/SELL). */
 export const replayDirectionSchema = z.enum(["BUY", "SELL"]);
 export type ReplayDirection = z.infer<typeof replayDirectionSchema>;
 
-/** Decision kinds (§25) — the market-context → decision → outcome bridge. */
+/** Decision kinds (§25) - the market-context → decision → outcome bridge. */
 export const replayDecisionKindSchema = z.enum([
   "ENTER",
   "WAIT",
@@ -46,9 +46,9 @@ export type ReplayDecisionKind = z.infer<typeof replayDecisionKindSchema>;
 
 /**
  * What the trader selected before starting: the historical window, the
- * starting point inside it, and optional context. Times are ms epoch —
+ * starting point inside it, and optional context. Times are ms epoch -
  * chart-space coordinates. No timezone control: the whole app renders
- * market time in UTC (Session Live convention) — a timezone field here
+ * market time in UTC (Session Live convention) - a timezone field here
  * would be a fake control (§14: never create fake controls).
  */
 export const replayConfigSchema = z.object({
@@ -57,11 +57,11 @@ export const replayConfigSchema = z.object({
   /** Historical window bounds served by the dataset (bucket-open basis). */
   fromMs: z.number().int().positive(),
   toMs: z.number().int().positive(),
-  /** Playhead position when the replay starts — inside the window. */
+  /** Playhead position when the replay starts - inside the window. */
   startAtMs: z.number().int().positive(),
   strategyId: uuidSchema.nullable(),
   setupId: uuidSchema.nullable(),
-  /** Optional account context — must belong to the owner (§36). */
+  /** Optional account context - must belong to the owner (§36). */
   tradingAccountId: uuidSchema.nullable(),
   startingBalance: decimalStringSchema.nullable(),
   riskPerTradePct: z.number().min(0).max(100).nullable(),
@@ -89,7 +89,7 @@ export const replayTradeSchema = z.object({
   exitPrice: decimalStringSchema.nullable(),
   /** Server-computed net simulated P&L (account currency). */
   pnl: decimalStringSchema.nullable(),
-  /** Server-computed R multiple — null without a computable risk amount. */
+  /** Server-computed R multiple - null without a computable risk amount. */
   rMultiple: decimalStringSchema.nullable(),
 });
 export type ReplayTrade = z.infer<typeof replayTradeSchema>;
@@ -117,7 +117,7 @@ export const replayNoteSchema = z.object({
 });
 export type ReplayNote = z.infer<typeof replayNoteSchema>;
 
-// ── Result (§30) — only metrics backed by real recorded data ─────────────────
+// ── Result (§30) - only metrics backed by real recorded data ─────────────────
 
 export const replayResultSchema = z.object({
   /** Historical span actually replayed. */
@@ -146,7 +146,7 @@ export const replaySessionSchema = z.object({
   id: uuidSchema,
   status: replayStatusSchema,
   config: replayConfigSchema,
-  /** Resume checkpoint (§33) — persisted on pause/leave, never per tick. */
+  /** Resume checkpoint (§33) - persisted on pause/leave, never per tick. */
   currentMs: z.number().int().nonnegative(),
   /** Denormalized playback state for list cards and resume UX. */
   playbackState: replayPlaybackStateSchema,
@@ -171,7 +171,7 @@ function positiveDecimal() {
   return decimalStringSchema.refine((value) => Number(value) > 0, "Must be > 0");
 }
 
-/** POST /replay/sessions — the New Replay form (§14). */
+/** POST /replay/sessions - the New Replay form (§14). */
 export const createReplaySessionInputSchema = z
   .object({
     symbol: z.string().min(1).max(20),
@@ -193,13 +193,13 @@ export const createReplaySessionInputSchema = z
     { message: "startAtMs must sit inside the historical window" },
   )
   // Bound the dataset: a replay window is a working session, not a warehouse
-  // query (§41 — do not make PostgreSQL a market-data warehouse accidentally).
+  // query (§41 - do not make PostgreSQL a market-data warehouse accidentally).
   .refine((input) => input.toMs - input.fromMs <= 120 * 24 * 60 * 60 * 1000, {
     message: "Historical window is limited to 120 days",
   });
 export type CreateReplaySessionInput = z.infer<typeof createReplaySessionInputSchema>;
 
-/** PATCH /replay/sessions/:id — rename context while DRAFT/IN_PROGRESS. */
+/** PATCH /replay/sessions/:id - rename context while DRAFT/IN_PROGRESS. */
 export const updateReplaySessionInputSchema = z.object({
   strategyId: uuidSchema.nullable().optional(),
   setupId: uuidSchema.nullable().optional(),
@@ -207,7 +207,7 @@ export const updateReplaySessionInputSchema = z.object({
 });
 export type UpdateReplaySessionInput = z.infer<typeof updateReplaySessionInputSchema>;
 
-/** POST /replay/sessions/:id/trades — open a simulated position. */
+/** POST /replay/sessions/:id/trades - open a simulated position. */
 export const createReplayTradeInputSchema = z.object({
   direction: replayDirectionSchema,
   entryPrice: positiveDecimal(),
@@ -215,12 +215,12 @@ export const createReplayTradeInputSchema = z.object({
   takeProfit: decimalStringSchema.nullable().optional(),
   quantity: positiveDecimal(),
   note: z.string().max(1000).nullable().optional(),
-  /** Replay-clock entry time — clamped into the session window server-side. */
+  /** Replay-clock entry time - clamped into the session window server-side. */
   openedAtMs: z.number().int().nonnegative().optional(),
 });
 export type CreateReplayTradeInput = z.infer<typeof createReplayTradeInputSchema>;
 
-/** POST /replay/sessions/:id/trades/:tradeId/close — settle a simulation. */
+/** POST /replay/sessions/:id/trades/:tradeId/close - settle a simulation. */
 export const closeReplayTradeInputSchema = z.object({
   exitPrice: decimalStringSchema.refine((value) => Number(value) !== 0, "Must be non-zero"),
   closedAtMs: z.number().int().nonnegative().optional(),
@@ -228,7 +228,7 @@ export const closeReplayTradeInputSchema = z.object({
 });
 export type CloseReplayTradeInput = z.infer<typeof closeReplayTradeInputSchema>;
 
-/** POST /replay/sessions/:id/decisions — record a decision marker. */
+/** POST /replay/sessions/:id/decisions - record a decision marker. */
 export const createReplayDecisionInputSchema = z.object({
   kind: replayDecisionKindSchema,
   atMs: z.number().int().nonnegative().optional(),
@@ -238,14 +238,14 @@ export const createReplayDecisionInputSchema = z.object({
 });
 export type CreateReplayDecisionInput = z.infer<typeof createReplayDecisionInputSchema>;
 
-/** POST /replay/sessions/:id/notes — timestamped observation. */
+/** POST /replay/sessions/:id/notes - timestamped observation. */
 export const createReplayNoteInputSchema = z.object({
   body: z.string().min(1).max(4000),
   atMs: z.number().int().nonnegative().optional(),
 });
 export type CreateReplayNoteInput = z.infer<typeof createReplayNoteInputSchema>;
 
-/** POST /replay/sessions/:id/advance — persist the resume checkpoint (§51). */
+/** POST /replay/sessions/:id/advance - persist the resume checkpoint (§51). */
 export const advanceReplayInputSchema = z.object({
   currentMs: z.number().int().nonnegative(),
   playbackState: replayPlaybackStateSchema,
@@ -264,7 +264,7 @@ export const replaySessionResponseSchema = z.object({
 });
 export type ReplaySessionResponse = z.infer<typeof replaySessionResponseSchema>;
 
-/** GET /replay/sessions/:id — the workspace payload (session + children). */
+/** GET /replay/sessions/:id - the workspace payload (session + children). */
 export const replayDetailResponseSchema = z.object({
   session: replaySessionSchema,
   trades: z.array(replayTradeSchema),
@@ -282,7 +282,7 @@ export type ReplayDecisionResponse = z.infer<typeof replayDecisionResponseSchema
 export const replayNoteResponseSchema = z.object({ note: replayNoteSchema });
 export type ReplayNoteResponse = z.infer<typeof replayNoteResponseSchema>;
 
-/** Overview metrics (§13) — backed by the user's real replay data only. */
+/** Overview metrics (§13) - backed by the user's real replay data only. */
 export const replayOverviewResponseSchema = z.object({
   total: z.number().int().nonnegative(),
   completed: z.number().int().nonnegative(),

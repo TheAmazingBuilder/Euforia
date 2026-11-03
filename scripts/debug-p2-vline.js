@@ -40,7 +40,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3001";
     console.log(label, JSON.stringify(d && d.byType), "tool:", d && d.activeTool);
   };
 
-  // hline SKIPPED — vline first
+  // hline SKIPPED - vline first
 
   // pan SKIPPED in this variant
 

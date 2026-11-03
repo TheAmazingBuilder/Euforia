@@ -6,7 +6,7 @@ import type { Direction, Emotion, ExitReason } from "@cosmoz/shared";
  * Capture-form draft persistence (trade-entry-ux.md §11): permanent
  * autosave to localStorage, restored on reopen, cleared after a successful
  * submit. A crash must never cost a capture.
- * Only SERIALIZABLE fields live here — screenshots stay in component state.
+ * Only SERIALIZABLE fields live here - screenshots stay in component state.
  */
 
 const DRAFT_KEY = "cosmoz.trade-draft.v1";
@@ -55,7 +55,7 @@ export function saveTradeDraft(values: TradeDraftValues): void {
     };
     window.localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
   } catch {
-    // Storage full / unavailable — the draft is best-effort by design.
+    // Storage full / unavailable - the draft is best-effort by design.
   }
 }
 
@@ -82,6 +82,6 @@ export function clearTradeDraft(): void {
   try {
     window.localStorage.removeItem(DRAFT_KEY);
   } catch {
-    // Ignore — nothing we can do without storage.
+    // Ignore - nothing we can do without storage.
   }
 }

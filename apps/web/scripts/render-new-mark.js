@@ -1,6 +1,6 @@
 /**
  * Render the corrected Euforia SVGs and build a side-by-side against the
- * user's reference image (playwright rasterization — no sharp available).
+ * user's reference image (playwright rasterization - no sharp available).
  */
 const { chromium } = require("playwright");
 const fs = require("fs");
@@ -44,7 +44,7 @@ canvas = Image.new("RGBA", (700, 409), (2, 6, 23, 255))
 canvas.paste(ref, (5, 0), ref)
 canvas.paste(new, (360, 0), new)
 canvas.save("${OUT}/e-compare-v2.png")
-print("saved ${OUT}/e-compare-v2.png — LEFT reference | RIGHT new")
+print("saved ${OUT}/e-compare-v2.png - LEFT reference | RIGHT new")
 EOF`);
   await browser.close();
 })();

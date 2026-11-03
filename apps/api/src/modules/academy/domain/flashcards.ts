@@ -1,11 +1,11 @@
 /**
- * Academy flashcard scheduling — Leitner boxes over the derived deck
+ * Academy flashcard scheduling - Leitner boxes over the derived deck
  * (glossary terms + lesson takeaways). Pure state transition + queue logic;
  * the ledger/state lives in the repository (Phase 11 §57: derived, not
  * duplicated).
  *
  * Parity source: mocks/academy-engine.ts FLASH_INTERVALS/flashcards/
- * reviewFlashcard — intervals [1,2,4,8,15] days, AGAIN resets to box 0 due
+ * reviewFlashcard - intervals [1,2,4,8,15] days, AGAIN resets to box 0 due
  * today, GOOD advances 1 box, EASY 2, with a 10-reviews-per-day cap and free
  * practice when nothing is due.
  */
@@ -57,7 +57,7 @@ export function flashcardsQueue(input: {
   const remaining = Math.max(0, FLASHCARD_DAILY_CAP - reviewedToday);
   const queue = dueCards.slice(0, remaining).map((card) => ({ ...card, extra: false }));
   if (queue.length === 0) {
-    // Nothing due — free practice keeps the deck warm without touching caps.
+    // Nothing due - free practice keeps the deck warm without touching caps.
     const free = shuffle(deck).slice(0, FLASHCARD_FREE_QUEUE_SIZE).map((card) => ({ ...card, extra: true }));
     return { due: free, dueCount: dueCards.length, reviewedToday, totalCards: deck.length };
   }

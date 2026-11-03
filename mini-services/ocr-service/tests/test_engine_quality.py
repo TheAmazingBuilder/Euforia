@@ -63,7 +63,7 @@ def test_dhash_stable_under_recompression_and_sensitive_to_content():
     with Image.open(io.BytesIO(image)) as img:
         gray = img.convert("L")
         baseline = dhash(gray)
-        # Recompress at a different quality — perceptually the same image.
+        # Recompress at a different quality - perceptually the same image.
         buffer = io.BytesIO()
         gray.save(buffer, format="JPEG", quality=55)
         with Image.open(io.BytesIO(buffer.getvalue())) as recompressed:
@@ -98,7 +98,7 @@ def test_deskew_estimates_a_known_rotation():
         rotated = gray.rotate(2.0, resample=Image.Resampling.BILINEAR, fillcolor=255)
         estimated = estimate_skew(rotated)
     # The value is the CORRECTION angle (applied back with PIL.rotate); the
-    # search grid is 0.5° — magnitude must land within one step.
+    # search grid is 0.5° - magnitude must land within one step.
     assert abs(abs(estimated) - 2.0) <= 0.75
 
 

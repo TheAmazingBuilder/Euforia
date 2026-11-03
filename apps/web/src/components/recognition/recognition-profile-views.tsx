@@ -18,18 +18,18 @@ import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries
 /**
  * Profile-specific result surfaces (Account & Chart V1.1 redesign).
  *
- * AccountSnapshotView — the account KPI strip (equity + balance as hero
+ * AccountSnapshotView - the account KPI strip (equity + balance as hero
  * cells, the margin metrics as KPI cells), the identity fields as a ruled
  * list and the recognized OPEN POSITIONS as a ledger table (the same
- * grouped-evidence contract as multi-trade drafts — the grouped review
+ * grouped-evidence contract as multi-trade drafts - the grouped review
  * owns their confirmation).
  *
- * ChartReadingView — the quote headline (symbol, timeframe stamp, price,
+ * ChartReadingView - the quote headline (symbol, timeframe stamp, price,
  * signed change, chart time) followed by the quote and indicator readings
  * as ruled field lists.
  *
  * Both views stay inside the review contract: every value is an
- * RecognizedField the user can correct — nothing becomes authoritative
+ * RecognizedField the user can correct - nothing becomes authoritative
  * without the confirmation step (§21).
  */
 
@@ -184,13 +184,13 @@ export function AccountSnapshotView({
     <div className="flex flex-col gap-5" data-testid="recognition-account-view">
       <p className="ledger-label rule-double pb-2">{dict.result.accountTitle}</p>
 
-      {/* KPI strip — equity + balance heroes, margin metrics as KPI cells. */}
+      {/* KPI strip - equity + balance heroes, margin metrics as KPI cells. */}
       <section aria-label={dict.result.accountSnapshot} className="stat-strip">
         {ACCOUNT_HEROES.map((key) => (byKey.has(key) ? cell(key) : null))}
         {ACCOUNT_KPIS.map((key) => (byKey.has(key) ? cell(key) : null))}
       </section>
 
-      {/* Identity — a ruled list of editable fields. */}
+      {/* Identity - a ruled list of editable fields. */}
       {ACCOUNT_IDENTITY.some((key) => byKey.has(key)) ? (
         <div className="flex flex-col">
           <p className="ledger-label border-b border-border pb-2">{dict.result.accountIdentity}</p>
@@ -216,7 +216,7 @@ export function AccountSnapshotView({
         </div>
       ) : null}
 
-      {/* Open positions — ledger table over the grouped candidates. */}
+      {/* Open positions - ledger table over the grouped candidates. */}
       <div className="flex flex-col" data-testid="recognition-account-positions">
         <p className="ledger-label flex items-center gap-1.5 border-b border-border pb-2">
           <ListOrdered className="size-3.5" strokeWidth={1.5} aria-hidden="true" />
@@ -252,7 +252,7 @@ export function AccountSnapshotView({
                               column === "symbol" && "font-medium",
                               column === "direction" && "text-xs",
                             )}>
-                              {value === null ? "—" : formatFinancial(value)}
+                              {value === null ? "-" : formatFinancial(value)}
                             </span>
                           </td>
                         );
@@ -316,16 +316,16 @@ export function ChartReadingView({
     <div className="flex flex-col gap-5" data-testid="recognition-chart-view">
       <p className="ledger-label rule-double pb-2">{dict.result.chartTitle}</p>
 
-      {/* Quote headline — symbol, timeframe stamp, price, signed change. */}
+      {/* Quote headline - symbol, timeframe stamp, price, signed change. */}
       <div className="chart-paper flex flex-col gap-3 rounded-xl border border-border bg-surface px-5 py-4" data-testid="recognition-chart-quote">
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
           <div className="flex items-center gap-3">
-            <span className="font-heading text-xl font-semibold tracking-tight">{symbol ?? "—"}</span>
+            <span className="font-heading text-xl font-semibold tracking-tight">{symbol ?? "-"}</span>
             {timeframe ? <span className="stamp stamp-accent !text-[10px]">{timeframe}</span> : null}
           </div>
           <div className="flex items-baseline gap-3">
             <span className="font-mono text-2xl font-medium tabular-nums">
-              {formatFinancial(price) || "—"}
+              {formatFinancial(price) || "-"}
             </span>
             {change !== null && change !== "" ? (
               <span className={cn("flex items-center gap-0.5 font-mono text-sm tabular-nums", changeTone ?? "text-muted-foreground")}>
@@ -346,7 +346,7 @@ export function ChartReadingView({
         ) : null}
       </div>
 
-      {/* Quote rows (OHLC) — editable, ruled. */}
+      {/* Quote rows (OHLC) - editable, ruled. */}
       {quoteKeys.some((key) => byKey.has(key)) ? (
         <div className="flex flex-col">
           <p className="ledger-label border-b border-border pb-2">{dict.result.chartQuote}</p>
@@ -372,7 +372,7 @@ export function ChartReadingView({
         </div>
       ) : null}
 
-      {/* Indicator readings — a two-column ruled grid on desktop. */}
+      {/* Indicator readings - a two-column ruled grid on desktop. */}
       {indicatorKeys.some((key) => byKey.has(key)) ? (
         <div className="flex flex-col">
           <p className="ledger-label flex items-center gap-1.5 border-b border-border pb-2">

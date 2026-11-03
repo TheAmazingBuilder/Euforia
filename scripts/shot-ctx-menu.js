@@ -25,7 +25,7 @@ const BASE = process.env.BASE_URL || 'http://localhost:3000';
 
   await page.locator('[data-testid="oryon-ctx-settings"]').click();
   await page.waitForTimeout(700);
-  // Symbol tab is the default — pick a preset up-color to show the live apply.
+  // Symbol tab is the default - pick a preset up-color to show the live apply.
   await page.locator('[data-testid="oryon-settings-up-color"]').fill('#22c55e').catch(() => {});
   await page.waitForTimeout(400);
   await page.screenshot({ path: '/home/z/my-project/scripts/ctx-settings-open.png' });

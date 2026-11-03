@@ -12,9 +12,9 @@ import { normalizeUserTemplates, resolveActiveLayoutId } from "./workspaces";
 import { configEquals, resolveWidgetConfig } from "./widget-configs";
 
 /**
- * Layout model — pure operations on dashboard layouts (Phase 01 §4/§10/§17).
+ * Layout model - pure operations on dashboard layouts (Phase 01 §4/§10/§17).
  *
- * Every function is immutable (structuredClone / spread — no nested
+ * Every function is immutable (structuredClone / spread - no nested
  * mutation), validates against the widget registry, and degrades safely:
  * unknown widget types are dropped per-layout, malformed layouts are
  * skipped, and the collection NEVER ends up empty. No React, no I/O.
@@ -57,12 +57,12 @@ function normalizeWidget(raw: unknown): DashboardWidgetItem | null {
   if (raw === null || typeof raw !== "object") return null;
   const candidate = raw as Partial<DashboardWidgetItem>;
   const def = getWidgetDefinition(String(candidate.type ?? ""));
-  if (!def) return null; // unknown/unsupported widget type — drop the instance
+  if (!def) return null; // unknown/unsupported widget type - drop the instance
   const instanceId =
     typeof candidate.instanceId === "string" && candidate.instanceId.trim() !== ""
       ? candidate.instanceId.slice(0, 64)
       : newWidgetInstanceId(def.type);
-  // Config: validate/migrate/repair through the config system — an invalid
+  // Config: validate/migrate/repair through the config system - an invalid
   // or future-versioned config never reaches a renderer (Phase 02 §5/§15).
   const resolution = resolveWidgetConfig(def.type, candidate.config);
   return {
@@ -78,7 +78,7 @@ function normalizeWidget(raw: unknown): DashboardWidgetItem | null {
 /**
  * Validate + repair one layout. Returns null when the layout document is
  * structurally unusable (wrong schema version, missing id/name, widget
- * explosion) — the caller skips it without discarding sibling layouts.
+ * explosion) - the caller skips it without discarding sibling layouts.
  */
 export function normalizeLayout(raw: unknown): DashboardLayoutDocument | null {
   if (raw === null || typeof raw !== "object") return null;
@@ -121,9 +121,9 @@ export function normalizeLayout(raw: unknown): DashboardLayoutDocument | null {
 
 /**
  * The shipped default collection: ONE "Default" layout with the DESIGNED
- * arrangement (Phase 01 canonical order — the Phase 02 analytics widgets
+ * arrangement (Phase 01 canonical order - the Phase 02 analytics widgets
  * are opt-in via the library, the default never grows under the user).
- * `order` (a legacy flat widgetOrder) only re-orders the default layout —
+ * `order` (a legacy flat widgetOrder) only re-orders the default layout -
  * missing DESIGN keys are appended, unknown keys dropped, exactly like the
  * pre-customization merge behavior.
  */
@@ -150,7 +150,7 @@ export function createDefaultLayouts(order?: readonly string[]): DashboardLayout
     {
       id: DEFAULT_LAYOUT_ID,
       name: "Default",
-      description: "The designed dashboard — every widget, full width.",
+      description: "The designed dashboard - every widget, full width.",
       schemaVersion: LAYOUT_SCHEMA_VERSION,
       widgets,
     },
@@ -204,7 +204,7 @@ export function readStoredCustomization(
       userTemplates: stored.userTemplates,
     });
   }
-  // Legacy document (widgetOrder only) — synthesize the default collection.
+  // Legacy document (widgetOrder only) - synthesize the default collection.
   return {
     layouts: createDefaultLayouts(stored?.widgetOrder),
     activeLayoutId: DEFAULT_LAYOUT_ID,
@@ -214,7 +214,7 @@ export function readStoredCustomization(
 }
 
 /**
- * Visible widget types in display order — the legacy widgetOrder view.
+ * Visible widget types in display order - the legacy widgetOrder view.
  * Derived ONLY from the layout's actual visible instances: opt-in widgets
  * (Phase 02 analytics) the user never added must NOT leak into the stored
  * order, and removed ones must stay removed through a backup/restore
@@ -243,7 +243,7 @@ export function cloneLayout(
   };
 }
 
-/** A layout with zero widget instances — structurally valid, renders empty. */
+/** A layout with zero widget instances - structurally valid, renders empty. */
 export function createEmptyLayout(name: string): DashboardLayoutDocument {
   return {
     id: newLayoutId(),
@@ -278,7 +278,7 @@ export function addWidget(
   return { ...layout, widgets: [...layout.widgets, instance], updatedAt: new Date().toISOString() };
 }
 
-/** Remove one instance — never touches data or other instances. */
+/** Remove one instance - never touches data or other instances. */
 export function removeWidget(
   layout: DashboardLayoutDocument,
   instanceId: string,
@@ -290,7 +290,7 @@ export function removeWidget(
   };
 }
 
-/** Hide/show one instance — config fully preserved. */
+/** Hide/show one instance - config fully preserved. */
 export function setWidgetVisible(
   layout: DashboardLayoutDocument,
   instanceId: string,
@@ -321,7 +321,7 @@ export function moveWidgetTo(
   return { ...layout, widgets, updatedAt: new Date().toISOString() };
 }
 
-/** Reorder by relative offset (-1 | 1) — the keyboard path. */
+/** Reorder by relative offset (-1 | 1) - the keyboard path. */
 export function moveWidgetByOffset(
   layout: DashboardLayoutDocument,
   instanceId: string,
@@ -358,7 +358,7 @@ export function resizeWidget(
 }
 
 /**
- * Layout name validation — non-empty, ≤60 chars, unique per collection
+ * Layout name validation - non-empty, ≤60 chars, unique per collection
  * (case-insensitive, excluding the layout being renamed).
  */
 export function validateLayoutName(
@@ -378,7 +378,7 @@ export function validateLayoutName(
 
 /**
  * Replace one instance's per-widget configuration (Phase 02 §6). The config
- * is validated first — an invalid payload is a no-op, never a corrupted
+ * is validated first - an invalid payload is a no-op, never a corrupted
  * layout. Returns the layout unchanged when the instance does not exist.
  */
 export function setWidgetConfig(
@@ -390,9 +390,9 @@ export function setWidgetConfig(
   if (!target) return layout;
   if (config !== undefined) {
     const resolution = resolveWidgetConfig(target.type, config);
-    if (resolution.status !== "ok") return layout; // invalid payload — never persist it
+    if (resolution.status !== "ok") return layout; // invalid payload - never persist it
   }
-  if (configEquals(target.config, config)) return layout; // no-op — identical content
+  if (configEquals(target.config, config)) return layout; // no-op - identical content
   const widgets = layout.widgets.map((widget) => {
     if (widget.instanceId !== instanceId) return widget;
     if (config === undefined) {

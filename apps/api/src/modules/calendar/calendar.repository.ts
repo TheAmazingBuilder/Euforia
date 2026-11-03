@@ -1,5 +1,5 @@
 /**
- * Calendar data access (B7) — owns the calendarBlockRow table (one row per
+ * Calendar data access (B7) - owns the calendarBlockRow table (one row per
  * marked date: planned day OFF or NEWS-blocked trading pause). The `date`
  * column is the lookup key; `data` holds the shared-contract block.
  */

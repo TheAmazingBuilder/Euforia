@@ -1,4 +1,4 @@
-// Range-math verification on the DEV server (:3001) — __ORYON_PANELS_DEBUG__
+// Range-math verification on the DEV server (:3001) - __ORYON_PANELS_DEBUG__
 // exposes the real visible range, so each preset's span is asserted.
 const { chromium } = require('playwright');
 const BASE = process.env.BASE_URL || 'http://localhost:3001';
@@ -44,7 +44,7 @@ const DAY = 86400;
     await page.click(`[data-testid="oryon-range-${id}"]`);
     await page.waitForTimeout(900);
     const r = await read();
-    if (!r) { console.log(`FAIL ${id} — no range after click`); fail++; continue; }
+    if (!r) { console.log(`FAIL ${id} - no range after click`); fail++; continue; }
     const span = r.to - r.from;
     if (spanOk === null) {
       // YTD: from must be Jan 1 UTC of the last bar's year
@@ -59,7 +59,7 @@ const DAY = 86400;
     }
   }
 
-  // Calendar jump: click "Today" — range should END at the last bar.
+  // Calendar jump: click "Today" - range should END at the last bar.
   await page.click('[data-testid="oryon-range-calendar"]');
   await page.waitForSelector('[data-testid="oryon-range-calendar-popover"]', { timeout: 5000 });
   await page.click('[data-testid="oryon-range-calendar-today"]');
@@ -71,7 +71,7 @@ const DAY = 86400;
     const ok = Math.abs(r2.to - full.to) < 2 * DAY;
     console.log(`${ok ? "PASS" : "FAIL"} calendar Today from=${fromIso} to=${r2.to} (last bar=${lastIso})`);
     ok ? pass++ : fail++;
-  } else { console.log("FAIL calendar Today — no range"); fail++; }
+  } else { console.log("FAIL calendar Today - no range"); fail++; }
 
   console.log(`\n=== range math: ${pass}/${pass + fail} ===`);
   await browser.close();

@@ -1,12 +1,12 @@
 /**
- * verify-oryon-drawings.js — Phase 2 browser verification of the Oryon
+ * verify-oryon-drawings.js - Phase 2 browser verification of the Oryon
  * drawing engine (docs/specs/oryon-prd.md §8, cahier de charge Phase 2 §15).
  *
  * Checks:
  *   1.  /oryon resolves; the left rail shows LIVE tools (cursor, trend,
  *       horizontal, vertical, ray, rectangle, fibonacci, text).
  *   2.  Trend line creation via drag on the chart (overlay gets content,
- *       objects store seeded — verified through the Drawings panel).
+ *       objects store seeded - verified through the Drawings panel).
  *   3.  Selection + persistence: reload → drawing restored from localStorage.
  *   4.  Undo/redo toolbar buttons enable/disable and work (Ctrl+Z path).
  *   5.  Horizontal line tool: one click creates a line (list grows).
@@ -17,7 +17,7 @@
  *   10. Escape cancels an in-progress drawing (nothing committed).
  *   11. Instrument switch: drawings do NOT leak across instruments.
  *   12. Chart pan still works while drawings exist (native navigation).
- *   13. Page errors collected — the probe fails on any unfiltered error.
+ *   13. Page errors collected - the probe fails on any unfiltered error.
  *
  * Screenshots → /home/z/my-project/download/oryon-phase2-*.png
  * Run: node scripts/verify-oryon-drawings.js   (server on :3000, mock mode)
@@ -32,7 +32,7 @@ const OUT = "/home/z/my-project/download";
 const results = [];
 function check(name, ok, detail = "") {
   results.push({ name, ok, detail });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${detail ? ` - ${detail}` : ""}`);
 }
 
 /** Known console noise: the documented auth boot 401 pair + favicon. */
@@ -135,7 +135,7 @@ async function objectRowCount(page) {
     check("drawing restored after reload (localStorage persistence)", rowsAfterReload === 1, `rows=${rowsAfterReload}`);
 
     // ── 4. Undo/redo (session-scoped history) ─────────────────────────────
-    // The restored book is the ground truth of a fresh session — the undo
+    // The restored book is the ground truth of a fresh session - the undo
     // stack starts EMPTY (the creation happened in a previous session).
     const undoDisabledAfterReload = !(await page.getByTestId("oryon-undo").isEnabled());
     check("undo stack empty after reload (honest, session-scoped)", undoDisabledAfterReload);
@@ -224,7 +224,7 @@ async function objectRowCount(page) {
       await page.waitForTimeout(900);
       const rowsEUR = await objectRowCount(page);
       check("drawings do not leak across instruments", rowsEUR === 0, `EURUSD rows=${rowsEUR}`);
-      // Switch back — the original book must still be intact.
+      // Switch back - the original book must still be intact.
       await page.keyboard.press("Control+k");
       await page.waitForTimeout(400);
       await searchInput.fill("XAUUSD");

@@ -29,7 +29,7 @@ import type { OryonDrawingStore } from "./store";
 import type { OryonDrawingConversions } from "@/lib/charting/oryon-chart-engine";
 
 /**
- * Oryon drawing interaction controller — the state machine (spec §4C, §8).
+ * Oryon drawing interaction controller - the state machine (spec §4C, §8).
  *
  * Explicit states (no scattered booleans):
  *   idle → drafting (two-anchor tools) → idle
@@ -38,11 +38,11 @@ import type { OryonDrawingConversions } from "@/lib/charting/oryon-chart-engine"
  *   idle → anchoring (handle drag) → idle
  * One-click tools (hline/vline/crossline/text) create + hand off in a
  * single step. Eraser: click a drawing → delete (hit-tested, undoable).
- * Cursor variants (arrow/cross/dot) BEHAVE as the select tool — they only
+ * Cursor variants (arrow/cross/dot) BEHAVE as the select tool - they only
  * change the pointer affordance over the chart.
  *
  * Pointer contract:
- *  - listeners live on the chart container, in the CAPTURE phase — when the
+ *  - listeners live on the chart container, in the CAPTURE phase - when the
  *    controller consumes an event (tool armed, or a hit) it stops the
  *    propagation so Lightweight Charts never starts a pan; when it does
  *    not (cursor tool, empty space) the event flows through untouched.
@@ -111,16 +111,16 @@ const TWO_ANCHOR_TOOLS: ReadonlySet<string> = new Set([
   "trend", "ray", "extended", "rect", "ellipse", "measure", "pricerange", "daterange", "fib", "longpos", "shortpos",
 ]);
 
-/** Select-class tools — same interaction semantics as the arrow cursor. */
+/** Select-class tools - same interaction semantics as the arrow cursor. */
 const SELECT_TOOLS: ReadonlySet<string> = new Set(["cursor", "cursor-cross", "cursor-dot"]);
 
 /** Minimum SCREEN px between captured brush points (smooth + bounded payload). */
 const BRUSH_CAPTURE_SPACING_PX = 3;
-/** Schema point cap — capture stops appending beyond it (stroke stays valid). */
+/** Schema point cap - capture stops appending beyond it (stroke stays valid). */
 const BRUSH_MAX_POINTS = 800;
 
 /** Base pointer affordance per tool (applied whenever no richer state wins).
- *  SVG data-URIs are percent-encoded (%22 for quotes) — valid inside the
+ *  SVG data-URIs are percent-encoded (%22 for quotes) - valid inside the
  *  single-quoted CSS url() AND the double-quoted TS string. */
 const BASE_CURSOR: Partial<Record<OryonDrawingTool, string>> = {
   cursor: "default",
@@ -149,11 +149,11 @@ type InteractionState =
   | { name: "anchoring"; id: string; index: number; original: OryonDrawing };
 
 export interface InteractionCallbacks {
-  /** A drawing was completed — the layer disarms the tool (TV behavior). */
+  /** A drawing was completed - the layer disarms the tool (TV behavior). */
   onToolComplete(): void;
-  /** Text annotation placed — the layer opens the editor at this anchor. */
+  /** Text annotation placed - the layer opens the editor at this anchor. */
   onTextEditRequest(id: string, screen: ScreenPoint): void;
-  /** RIGHT-CLICK on a drawing — the layer opens the property editor there.
+  /** RIGHT-CLICK on a drawing - the layer opens the property editor there.
    *  The hit object is already selected by the controller (TV behavior). */
   onDrawingContextMenu(id: string, screen: ScreenPoint): void;
   /** Repaint request (draft/preview updates). */
@@ -162,7 +162,7 @@ export interface InteractionCallbacks {
 
 export interface InteractionDeps {
   /**
-   * The event host — an ANCESTOR of the chart canvas (the price-chart
+   * The event host - an ANCESTOR of the chart canvas (the price-chart
    * wrapper). Capture-phase listeners here run BEFORE Lightweight Charts'
    * own canvas handlers: consume() stops the descent (no pan), everything
    * else flows through untouched (pan, crosshair, scale interactions).
@@ -172,9 +172,9 @@ export interface InteractionDeps {
   container: HTMLElement;
   conversions: OryonDrawingConversions;
   store: OryonDrawingStore;
-  /** Plot bounds provider (pane size) — from the primitive. */
+  /** Plot bounds provider (pane size) - from the primitive. */
   getPlotRect(): ScreenRect | null;
-  /** Drawing factory (id, timestamps, default style) — layer-owned. The
+  /** Drawing factory (id, timestamps, default style) - layer-owned. The
    *  third anchor is the fibext projection point (null for the others);
    *  `points` carries the captured brush polyline (brush tool only). */
   makeDrawing(
@@ -186,18 +186,18 @@ export interface InteractionDeps {
   ): OryonDrawing;
   callbacks: InteractionCallbacks;
   /**
-   * Phase 7 active-chart gate — NEW interactions (creation, selection,
+   * Phase 7 active-chart gate - NEW interactions (creation, selection,
    * hover) only start while this returns true (the panel is the active
    * one). The FIRST click on an inactive panel activates it without
-   * drawing (predictable, spec §7 — a tool armed for one chart never
+   * drawing (predictable, spec §7 - a tool armed for one chart never
    * accidentally modifies another). In-progress gestures (drafting,
-   * moving, anchoring) always complete — the user is mid-motion on this
+   * moving, anchoring) always complete - the user is mid-motion on this
    * chart. Optional: absent = always interactive (single-chart default).
    */
   canInteract?: () => boolean;
 }
 
-/** Layer UI (text editor, object list) — events inside never draw. */
+/** Layer UI (text editor, object list) - events inside never draw. */
 function isUiTarget(event: Event): boolean {
   const target = event.target;
   if (!(target instanceof Element)) return false;
@@ -217,7 +217,7 @@ export class DrawingInteractionController {
 
   // ── public API ─────────────────────────────────────────────────────────────
 
-  /** Arms a tool — cancels any in-progress operation cleanly (spec §8). */
+  /** Arms a tool - cancels any in-progress operation cleanly (spec §8). */
   setTool(tool: OryonDrawingTool): void {
     if (this.activeTool === tool) return;
     this.cancelActive();
@@ -279,14 +279,14 @@ export class DrawingInteractionController {
   // ── pointer handlers (capture phase) ──────────────────────────────────────
 
   private onPointerDown = (event: PointerEvent): void => {
-    if (event.button !== 0) return; // Left button only — right/middle stay chart-native.
+    if (event.button !== 0) return; // Left button only - right/middle stay chart-native.
     if (isUiTarget(event)) return; // Layer UI (editor, list) owns its events.
     const point = this.eventPoint(event);
-    if (point === null) return; // Outside the pane (over axes) — chart handles it.
+    if (point === null) return; // Outside the pane (over axes) - chart handles it.
 
     // Active-chart gate (Phase 7 §7): in-progress gestures ALWAYS complete;
     // new interactions only start on the active panel. The activation click
-    // itself is not swallowed — the event flows through (pan) and the panel
+    // itself is not swallowed - the event flows through (pan) and the panel
     // wrapper's own handler activates the panel; the NEXT click interacts.
     if (this.state.name === "idle" && this.deps.canInteract !== undefined && !this.deps.canInteract()) {
       return;
@@ -319,7 +319,7 @@ export class DrawingInteractionController {
           this.deps.store.remove(target.id);
           this.consume(event);
         }
-        // Locked drawings stay put (the store would refuse anyway) — the
+        // Locked drawings stay put (the store would refuse anyway) - the
         // click falls through to the chart so the pan gesture stays live.
       }
       return;
@@ -510,7 +510,7 @@ export class DrawingInteractionController {
     const point = this.eventPoint(event);
 
     if (this.state.name === "brushing") {
-      // A stroke with a single point is a tap — discarded (no artifact),
+      // A stroke with a single point is a tap - discarded (no artifact),
       // never persisted as a degenerate object.
       const points = this.state.points;
       this.state = { name: "idle" };
@@ -557,7 +557,7 @@ export class DrawingInteractionController {
         this.dragPointerId = null;
         this.consume(event);
       }
-      // Otherwise stay drafting (click-click mode) — capture continues via pointer id.
+      // Otherwise stay drafting (click-click mode) - capture continues via pointer id.
     }
   };
 
@@ -649,7 +649,7 @@ export class DrawingInteractionController {
       }
     }
 
-    // 3. Empty space — deselect and let the chart pan (no consume).
+    // 3. Empty space - deselect and let the chart pan (no consume).
     if (this.deps.store.selectedId !== null) {
       this.deps.store.select(null);
     }
@@ -673,9 +673,9 @@ export class DrawingInteractionController {
   }
 
   /**
-   * fibext gesture — one stage per call:
+   * fibext gesture - one stage per call:
    *   b not placed → the click FIXES b (A→B leg locked, C preview starts)
-   *   b placed     → the click is C — the extension commits.
+   *   b placed     → the click is C - the extension commits.
    */
   private advanceDraft3(point: ScreenPoint): void {
     if (this.state.name !== "drafting3" || this.draft?.kind !== "create3") return;
@@ -768,7 +768,7 @@ export class DrawingInteractionController {
    *  - target drag → the pointer price IS the new target: rr maps
    *    (entry, stop) onto it; the stop edge stays put;
    *  - stop drag → the pointer price IS the new stop, and rr is recomputed
-   *    so the CURRENT target stays exactly where it was — the reward zone
+   *    so the CURRENT target stays exactly where it was - the reward zone
    *    does not move when the risk zone is resized (TV-style independence).
    *
    * Degenerate risk (entry == stop) carries no ratio → the current rr is
@@ -806,7 +806,7 @@ export class DrawingInteractionController {
     this.deps.store.endBatch();
   }
 
-  /** Whole-object translation by (bars, price) deltas — null when unsafe. */
+  /** Whole-object translation by (bars, price) deltas - null when unsafe. */
   private translateDrawing(
     drawing: OryonDrawing,
     deltaLogical: number,
@@ -912,7 +912,7 @@ export class DrawingInteractionController {
         // FOUR handles in FIXED slots (the index maps to the anchor-edit
         // switch, never reorder): 0/1 = the a/b corners (existing diagonal
         // drag), 2 = the TARGET line (rr), 3 = the STOP line (stop price).
-        // Both edge handles sit mid-line — collision-free with the corners
+        // Both edge handles sit mid-line - collision-free with the corners
         // for either drawing direction. A non-projectable target keeps the
         // slot with a NaN y: it can never be hit (NaN comparisons fail) so
         // the handle silently disappears while the index map stays stable.
@@ -989,7 +989,7 @@ export class DrawingInteractionController {
         if (drawing.type === "rect" || drawing.type === "measure") {
           return hitRect(point.x, point.y, a, b, tolerance);
         }
-        // Fibonacci — any level line within its x range.
+        // Fibonacci - any level line within its x range.
         for (const level of this.fibLevelPrices(drawing)) {
           const y = this.deps.conversions.priceToY(level.price);
           if (y === null) continue;
@@ -1043,7 +1043,7 @@ export class DrawingInteractionController {
         const b = this.projectAnchor(drawing.b);
         if (a === null || b === null) return false;
         // Risk zone (entry↔stop) OR reward zone (entry↔derived target at
-        // the object's OWN rr) — the drawn geometry is what you can hit.
+        // the object's OWN rr) - the drawn geometry is what you can hit.
         const targetY = this.deps.conversions.priceToY(
           oryonPositionTargetPrice(drawing.a.p, drawing.b.p, oryonPositionRr(drawing)),
         );
@@ -1060,7 +1060,7 @@ export class DrawingInteractionController {
         // The two swing legs are draggable geometry.
         if (distanceToSegment(point.x, point.y, a.x, a.y, b.x, b.y) <= tolerance) return true;
         if (distanceToSegment(point.x, point.y, b.x, b.y, c.x, c.y) <= tolerance) return true;
-        // Extension levels — from the LAST placed anchor rightward.
+        // Extension levels - from the LAST placed anchor rightward.
         const xStart = Math.max(a.x, b.x, c.x);
         for (const level of FIB_EXT_HIT_LEVELS) {
           const price = fibExtLevelPrice(drawing.a.p, drawing.b.p, drawing.c.p, level);
@@ -1111,7 +1111,7 @@ export class DrawingInteractionController {
     }
   }
 
-  /** Projects a brush polyline — null when ANY point fails to project. */
+  /** Projects a brush polyline - null when ANY point fails to project. */
   private projectPoints(anchors: readonly OryonDrawingAnchor[]): ScreenPoint[] | null {
     const points: ScreenPoint[] = [];
     for (const anchor of anchors) {
@@ -1161,7 +1161,7 @@ export class DrawingInteractionController {
 
   /**
    * Pointer → domain anchor with an UNSNAPPED time (continuous logical index
-   * → interpolated time) — the brush captures a SHAPE, not per-bar anchors,
+   * → interpolated time) - the brush captures a SHAPE, not per-bar anchors,
    * so freehand curves stay smooth instead of stepping bar to bar.
    */
   private domainAnchorUnsnapped(point: ScreenPoint): OryonDrawingAnchor | null {
@@ -1220,7 +1220,7 @@ export class DrawingInteractionController {
       try {
         container.setPointerCapture(this.dragPointerId);
       } catch {
-        // Capture can fail on detached nodes — the up/cancel paths still run.
+        // Capture can fail on detached nodes - the up/cancel paths still run.
       }
     }
   }

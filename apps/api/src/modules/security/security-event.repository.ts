@@ -1,14 +1,14 @@
 /**
- * Security activity persistence (Phase 16 — bounded-context extraction).
+ * Security activity persistence (Phase 16 - bounded-context extraction).
  *
- * Owns the append-only SecurityEvent log and the LoginRecord history — the
+ * Owns the append-only SecurityEvent log and the LoginRecord history - the
  * tables were previously persisted through IdentityRepository (Phase 2);
  * they now live in the Security context so that:
  *   - Identity/Accounts record events through the SecurityEventService port
  *     without dragging the whole identity context in (§33/§34);
  *   - the Security center owns the reads (activity, audit trail, posture).
  *
- * The log is APPEND-ONLY (§10): this repository exposes append + reads —
+ * The log is APPEND-ONLY (§10): this repository exposes append + reads -
  * no update, no delete. Retention enforcement belongs to an authorized
  * system process, never to a user-facing API (§31).
  *
@@ -51,7 +51,7 @@ export function encodeActivityCursor(at: Date, id: string): string {
   return Buffer.from(`${at.toISOString()}|${id}`, "utf8").toString("base64url");
 }
 
-/** Returns null for malformed cursors — callers map that to 400. */
+/** Returns null for malformed cursors - callers map that to 400. */
 export function decodeActivityCursor(raw: string): { at: Date; id: string } | null {
   try {
     const decoded = Buffer.from(raw, "base64url").toString("utf8");
@@ -118,7 +118,7 @@ export class SecurityEventRepository {
 
   /**
    * User-scoped counts over the context's OWN tables (SecurityEvent ledger +
-   * LoginRecord history) — the narrow read contract Monitoring consumes
+   * LoginRecord history) - the narrow read contract Monitoring consumes
    * (Phase 20 §39: no cross-context Prisma access anywhere else).
    */
   async countUserEntities(userId: string): Promise<{
@@ -132,7 +132,7 @@ export class SecurityEventRepository {
     return { securityEvents, loginRecords };
   }
 
-  // ── Reads — overview windows (bounded, Phase 2 semantics) ───────────────────
+  // ── Reads - overview windows (bounded, Phase 2 semantics) ───────────────────
 
   async listSecurityEvents(userId: string, take: number): Promise<SecurityEventRow[]> {
     const rows = await this.prisma.securityEvent.findMany({
@@ -158,7 +158,7 @@ export class SecurityEventRepository {
     });
   }
 
-  // ── Reads — keyset-paginated audit trail (Phase 16 §28) ─────────────────────
+  // ── Reads - keyset-paginated audit trail (Phase 16 §28) ─────────────────────
 
   async listSecurityEventPage(
     userId: string,

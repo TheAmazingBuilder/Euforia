@@ -1,8 +1,8 @@
 /**
- * Ghost Trades application service (B6) — capture + settlement, mock parity:
+ * Ghost Trades application service (B6) - capture + settlement, mock parity:
  * the SAME validations and response shapes as the MSW engine
  * (`mocks/handlers/ghosts.ts` + store). Unknown instrument ids are honestly
- * rejected (422 UNKNOWN_INSTRUMENT) — a ghost anchored on nothing would
+ * rejected (422 UNKNOWN_INSTRUMENT) - a ghost anchored on nothing would
  * poison the discipline aggregates that consume these rows.
  */
 import { Injectable } from "@nestjs/common";
@@ -31,7 +31,7 @@ export class GhostsService {
     private readonly trades: TradesRepository,
   ) {}
 
-  /** GET /skipped-trades — the regret feed, most recent observation first. */
+  /** GET /skipped-trades - the regret feed, most recent observation first. */
   async listSkippedTrades(userId: string): Promise<SkippedTradesResponse> {
     const rows = await this.ghosts.listRows(userId);
     const skippedTrades = rows
@@ -40,7 +40,7 @@ export class GhostsService {
     return { skippedTrades };
   }
 
-  /** POST /skipped-trades — the 10-second ghost capture. */
+  /** POST /skipped-trades - the 10-second ghost capture. */
   async createSkippedTrade(userId: string, input: CreateSkippedTradeInput): Promise<SkippedTrade> {
     const instrument = await this.trades.findInstrument(input.instrumentId);
     if (instrument === null || !instrument.isActive) {
@@ -65,7 +65,7 @@ export class GhostsService {
   }
 
   /**
-   * PATCH /skipped-trades/:id/settle — would have won / lost / unknown (+R).
+   * PATCH /skipped-trades/:id/settle - would have won / lost / unknown (+R).
    * Mock parity: a re-settle OVERWRITES the guess (the user may correct a
    * misclick); discipline aggregates always read the latest state.
    */

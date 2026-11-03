@@ -1,8 +1,8 @@
-"""Perceptual hashing (OCR V2 — duplicate detection).
+"""Perceptual hashing (OCR V2 - duplicate detection).
 
 A dHash 64-bit (difference hash): grayscale → 9x8 resize → adjacent-pixel
 horizontal comparisons. Cheap, deterministic, robust to trivial re-encodes
-(metas, slight color shifts) — exactly the "same screenshot uploaded twice"
+(metas, slight color shifts) - exactly the "same screenshot uploaded twice"
 signal the upload boundary needs. Two DIFFERENT screenshots may collide in
 rare cases; the Nest side therefore treats a small hamming distance as a
 user-facing WARNING, never as an automatic block.

@@ -1,6 +1,6 @@
 /**
- * Verify — Goal → notification bridge ("At risk" alerts).
- * Probes (in ONE SPA session — the mock store reseeds on full reload):
+ * Verify - Goal → notification bridge ("At risk" alerts).
+ * Probes (in ONE SPA session - the mock store reseeds on full reload):
  *  1. Goals tab renders + inbox-wiring hint line
  *  2. Seeded baseline: bell opens, GOAL_STATUS items (if any) carry the Target icon
  *  3. Create an impossible goal (R earned 999999 / week) → BEHIND → warning
@@ -32,7 +32,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const toastFor = (text) => page.locator('[data-sonner-toast]', { hasText: text });
 
@@ -49,7 +49,7 @@ const BASE = "http://localhost:3000";
   const seededGoalItems = await page
     .locator('[data-testid="notification-item"]', { hasText: "Goal" })
     .count();
-  check("Bell opens; seeded goal alerts present (or 0 — honest baseline)", seededGoalItems >= 0, `${seededGoalItems} items`);
+  check("Bell opens; seeded goal alerts present (or 0 - honest baseline)", seededGoalItems >= 0, `${seededGoalItems} items`);
   if (seededGoalItems > 0) {
     check(
       "Seeded GOAL_STATUS items carry the Target icon",
@@ -63,7 +63,7 @@ const BASE = "http://localhost:3000";
   // ── 3. Impossible goal → BEHIND → warning toast + inbox item ─────────────
   await page.locator('[data-testid="goal-create"]').click();
   await page.locator('[data-testid="goal-form-dialog"]').waitFor({ state: "visible" });
-  await page.locator('[data-testid="goal-title-input"]').fill("Verify guard — impossible R");
+  await page.locator('[data-testid="goal-title-input"]').fill("Verify guard - impossible R");
   await page.locator('[data-testid="goal-metric-select"]').click();
   await page.getByRole("option", { name: "R earned" }).click();
   await page.locator('[data-testid="goal-target-input"]').fill("999999");
@@ -82,7 +82,7 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="notification-bell"]').click();
   await page.locator('[data-testid="notification-panel"]').waitFor({ state: "visible" });
   const offPaceItem = page
-    .locator('[data-testid="notification-item"]', { hasText: "Goal off pace — Verify guard" });
+    .locator('[data-testid="notification-item"]', { hasText: "Goal off pace - Verify guard" });
   check("Inbox holds the live at-risk alert", await offPaceItem.first().isVisible());
   check("Alert icon is the Target", await offPaceItem.first().locator("svg.lucide-target").isVisible());
   await page.keyboard.press("Escape");
@@ -100,12 +100,12 @@ const BASE = "http://localhost:3000";
   await page.locator('[data-testid="notification-bell"]').click();
   await page.locator('[data-testid="notification-panel"]').waitFor({ state: "visible" });
   const liveOffPace = await page
-    .locator('[data-testid="notification-item"]', { hasText: "Goal off pace — Verify guard" })
+    .locator('[data-testid="notification-item"]', { hasText: "Goal off pace - Verify guard" })
     .count();
   check("Resolved risk alert leaves the inbox", liveOffPace === 0, `${liveOffPace} left`);
   check(
     "Recovery notice lands in the inbox",
-    await page.locator('[data-testid="notification-item"]', { hasText: "Goal back on track — Verify guard" }).first().isVisible(),
+    await page.locator('[data-testid="notification-item"]', { hasText: "Goal back on track - Verify guard" }).first().isVisible(),
   );
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
@@ -113,7 +113,7 @@ const BASE = "http://localhost:3000";
   // ── 5. Trivial goal → ACHIEVED (deduped) when the sample cooperates ───────
   await page.locator('[data-testid="goal-create"]').click();
   await page.locator('[data-testid="goal-form-dialog"]').waitFor({ state: "visible" });
-  await page.locator('[data-testid="goal-title-input"]').fill("Verify ace — win rate 1");
+  await page.locator('[data-testid="goal-title-input"]').fill("Verify ace - win rate 1");
   await page.locator('[data-testid="goal-metric-select"]').click();
   await page.getByRole("option", { name: "Win rate" }).click();
   await page.locator('[data-testid="goal-target-input"]').fill("1");
@@ -129,13 +129,13 @@ const BASE = "http://localhost:3000";
     await page.locator('[data-testid="notification-bell"]').click();
     await page.locator('[data-testid="notification-panel"]').waitFor({ state: "visible" });
     const achievedItems = await page
-      .locator('[data-testid="notification-item"]', { hasText: "Goal achieved — Verify ace" })
+      .locator('[data-testid="notification-item"]', { hasText: "Goal achieved - Verify ace" })
       .count();
     check("ACHIEVED alert deduped to exactly one", achievedItems === 1, `${achievedItems} items`);
     await page.keyboard.press("Escape");
     await page.waitForTimeout(300);
   } else {
-    check("Trivial goal not ACHIEVED this run (empty/negative sample) — skipped honestly", true, aceStatus);
+    check("Trivial goal not ACHIEVED this run (empty/negative sample) - skipped honestly", true, aceStatus);
   }
 
   // ── 6. Settings: Goals category + mute → no new alerts ────────────────────
@@ -158,7 +158,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(1000);
   check("Prefs saved with goals muted", await toastFor("Notification preferences saved").first().isVisible());
 
-  // SPA navigation only — a full page load would reseed the mock store and
+  // SPA navigation only - a full page load would reseed the mock store and
   // silently restore the default (enabled) preferences.
   await page.locator('aside a[href="/journal"]').click();
   await page.waitForTimeout(1400);
@@ -166,7 +166,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(800);
   await page.locator('[data-testid="goal-create"]').click();
   await page.locator('[data-testid="goal-form-dialog"]').waitFor({ state: "visible" });
-  await page.locator('[data-testid="goal-title-input"]').fill("Verify mute — silenced R");
+  await page.locator('[data-testid="goal-title-input"]').fill("Verify mute - silenced R");
   await page.locator('[data-testid="goal-metric-select"]').click();
   await page.getByRole("option", { name: "R earned" }).click();
   await page.locator('[data-testid="goal-target-input"]').fill("888888");
@@ -176,7 +176,7 @@ const BASE = "http://localhost:3000";
   await page.waitForTimeout(1800);
   check(
     "Muted: NO 'Goal off pace' toast for the new slipping goal",
-    (await toastFor("Goal off pace — Verify mute").count()) === 0,
+    (await toastFor("Goal off pace - Verify mute").count()) === 0,
   );
   await page.locator('[data-testid="notification-bell"]').click();
   await page.locator('[data-testid="notification-panel"]').waitFor({ state: "visible" });
@@ -186,7 +186,7 @@ const BASE = "http://localhost:3000";
   );
   await page.keyboard.press("Escape");
 
-  // ── 7. Cleanup — re-enable prefs, delete verify goals ─────────────────────
+  // ── 7. Cleanup - re-enable prefs, delete verify goals ─────────────────────
   await page.locator('aside a[href="/settings"]').click();
   await page.waitForTimeout(1400);
   await page.locator('[data-testid="settings-nav-notifications"]').click();
@@ -237,7 +237,7 @@ const BASE = "http://localhost:3000";
   );
   check("Zero console errors (known market-service noise excluded)", errors.length - noise.length === 0, errors.slice(0, 3).join(" | "));
 
-  console.log("\n═══ GOAL → NOTIFICATION BRIDGE — RESULTS ═══");
+  console.log("\n═══ GOAL → NOTIFICATION BRIDGE - RESULTS ═══");
   results.forEach((r) => console.log(r));
   const failed = results.filter((r) => r.startsWith("FAIL")).length;
   console.log(`\n${results.length - failed}/${results.length} PASS`);

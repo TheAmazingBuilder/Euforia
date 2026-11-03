@@ -1,9 +1,9 @@
 /**
- * Regression — JWT issuer/audience pinning (security-audit 2026-10-19, §1.8).
+ * Regression - JWT issuer/audience pinning (security-audit 2026-10-19, §1.8).
  *
  * The access-token contract is now: signature + exp + iss + aud. A token
  * signed with the SAME secret but a different issuer or audience must be
- * REJECTED — the mock had no such pinning; the real backend does.
+ * REJECTED - the mock had no such pinning; the real backend does.
  */
 
 import { describe, expect, it } from "vitest";

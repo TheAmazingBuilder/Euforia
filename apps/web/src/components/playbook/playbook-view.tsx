@@ -25,13 +25,13 @@ import { usePlaybookOverview, useStrategies, useStrategiesStats } from "@/lib/ap
 
 /**
  * Professional Playbook module shell (MASTER PROMPT §4): seven tabs over the
- * operational trading-system repository — Overview, My Strategies, Setups,
+ * operational trading-system repository - Overview, My Strategies, Setups,
  * Rules, Checklists, Performance, Templates. The tab persists as ?tab=
  * (module convention); shared data (strategies + per-strategy stats + the
  * overview aggregate) is fetched ONCE here and passed down.
  */
 
-/** Tab machine ids — labels resolve through dict.playbook.view.tabs. */
+/** Tab machine ids - labels resolve through dict.playbook.view.tabs. */
 const TAB_IDS = [
   "overview",
   "strategies",
@@ -99,7 +99,7 @@ export function PlaybookView() {
     <div className="mx-auto w-full max-w-7xl space-y-4 sm:space-y-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-heading text-2xl font-extrabold tracking-tight sm:text-3xl">{V.title}</h1>
+          <h1 className="page-title">{V.title}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{V.subtitle}</p>
         </div>
         <Button onClick={openCreate}>

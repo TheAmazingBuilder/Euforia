@@ -1,5 +1,5 @@
 /**
- * GLOBAL FRONTEND SWEEP — final pass over every route of the app.
+ * GLOBAL FRONTEND SWEEP - final pass over every route of the app.
  *
  * For each page (desktop 1440, then mobile 390, then light theme):
  *   - HTTP 200 / no unexpected 4xx-5xx responses (auth noise filtered)
@@ -49,7 +49,7 @@ const PAGES = [
 
 const results = [];
 const check = (name, ok, extra = "") => {
-  results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
   console.log(results[results.length - 1]);
 };
 
@@ -61,7 +61,7 @@ async function sweepPage(page, href, label, opts = {}) {
   const onErr = (err) => errors.push(`pageerror ${String(err).slice(0, 160)}`);
   const onConsole = (msg) => {
     // "Failed to load resource" echoes are already tracked by the response
-    // listener (with URL filtering) — the console text itself has no URL.
+    // listener (with URL filtering) - the console text itself has no URL.
     if (msg.type() === "error" && !/^Failed to load resource/.test(msg.text()) && !NOISE.some((re) => re.test(msg.text()))) errors.push(`console ${msg.text().slice(0, 160)}`);
   };
   page.on("response", onResp); page.on("pageerror", onErr); page.on("console", onConsole);
@@ -93,14 +93,14 @@ async function sweepPage(page, href, label, opts = {}) {
   // single-page context that forbids it).
   const mainCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 
-  // ── 1. Desktop pass — mount + errors on every route ──────────────────────
+  // ── 1. Desktop pass - mount + errors on every route ──────────────────────
   let page = await mainCtx.newPage();
   await page.goto(`${BASE}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
   await ensureLogin(page);
   await page.waitForTimeout(1500);
 
   // Resolve an account id once for the dynamic detail route.
-  // Cards are role=link divs (router.push) — not <a href>.
+  // Cards are role=link divs (router.push) - not <a href>.
   // Retry once: dev-mode on-demand route compilation can exceed one wait.
   async function resolveAccountId(browserPage) {
     for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -121,7 +121,7 @@ async function sweepPage(page, href, label, opts = {}) {
     return null;
   }
 
-  // Chromium renderers OOM-crash after ~30 full reloads on one tab — recycle
+  // Chromium renderers OOM-crash after ~30 full reloads on one tab - recycle
   // pages every 8 routes. newPage() in the SAME context keeps the auth session.
   async function recycledPage(contextPage, viewport) {
     await contextPage.close().catch(() => {});
@@ -148,8 +148,8 @@ async function sweepPage(page, href, label, opts = {}) {
     await sweepPage(page, href, p.label);
   }
 
-  // ── 2. Mobile pass — 390px overflow on every route ────────────────────────
-  // Own fresh context — the proven pattern: fresh boot → login form → login.
+  // ── 2. Mobile pass - 390px overflow on every route ────────────────────────
+  // Own fresh context - the proven pattern: fresh boot → login form → login.
   const mobileCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   let mobile = await mobileCtx.newPage();
   await mobile.goto(`${BASE}/`, { waitUntil: "domcontentloaded", timeout: 60_000 });
@@ -175,8 +175,8 @@ async function sweepPage(page, href, label, opts = {}) {
     await sweepPage(mobile, p.href, `${p.label} · mobile`, { overflow: true, settle: 2200 });
   }
 
-  // ── 3. Light theme pass — every route renders under light ────────────────
-  // NOTE: recycle the page every 6 routes — Chromium renderers crash (OOM)
+  // ── 3. Light theme pass - every route renders under light ────────────────
+  // NOTE: recycle the page every 6 routes - Chromium renderers crash (OOM)
   // after ~30 full reloads on the same tab. newPage() in the SAME context
   // keeps the auth session, so recycling is transparent.
   await page.setViewportSize({ width: 1440, height: 900 });

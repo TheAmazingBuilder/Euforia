@@ -41,7 +41,7 @@ function StatRow({ label, value }: { label: string; value: string }) {
 }
 
 /**
- * "Today's risk budget" — vertical gauge of the daily budget already
+ * "Today's risk budget" - vertical gauge of the daily budget already
  * committed, from GET /rules/status. Warning color near the threshold,
  * loss color past the limit (discipline semantics, per design-tokens.md).
  */

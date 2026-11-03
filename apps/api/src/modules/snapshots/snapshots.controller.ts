@@ -1,15 +1,15 @@
 /**
  * Performance snapshots controller (Dashboard Customization Phase 08).
- * All routes authenticated (global JwtAuthGuard — no @Public), userId from
+ * All routes authenticated (global JwtAuthGuard - no @Public), userId from
  * the auth principal (never the client), ZodValidationPipe on every body,
  * uuid-validated params, shared-contract parse on read responses.
  *
  * Routes (frontend contract): /snapshots
- *   GET    /snapshots            — the user's snapshots (newest first, capped)
- *   POST   /snapshots            — capture the current analytics scope (201)
- *   GET    /snapshots/:id        — one snapshot detail
- *   PATCH  /snapshots/:id        — rename / edit notes (METADATA ONLY)
- *   DELETE /snapshots/:id        — remove (existing deletion conventions)
+ *   GET    /snapshots            - the user's snapshots (newest first, capped)
+ *   POST   /snapshots            - capture the current analytics scope (201)
+ *   GET    /snapshots/:id        - one snapshot detail
+ *   PATCH  /snapshots/:id        - rename / edit notes (METADATA ONLY)
+ *   DELETE /snapshots/:id        - remove (existing deletion conventions)
  */
 import {
   Body,
@@ -38,14 +38,14 @@ import { SnapshotsService } from "./snapshots.service";
 export class SnapshotsController {
   constructor(private readonly snapshotsService: SnapshotsService) {}
 
-  /** GET /snapshots — the user's snapshot history. */
+  /** GET /snapshots - the user's snapshot history. */
   @Get()
   async list(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.snapshotsService.list(principal.userId);
     return performanceSnapshotsResponseSchema.parse(response);
   }
 
-  /** POST /snapshots — capture the CURRENT analytics scope (never overwrites). */
+  /** POST /snapshots - capture the CURRENT analytics scope (never overwrites). */
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(
@@ -57,7 +57,7 @@ export class SnapshotsController {
     return performanceSnapshotSchema.parse(snapshot);
   }
 
-  /** GET /snapshots/:id — detail (ownership-scoped, foreign = 404). */
+  /** GET /snapshots/:id - detail (ownership-scoped, foreign = 404). */
   @Get(":snapshotId")
   async get(@CurrentUser() principal: AuthPrincipal, @Param("snapshotId") snapshotId: string) {
     const id = uuidSchema.parse(snapshotId);
@@ -65,7 +65,7 @@ export class SnapshotsController {
     return performanceSnapshotSchema.parse(snapshot);
   }
 
-  /** PATCH /snapshots/:id — metadata only (name/notes); metrics immutable. */
+  /** PATCH /snapshots/:id - metadata only (name/notes); metrics immutable. */
   @Patch(":snapshotId")
   async update(
     @CurrentUser() principal: AuthPrincipal,
@@ -78,7 +78,7 @@ export class SnapshotsController {
     return performanceSnapshotSchema.parse(snapshot);
   }
 
-  /** DELETE /snapshots/:id — delete per existing deletion conventions. */
+  /** DELETE /snapshots/:id - delete per existing deletion conventions. */
   @Delete(":snapshotId")
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@CurrentUser() principal: AuthPrincipal, @Param("snapshotId") snapshotId: string) {

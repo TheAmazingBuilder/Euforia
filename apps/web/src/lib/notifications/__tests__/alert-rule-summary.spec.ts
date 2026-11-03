@@ -69,6 +69,6 @@ describe("alertEventObservation", () => {
   });
 
   it("degrades missing values honestly", () => {
-    expect(alertEventObservation({ observedValue: null, threshold: null, unit: null })).toBe("—");
+    expect(alertEventObservation({ observedValue: null, threshold: null, unit: null })).toBe("-");
   });
 });

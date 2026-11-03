@@ -21,7 +21,7 @@ export const REDACT_PATHS = [
   "req.headers.cookie",
   "req.headers['x-api-key']",
   "req.headers['x-refresh-token']",
-  // Request payload secrets (auth vectors — validated contract fields)
+  // Request payload secrets (auth vectors - validated contract fields)
   "req.body.password",
   "req.body.currentPassword",
   "req.body.newPassword",
@@ -56,7 +56,7 @@ export function getOrCreateRootLogger(config: AppConfig): pino.Logger {
     level: config.logLevel,
     base: { service: SERVICE_NAME, env: config.env },
     redact: { paths: REDACT_PATHS, censor: "[Redacted]" },
-    // Pretty, human-readable logs in development only — production stays JSON.
+    // Pretty, human-readable logs in development only - production stays JSON.
     ...(config.isDevelopment
       ? {
           transport: {
@@ -69,7 +69,7 @@ export function getOrCreateRootLogger(config: AppConfig): pino.Logger {
   return cached;
 }
 
-/** Test helper — clears the memoized logger. Not used in production code. */
+/** Test helper - clears the memoized logger. Not used in production code. */
 export function resetRootLoggerCache(): void {
   cached = undefined;
 }
@@ -79,7 +79,7 @@ export const ROOT_LOGGER = Symbol("ROOT_LOGGER");
 export type RootLogger = pino.Logger;
 
 /**
- * Nest logger adapter — routes Nest's internal lifecycle logging (bootstrap,
+ * Nest logger adapter - routes Nest's internal lifecycle logging (bootstrap,
  * shutdown, route mapping) into the structured pino logger so every line
  * shares the same format, service name and redaction.
  */

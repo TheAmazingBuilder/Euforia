@@ -17,13 +17,13 @@ import {
 import { recognitionFieldLabel, type RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * SetWorkspace — V2 §1/§2/§14/§15/§18: the multi-screenshot flow.
+ * SetWorkspace - V2 §1/§2/§14/§15/§18: the multi-screenshot flow.
  *
  * The user picks 2..6 screenshots of ONE trading event (entry / position /
  * exit); the backend recognizes each individually, fuses them into a single
  * TradeDraft, and the fused confirmation goes through the SAME Trading Core
  * bridge as the single path. Individual member recognitions are always
- * preserved (they land in the history too — V2 §15).
+ * preserved (they land in the history too - V2 §15).
  *
  * The pipeline mirrors the single-upload discipline: client validation →
  * create → review → explicit confirm (human-in-the-loop, V2 §103).
@@ -59,7 +59,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
     setFiles((current) => current.filter((_, i) => i !== index));
   }
 
-  // Data URLs are produced asynchronously — the create flow reads them all
+  // Data URLs are produced asynchronously - the create flow reads them all
   // first, then posts (honest ordering, no state races).
   async function handleCreateSet() {
     if (files.length < 2) return;
@@ -154,7 +154,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
                   type="button"
                   className="text-muted-foreground hover:text-foreground"
                   onClick={() => removeFile(index)}
-                  aria-label={`${file.name} — remove`}
+                  aria-label={`${file.name} - remove`}
                 >
                   ×
                 </button>
@@ -204,7 +204,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
 
       {fused && stage !== "idle" ? (
         <div className="flex flex-col gap-4 border-t border-border pt-3" data-testid="set-review">
-          {/* Member strip — individual recognitions are preserved (V2 §15). */}
+          {/* Member strip - individual recognitions are preserved (V2 §15). */}
           <div className="flex flex-col gap-1.5">
             <p className="ledger-label">{dict.sets.membersTitle}</p>
             <div className="flex flex-wrap gap-2">
@@ -217,7 +217,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
                     {dict.sets.member} {member.order + 1}
                   </span>
                   <span className="font-mono text-[11px] tabular-nums">
-                    {recognitionConfidence(member.recognition.fields) ?? "—"}%
+                    {recognitionConfidence(member.recognition.fields) ?? "-"}%
                   </span>
                 </span>
               ))}
@@ -227,7 +227,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
             </p>
           </div>
 
-          {/* Fused fields — the single TradeDraft (V2 §18). */}
+          {/* Fused fields - the single TradeDraft (V2 §18). */}
           <div className="flex flex-col">
             <p className="ledger-label border-b border-border pb-1.5">{dict.sets.fusedTitle}</p>
             <p className="pt-1 text-xs text-muted-foreground">{dict.sets.fusedHint}</p>
@@ -263,7 +263,7 @@ export function SetWorkspace({ dict }: { dict: RecognitionDict }) {
             })}
           </div>
 
-          {/* Conflicts — both readings kept, the user decides (V2 §18). */}
+          {/* Conflicts - both readings kept, the user decides (V2 §18). */}
           {fused.conflicts.length > 0 ? (
             <div className="flex flex-col gap-1.5 rounded-lg border border-warning/40 bg-warning/[0.05] px-3 py-2">
               <p className="flex items-center gap-2 text-xs font-medium">

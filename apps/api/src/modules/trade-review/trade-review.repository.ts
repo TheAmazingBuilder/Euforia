@@ -1,10 +1,10 @@
 /**
- * Trade Review repository (Phase 6) — the ONLY Prisma touchpoint of the
+ * Trade Review repository (Phase 6) - the ONLY Prisma touchpoint of the
  * context (Phase 0 §I discipline: one repository, narrow rows, ownership in
  * every query).
  *
  * Read models owned here: the workspace rows are a JOIN projection of
- * TradeReview ⊕ Trade (the product's ReviewRow) — a review-owned read model,
+ * TradeReview ⊕ Trade (the product's ReviewRow) - a review-owned read model,
  * NOT an ownership transfer: Trading Core remains the exclusive writer of
  * Trade/TradeExecution rows (§11/§66 red lines). Every query carries the
  * userId from the principal (IDOR → honest 404/empty, §24/§36) and filters
@@ -97,7 +97,7 @@ export interface PatchReviewData {
   archivedAt?: Date | null;
 }
 
-/** Narrow review select — never a SELECT * (§41 hygiene). */
+/** Narrow review select - never a SELECT * (§41 hygiene). */
 const reviewSelect = {
   id: true,
   userId: true,
@@ -145,7 +145,7 @@ export class TradeReviewRepository {
     return (row as TradeReviewRow | null) ?? null;
   }
 
-  /** Active (COMPLETED) review — the workspace-visible artifact. */
+  /** Active (COMPLETED) review - the workspace-visible artifact. */
   async findActiveReviewByTradeId(tradeId: string, userId: string): Promise<TradeReviewRow | null> {
     const row = await this.prisma.tradeReview.findFirst({
       where: { tradeId, userId, status: "COMPLETED" },
@@ -305,14 +305,14 @@ export class TradeReviewRepository {
 
   /**
    * Overview scan: narrow active-review summaries (the review history is
-   * naturally bounded — one per reviewed trade) + the closed-trade count.
+   * naturally bounded - one per reviewed trade) + the closed-trade count.
    */
   async listActiveReviewSummaries(
     userId: string,
   ): Promise<
     Array<{
       tradeId: string;
-      /** Nullable like the columns — partial reviews exist; consumers guard. */
+      /** Nullable like the columns - partial reviews exist; consumers guard. */
       executionGrade: ExecutionGrade | null;
       followedPlan: boolean | null;
       playbookMatch: PlaybookMatch | null;

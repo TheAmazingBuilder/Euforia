@@ -1,6 +1,6 @@
 /**
- * Metric alert rules — PURE evaluation logic (Dashboard Customization
- * Phase 07). Deterministic, side-effect-free, unit-testable without Nest —
+ * Metric alert rules - PURE evaluation logic (Dashboard Customization
+ * Phase 07). Deterministic, side-effect-free, unit-testable without Nest -
  * the `monitoring.logic.ts` house pattern (§46).
  *
  * The engine NEVER computes a financial metric itself: observations are
@@ -46,10 +46,10 @@ function parseDecimal(value: string | null | undefined): number | null {
 /**
  * Extract a metric observation from the authoritative suite summary.
  * Registry transforms (documented in the shared registry):
- *   WIN_RATE     — summary.winRate is a 0..1 ratio → reported 0..100 %.
- *   DRAWDOWN_PCT — summary.maxDrawdownPct is ≤ 0 → reported ≥ 0 magnitude.
+ *   WIN_RATE     - summary.winRate is a 0..1 ratio → reported 0..100 %.
+ *   DRAWDOWN_PCT - summary.maxDrawdownPct is ≤ 0 → reported ≥ 0 magnitude.
  * Null summary fields (empty sample, multi-currency money) are honest
- * NO_DATA observations — never treated as "condition false".
+ * NO_DATA observations - never treated as "condition false".
  */
 export function extractSummaryObservation(
   metric: keyof typeof METRIC_ALERT_REGISTRY,
@@ -111,7 +111,7 @@ export function compareCondition(
 /**
  * True when the rule may fire an event NOW. Policy (documented, spec §6):
  * transition-based triggering; cooldownMinutes only suppresses EVENTS
- * within the window — it never fakes a transition, and after the cooldown
+ * within the window - it never fakes a transition, and after the cooldown
  * a still-true condition does NOT re-fire (a new false→true is required).
  */
 function cooldownElapsed(
@@ -124,7 +124,7 @@ function cooldownElapsed(
   return elapsedMs >= cooldownMinutes * 60_000;
 }
 
-// ── The tick — one rule × one observation ────────────────────────────────────
+// ── The tick - one rule × one observation ────────────────────────────────────
 
 export type RuleTickOutcome =
   | {
@@ -149,7 +149,7 @@ export type RuleTickOutcome =
 /**
  * One evaluation tick for one rule. `state` is re-read by the caller
  * INSIDE the persistence transaction, so concurrent evaluations of the
- * same rule serialize on the row update — the transition decision cannot
+ * same rule serialize on the row update - the transition decision cannot
  * double-fire (spec §12 race requirement).
  */
 export function evaluateRuleTick(
@@ -181,10 +181,10 @@ export function evaluateRuleTick(
     rule.kind === "THRESHOLD"
       ? compareCondition(observation.value, rule.condition, rule.threshold)
       : rule.goalCondition === "ACHIEVED"
-        ? // ACHIEVED — the goal engine's authoritative status folded to a
+        ? // ACHIEVED - the goal engine's authoritative status folded to a
           // boolean: progressPct reaches 100 exactly when status = ACHIEVED.
           observation.value >= 100
-        : // PROGRESS_BELOW — progress slipped under the user's percent line.
+        : // PROGRESS_BELOW - progress slipped under the user's percent line.
           observation.value < (rule.thresholdPct ?? 0);
 
   const transitionEligible = state.lastConditionMet === null || state.lastConditionMet === false;
@@ -194,7 +194,7 @@ export function evaluateRuleTick(
     return {
       outcome: "QUIET",
       reason: "COOLDOWN",
-      // A cooldown-suppressed trigger still commits the transition — after
+      // A cooldown-suppressed trigger still commits the transition - after
       // the cooldown a NEW false→true is required (documented policy).
       nextState: {
         ...state,
@@ -238,14 +238,14 @@ export function evaluateRuleTick(
 
 /**
  * GOAL observations arrive as the goal engine's progressPct (0..100).
- * The per-condition comparison lives inline in evaluateRuleTick — the goal
+ * The per-condition comparison lives inline in evaluateRuleTick - the goal
  * engine itself stays the only status authority (spec §10: no second goal
  * calculation engine).
  */
 
 // ── Event identity + presentation ────────────────────────────────────────────
 
-/** Deterministic event id — replays of the same trigger are no-ops. */
+/** Deterministic event id - replays of the same trigger are no-ops. */
 export function metricAlertEventId(ruleId: string, triggerCount: number): string {
   return uuidV5(`metric-alert:${ruleId}:t${triggerCount}`, METRIC_ALERTS_UUID_NAMESPACE);
 }
@@ -273,7 +273,7 @@ export function metricAlertCopy(
   const meta = METRIC_ALERT_REGISTRY[rule.metric];
   const condition = METRIC_ALERT_CONDITION_LABELS[rule.condition];
   const title = rule.name;
-  const message = `${meta.label} is ${formatMetricValue(meta.unit, observedValue)} ${METRIC_ALERT_PERIOD_LABELS[period ?? "ALL"]} — condition ${condition} ${formatMetricValue(meta.unit, rule.threshold)} met.`;
+  const message = `${meta.label} is ${formatMetricValue(meta.unit, observedValue)} ${METRIC_ALERT_PERIOD_LABELS[period ?? "ALL"]} - condition ${condition} ${formatMetricValue(meta.unit, rule.threshold)} met.`;
   return { title, message };
 }
 
@@ -285,7 +285,7 @@ export function metricAlertPayload(
   evaluatedAt: string,
   context: {
     /** Suite window for THRESHOLD rules; null for GOAL rules (the goal
-     * engine owns its own window — never re-derived here). */
+     * engine owns its own window - never re-derived here). */
     period: MetricAlertPeriod | null;
     periodStart: string | null;
     periodEnd: string | null;
@@ -317,9 +317,9 @@ export function metricAlertPayload(
 // ── Duplicate-rule semantic key (spec §5) ────────────────────────────────────
 
 /**
- * Two rules with the same semantic identity would always fire together —
+ * Two rules with the same semantic identity would always fire together -
  * the API rejects exact duplicates with 409 (documented behavior: near
- * duplicates with different thresholds remain allowed — they are a
+ * duplicates with different thresholds remain allowed - they are a
  * deliberate escalation ladder, e.g. warn at 5% drawdown, alert at 10%).
  */
 export function metricAlertSemanticKey(rule: {

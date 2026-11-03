@@ -11,13 +11,13 @@ import { cn } from "@/lib/utils";
 
 /**
  * Playbook strategy card (Phase 8): grade badge (A+ in accent, others muted),
- * status dot, mono stats row (trades, win rate, avg R, expectancy —
+ * status dot, mono stats row (trades, win rate, avg R, expectancy -
  * server-computed) and a tiny cumulative-R equity sparkline. The strategy
  * color lives ONLY in the data sparkline, never as a decorative edge.
  * Clicking opens the detail dialog with the full rules.
  */
 
-/** Grade symbols (A+/A/B/C) — language-neutral, kept out of the dict. */
+/** Grade symbols (A+/A/B/C) - language-neutral, kept out of the dict. */
 export const GRADE_LABELS: Record<StrategyGrade, string> = {
   A_PLUS: "A+",
   A: "A",
@@ -25,7 +25,7 @@ export const GRADE_LABELS: Record<StrategyGrade, string> = {
   C: "C",
 };
 
-/** Status → token class. Status is process state, NOT P&L — no profit/loss here. */
+/** Status → token class. Status is process state, NOT P&L - no profit/loss here. */
 const STATUS_DOT: Record<Strategy["status"], string> = {
   ACTIVE: "bg-accent",
   DRAFT: "bg-muted-foreground/60",
@@ -106,22 +106,22 @@ export function StrategyCard({ strategy, stat, onOpen }: StrategyCardProps) {
         <div className="grid grid-cols-4 gap-2 font-mono text-xs tabular-nums">
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statTrades}</span>
-            <span className="text-foreground">{stat ? String(stat.trades) : "—"}</span>
+            <span className="text-foreground">{stat ? String(stat.trades) : "-"}</span>
           </div>
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statWinRate}</span>
-            <span className="text-foreground">{stat ? formatPercent(stat.winRate, 0) : "—"}</span>
+            <span className="text-foreground">{stat ? formatPercent(stat.winRate, 0) : "-"}</span>
           </div>
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statAvgR}</span>
             <span className={cn(avgR === null ? "text-foreground" : avgR >= 0 ? "text-profit" : "text-loss")}>
-              {stat ? formatR(stat.avgR) : "—"}
+              {stat ? formatR(stat.avgR) : "-"}
             </span>
           </div>
           <div>
             <span className="block text-[10px] uppercase tracking-wide text-muted-foreground">{V.statExpectancy}</span>
             <span className={cn(avgR === null ? "text-foreground" : avgR >= 0 ? "text-profit" : "text-loss")}>
-              {stat ? formatR(stat.last20Expectancy ?? stat.avgR) : "—"}
+              {stat ? formatR(stat.last20Expectancy ?? stat.avgR) : "-"}
             </span>
           </div>
         </div>

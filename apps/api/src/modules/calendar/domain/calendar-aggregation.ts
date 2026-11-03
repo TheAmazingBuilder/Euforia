@@ -1,16 +1,16 @@
 /**
- * Calendar-view aggregation (Phase 13) — PURE domain function, the server
+ * Calendar-view aggregation (Phase 13) - PURE domain function, the server
  * authority behind `GET /calendar-view` (§31).
  *
- * Every row is server-computed from three owned inputs — the journal's
+ * Every row is server-computed from three owned inputs - the journal's
  * closed-trade daily aggregates (read through Trading Core's public
- * contract, never recomputed from executions here — Phase 4 §46),
+ * contract, never recomputed from executions here - Phase 4 §46),
  * canonical economic events and per-user calendar blocks. Days marked OFF
- * are EXCLUDED from every aggregate (planned rest is not trading data —
+ * are EXCLUDED from every aggregate (planned rest is not trading data -
  * mock parity).
  *
  * Deterministic: iteration from `from` to `to` step-by-step with
- * zero-filled missing days, hard window cap (semester ≈ 190 days — 400
+ * zero-filled missing days, hard window cap (semester ≈ 190 days - 400
  * emitted rows at most, mock parity), fixed rounding (round2 → decimal
  * string). No floats cross the wire: money is decimal-string everywhere.
  */
@@ -22,14 +22,14 @@ type Decimal = string;
 
 /** Narrow daily aggregate of CLOSED trades for one trading day. */
 export interface CalendarDailyStatRow {
-  /** Trading-day key (YYYY-MM-DD, user timezone — persisted by Trading). */
+  /** Trading-day key (YYYY-MM-DD, user timezone - persisted by Trading). */
   readonly date: string;
   readonly tradesCount: number;
   readonly pnlNet: Decimal | null;
   readonly rEarned: Decimal | null;
-  /** Journal-discipline score — absent backend domain → honest null (§63). */
+  /** Journal-discipline score - absent backend domain → honest null (§63). */
   readonly disciplineScore: Decimal | null;
-  /** Rule-violation alerts — no backend alert domain yet → honest 0. */
+  /** Rule-violation alerts - no backend alert domain yet → honest 0. */
   readonly violationsCount: number;
 }
 
@@ -44,7 +44,7 @@ export interface CalendarViewBlockRow {
   readonly date: string;
   readonly kind: "OFF" | "NEWS";
   readonly note: string;
-  /** ISO instant — wire passes it through verbatim. */
+  /** ISO instant - wire passes it through verbatim. */
   readonly createdAt: string;
 }
 
@@ -54,9 +54,9 @@ export interface BuildCalendarViewInput {
   readonly dailyStats: readonly CalendarDailyStatRow[];
   readonly events: readonly CalendarViewEventRow[];
   readonly blocks: readonly CalendarViewBlockRow[];
-  /** The account's daily loss limit in % — the "guard line" of the view. */
+  /** The account's daily loss limit in % - the "guard line" of the view. */
   readonly dailyLossLimitPct: number;
-  /** Main (default) account currency — the view's display currency. */
+  /** Main (default) account currency - the view's display currency. */
   readonly currency: string;
 }
 
@@ -92,14 +92,14 @@ export interface CalendarViewWire {
   readonly currency: string;
 }
 
-/** Hard cap on emitted rows — window abuse guard (§31), mock parity. */
+/** Hard cap on emitted rows - window abuse guard (§31), mock parity. */
 export const CALENDAR_VIEW_MAX_DAYS = 400;
 
 const round2 = (value: number): number => Number(value.toFixed(2));
 
 /**
  * Build the trading-calendar view: zero-filled day rows + range summary.
- * Pure — every input is pre-resolved by the application service.
+ * Pure - every input is pre-resolved by the application service.
  */
 export function buildCalendarView(input: BuildCalendarViewInput): CalendarViewWire {
   const statByDate = new Map(input.dailyStats.map((stat) => [stat.date, stat]));

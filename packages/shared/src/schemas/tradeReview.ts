@@ -5,10 +5,10 @@ import { dateKeySchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 // ── Trade Review module (fusion with Goal) ──────────────────────────────────
 //
 // Two coupled workspaces, one module:
-//  1. GOALS — targets the trader sets; progress is COMPUTED server-side from
+//  1. GOALS - targets the trader sets; progress is COMPUTED server-side from
 //     real trading behavior (closed trades + daily stats) over a calendar
 //     period, never self-entered.
-//  2. REVIEWS — the post-trade workflow: grade execution against the playbook,
+//  2. REVIEWS - the post-trade workflow: grade execution against the playbook,
 //     score entry/exit/risk quality, capture the lesson. One review per trade
 //     (upsert). Distinct from the pre-reveal decisionGrade on Trade.
 
@@ -16,7 +16,7 @@ import { dateKeySchema, isoDateTimeSchema, uuidSchema } from "./primitives";
 
 /**
  * The metrics the engine can compute from REAL data. The direction
- * (higher/lower is better) and the display unit are DERIVED server-side —
+ * (higher/lower is better) and the display unit are DERIVED server-side -
  * the client never guesses them.
  */
 export const goalMetricSchema = z.enum([
@@ -46,7 +46,7 @@ export type GoalStatus = z.infer<typeof goalStatusSchema>;
 export const goalUnitSchema = z.enum(["PERCENT", "R", "MONEY", "COUNT", "SCORE"]);
 export type GoalUnit = z.infer<typeof goalUnitSchema>;
 
-/** Vivid card palette — keys resolved to gradients client-side. */
+/** Vivid card palette - keys resolved to gradients client-side. */
 export const goalColorSchema = z.enum([
   "VIOLET",
   "CYAN",
@@ -92,7 +92,7 @@ export const goalProgressSchema = z.object({
   actual: z.number().nullable(),
   /** Same metric over the PREVIOUS equivalent period (trend anchor). */
   previous: z.number().nullable(),
-  /** 0–100 — direction-aware (LOWER goals: 100 while actual ≤ target). */
+  /** 0–100 - direction-aware (LOWER goals: 100 while actual ≤ target). */
   progressPct: z.number().min(0).max(100).nullable(),
   status: goalStatusSchema,
   /** Period pacing context, so "behind" is honest, not vibes. */
@@ -151,7 +151,7 @@ export const checklistResultSchema = z.object({
 export type ChecklistResult = z.infer<typeof checklistResultSchema>;
 
 /**
- * TradeReview — the post-trade workflow artifact. One per trade (upsert).
+ * TradeReview - the post-trade workflow artifact. One per trade (upsert).
  * executionGrade is the POST-trade verdict and stays distinct from the
  * pre-reveal decisionGrade frozen on the trade.
  */
@@ -162,15 +162,15 @@ export const tradeReviewSchema = z.object({
   executionGrade: gradeSchema,
   followedPlan: z.boolean(),
   playbookMatch: playbookMatchSchema,
-  /** Pass/fail per checklist item — initialized from the trade's checklistSnap. */
+  /** Pass/fail per checklist item - initialized from the trade's checklistSnap. */
   checklistResults: z.array(checklistResultSchema).max(24).nullable(),
   /** 1–5 quality scores. */
   entryQuality: z.number().int().min(1).max(5).nullable(),
   exitQuality: z.number().int().min(1).max(5).nullable(),
   riskManagement: z.number().int().min(1).max(5).nullable(),
-  /** THE takeaway — required, the module's whole point. */
+  /** THE takeaway - required, the module's whole point. */
   lessons: z.string().min(3).max(4000),
-  /** "Next time I will…" — the forward commitment. */
+  /** "Next time I will…" - the forward commitment. */
   improvementNote: z.string().max(1000).nullable(),
   reviewedAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
@@ -188,12 +188,12 @@ export const upsertReviewInputSchema = z.object({
   riskManagement: z.number().int().min(1).max(5).nullable().optional(),
   lessons: z.string().min(3, "Capture at least a short lesson").max(4000),
   improvementNote: z.string().max(1000).nullable().optional(),
-  /** Origin TradePlan (Phase 5) — ownership validated server-side, values frozen into planSnapshot. */
+  /** Origin TradePlan (Phase 5) - ownership validated server-side, values frozen into planSnapshot. */
   originTradePlanId: uuidSchema.nullable().optional(),
 });
 export type UpsertReviewInput = z.infer<typeof upsertReviewInputSchema>;
 
-/** PATCH /reviews/:tradeId — partial update (every field optional, tradeId in path). */
+/** PATCH /reviews/:tradeId - partial update (every field optional, tradeId in path). */
 export const patchReviewInputSchema = upsertReviewInputSchema
   .omit({ tradeId: true })
   .partial()
@@ -279,8 +279,8 @@ export type GradeDistribution = z.infer<typeof gradeDistributionSchema>;
 
 /**
  * Review streak with an HONEST freeze: one grace day per calendar week
- * (Mon–Sun). A missed day is forgiven — counted as frozen, never as reviewed
- * — only if the chain stays continuous around it, and only once per week.
+ * (Mon–Sun). A missed day is forgiven - counted as frozen, never as reviewed
+ * - only if the chain stays continuous around it, and only once per week.
  * The numbers are reported separately so the gamification never lies.
  */
 export const reviewStreakSchema = z.object({
@@ -309,7 +309,7 @@ export const tradeReviewOverviewResponseSchema = z.object({
     avgExitQuality: z.number().min(1).max(5).nullable(),
     avgRiskManagement: z.number().min(1).max(5).nullable(),
     lessonsCaptured: z.number().int().min(0),
-    /** Effective streak (frozen grace days included) — badge value. */
+    /** Effective streak (frozen grace days included) - badge value. */
     reviewStreakDays: z.number().int().min(0),
     followedPlanPct: z.number().min(0).max(100).nullable(),
     offPlaybookCount: z.number().int().min(0),
@@ -332,19 +332,19 @@ export const tradeReviewOverviewResponseSchema = z.object({
   ),
   recentLessons: z.array(lessonEntrySchema).max(6),
   pendingQueuePreview: z.array(reviewRowSchema).max(5),
-  /** Freeze-aware streak breakdown — the honest gamification ledger. */
+  /** Freeze-aware streak breakdown - the honest gamification ledger. */
   streak: reviewStreakSchema,
-  /** Latest "next time I will…" note — the recurring-lesson template source. */
+  /** Latest "next time I will…" note - the recurring-lesson template source. */
   lastImprovementNote: z.string().nullable(),
   meta: z.object({ generatedAt: isoDateTimeSchema }),
 });
 export type TradeReviewOverviewResponse = z.infer<typeof tradeReviewOverviewResponseSchema>;
 
-/** DELETE /reviews/:tradeId — undo a review (trade returns to pending). */
+/** DELETE /reviews/:tradeId - undo a review (trade returns to pending). */
 export const deleteReviewResponseSchema = z.object({ ok: z.boolean() });
 export type DeleteReviewResponse = z.infer<typeof deleteReviewResponseSchema>;
 
-// ── Phase 6 — plan-linked reviews: pagination, patch, detail, comparison ─────
+// ── Phase 6 - plan-linked reviews: pagination, patch, detail, comparison ─────
 
 /** Stable error-code registry (Phase 6). Rides the AppError envelope. */
 export const TRADE_REVIEW_ERROR_CODES = {
@@ -362,7 +362,7 @@ export const TRADE_REVIEW_ERROR_CODES = {
   TRADE_REVIEW_PLAN_MISMATCH: "TRADE_REVIEW_PLAN_MISMATCH",
 } as const;
 
-/** GET /reviews — list query (pagination only; ordering is tradingDate DESC). */
+/** GET /reviews - list query (pagination only; ordering is tradingDate DESC). */
 export const reviewsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).max(10_000).optional(),
   limit: z.coerce.number().int().min(1).max(100).optional(),
@@ -398,12 +398,12 @@ export const comparisonLegSchema = z.object({
   actual: z.string().nullable(),
   deviation: z.string().nullable(),
   deviationPips: z.number().nullable(),
-  /** false = the value was unavailable on either side — never fabricated. */
+  /** false = the value was unavailable on either side - never fabricated. */
   available: z.boolean(),
 });
 export type ComparisonLeg = z.infer<typeof comparisonLegSchema>;
 
-/** Phase 6 §12 — planned vs actual. Computed facts, never quality labels. */
+/** Phase 6 §12 - planned vs actual. Computed facts, never quality labels. */
 export const planVsActualComparisonSchema = z.object({
   /** SNAPSHOT = frozen plan values, LIVE = defensive legacy row, NONE = no plan. */
   basedOn: z.enum(["SNAPSHOT", "LIVE", "NONE"]),
@@ -457,7 +457,7 @@ export const reviewTradeSummarySchema = z.object({
 });
 export type ReviewTradeSummary = z.infer<typeof reviewTradeSummarySchema>;
 
-/** GET /reviews/:tradeId — review payload + trade summary + plan + comparison. */
+/** GET /reviews/:tradeId - review payload + trade summary + plan + comparison. */
 export const reviewDetailResponseSchema = z.object({
   review: tradeReviewSchema,
   tradeSummary: reviewTradeSummarySchema,

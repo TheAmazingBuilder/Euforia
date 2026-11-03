@@ -1,5 +1,5 @@
 /**
- * e2e — Professional Playbook (B10) over the REAL AppModule + real database:
+ * e2e - Professional Playbook (B10) over the REAL AppModule + real database:
  * strategy CRUD with server-side versioning, duplicate-as-draft, FK-RESTRICT
  * deletes, setups/checklists/rules CRUD, template library + instantiate, and
  * the overview/stats/insights aggregates.
@@ -231,7 +231,7 @@ describe("setups, checklists, rules (B10)", () => {
       headers: auth(user),
       payload: {
         title: "Never chase",
-        detail: "If the entry moved more than 0.5 × ATR without you — skip.",
+        detail: "If the entry moved more than 0.5 × ATR without you - skip.",
         category: "EXECUTION",
         scope: "GLOBAL",
         evaluatable: false,

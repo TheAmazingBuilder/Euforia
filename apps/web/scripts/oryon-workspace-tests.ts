@@ -1,7 +1,7 @@
 /**
- * Oryon workspace configuration — unit tests (bun).
+ * Oryon workspace configuration - unit tests (bun).
  *
- * Phase 6 spec §15 + Phase 7 spec §16 (pure layer — no DOM, no React):
+ * Phase 6 spec §15 + Phase 7 spec §16 (pure layer - no DOM, no React):
  *   - naming policy: trim/length validation, case-insensitive uniqueness,
  *     deterministic "(copy)" names that always fit the contract cap;
  *   - session shape (v2): deterministic default (one-panel single grid),
@@ -102,9 +102,9 @@ function installStorage(): Map<string, string> {
   return memory;
 }
 
-// ── 1. Nommage (spécification §4 — politique documentée) ────────────────────
+// ── 1. Nommage (spécification §4 - politique documentée) ────────────────────
 
-console.log("— nommage des configurations");
+console.log("- nommage des configurations");
 
 eq("nom valide trimmé", normalizeConfigName("  Swing desk  "), "Swing desk");
 eq("nom vide → invalide", normalizeConfigName("   "), null);
@@ -138,7 +138,7 @@ ok("copie tronquée reste unique", longCopy !== `${"x".repeat(48)} (copy)`);
 
 // ── 2. Forme de session v2 + conversion layout↔session ──────────────────────
 
-console.log("— session du workspace (v2 multi-graphe)");
+console.log("- session du workspace (v2 multi-graphe)");
 
 eq(
   "session par défaut déterministe (un panneau, grille single)",
@@ -264,7 +264,7 @@ ok("panel ids distincts", newPanelId() !== newPanelId());
 
 // ── 3. Invariants de grille (Phase 7 §5) ─────────────────────────────────────
 
-console.log("— invariants de grille");
+console.log("- invariants de grille");
 
 {
   const p1 = panelOf("panel-main", null, "5m", "candles");
@@ -312,7 +312,7 @@ console.log("— invariants de grille");
 
 // ── 4. Migrations v1/v2 → v3 (déterministes, rétrocompatibles) ───────────────
 
-console.log("— migration v1 → v3");
+console.log("- migration v1 → v3");
 
 const layoutV1: OryonWorkspaceLayout = {
   id: "layout-aaaaaaaa",
@@ -349,10 +349,10 @@ eq("migration : timestamps préservés", { c: migrated.createdAt, u: migrated.up
 
 // ── 5. Plan d'application d'un template (spec §6) ───────────────────────────
 
-console.log("— plan d'application des templates");
+console.log("- plan d'application des templates");
 
 const makeIndicator = (overrides: Partial<OryonIndicatorInstance> = {}): OryonIndicatorInstance =>
-  // Test factory: the spread erases the discriminated-union narrowing — the
+  // Test factory: the spread erases the discriminated-union narrowing - the
   // cast is safe here, every instance re-passes the shared Zod schema at
   // runtime (template capture/salvage/apply all re-validate).
   ({ ...defaultIndicatorInstance("sma"), ...overrides }) as OryonIndicatorInstance;
@@ -415,7 +415,7 @@ eq("template sans indicateur → pile vide appliquée", { applied: planEmpty.ind
 
 // ── 6. Persistance layouts (v1 + v2, fake localStorage, salvage) ─────────────
 
-console.log("— persistance navigateur-local (layouts)");
+console.log("- persistance navigateur-local (layouts)");
 
 let memory = installStorage();
 
@@ -479,7 +479,7 @@ eq(
   },
 );
 
-// Enveloppe v2 (Phase 7) : les panneaux n'ont PAS de contexte — le chargeur
+// Enveloppe v2 (Phase 7) : les panneaux n'ont PAS de contexte - le chargeur
 // le complète avec la valeur par défaut documentée (migration v2→v3).
 memory.set(
   LAYOUTS_KEY,
@@ -544,7 +544,7 @@ ok("écriture différée : save seul n'écrit pas tout de suite", true); // couv
 
 // ── 7. Persistance templates (salvage par indicateur) ────────────────────────
 
-console.log("— persistance navigateur-local (templates)");
+console.log("- persistance navigateur-local (templates)");
 
 saveTemplates([validTemplate]);
 flushTemplates([validTemplate]);
@@ -592,9 +592,9 @@ ok("stockage indisponible → dégradation sûre", (() => {
   return layouts.layouts.length === 0 && templates.templates.length === 0;
 })());
 
-// ── 8. Store — hydratation et workflows complets (spec §4, §7, §10) ─────────
+// ── 8. Store - hydratation et workflows complets (spec §4, §7, §10) ─────────
 
-console.log("— store : hydratation");
+console.log("- store : hydratation");
 
 memory = installStorage();
 {
@@ -608,7 +608,7 @@ memory = installStorage();
   ok("hydrate sans stockage → défauts + hydrated", store.getSnapshot().hydrated && store.getSnapshot().layouts.length === 0);
 
   // Les mutations de session ne persistent PAS (l'enregistrement est
-  // explicite — spec §10/§14) : le flush n'écrit qu'un fichier vide.
+  // explicite - spec §10/§14) : le flush n'écrit qu'un fichier vide.
   store.setPanelInterval("panel-main", "1H");
   eq(
     "mutation session → dirty reste false (layout par défaut actif)",
@@ -624,7 +624,7 @@ memory = installStorage();
   );
 }
 
-console.log("— store : save-as / dirty / save");
+console.log("- store : save-as / dirty / save");
 
 {
   const store = new OryonWorkspaceConfigStore();
@@ -668,7 +668,7 @@ console.log("— store : save-as / dirty / save");
   eq("updatedAt avancé (>= création)", store.getSnapshot().layouts[0]!.createdAt <= store.getSnapshot().layouts[0]!.updatedAt, true);
 }
 
-console.log("— store : grille, duplication et retrait de panneaux");
+console.log("- store : grille, duplication et retrait de panneaux");
 
 {
   const store = new OryonWorkspaceConfigStore();
@@ -726,7 +726,7 @@ console.log("— store : grille, duplication et retrait de panneaux");
   eq("setGrid identique → pas de commit", store.getSnapshot().version, before);
 }
 
-console.log("— store : propagation de synchronisation (instrument / timeframe)");
+console.log("- store : propagation de synchronisation (instrument / timeframe)");
 
 {
   const store = new OryonWorkspaceConfigStore();
@@ -743,7 +743,7 @@ console.log("— store : propagation de synchronisation (instrument / timeframe)
   store.setSync({ instrument: true });
   store.setPanelSymbol("panel-main", "XAUUSD");
   eq("instrument sync : propagation", store.getSnapshot().session.panels.map((p) => p.symbol), ["XAUUSD", "XAUUSD"]);
-  // Timeframe sync reste OFF (indépendance des features — spec §8).
+  // Timeframe sync reste OFF (indépendance des features - spec §8).
   store.setPanelInterval("panel-main", "1H");
   eq("timeframe sync off : pas de propagation", store.getSnapshot().session.panels.map((p) => p.interval), ["1H", "5m"]);
 
@@ -772,7 +772,7 @@ console.log("— store : propagation de synchronisation (instrument / timeframe)
   eq("activer crosshair ne touche pas aux autres", store.getSnapshot().session.sync.timeScale, false);
 }
 
-console.log("— store : switch / delete / restore-default");
+console.log("- store : switch / delete / restore-default");
 
 {
   const store = new OryonWorkspaceConfigStore();
@@ -805,7 +805,7 @@ console.log("— store : switch / delete / restore-default");
   ok("switch vers soi-même = no-op ok", store.switchLayout(intraday.id).ok);
   eq("no-op : session inchangée", store.getSnapshot().session.panels[0]!.interval, "15m");
 
-  // Changement non sauvé puis abandon via switch vers un AUTRE layout —
+  // Changement non sauvé puis abandon via switch vers un AUTRE layout -
   // la politique « prompt avant abandon » est UI ; au niveau store,
   // switchLayout applique la cible (abandon explicite, documenté).
   store.setPanelInterval("panel-main", "1m");
@@ -822,7 +822,7 @@ console.log("— store : switch / delete / restore-default");
   ok("rename du même nom (casse) autorisé", store.renameLayout(intraday.id, "INTRADAY FX").ok);
   eq("rename inconnu", store.renameLayout("layout-inconnu", "X"), { ok: false, error: "not_found" });
 
-  // Duplicate : copie indépendante du SAUVEGARDÉ, non activée — la session
+  // Duplicate : copie indépendante du SAUVEGARDÉ, non activée - la session
   // vivante diverge (1m) mais la copie part de l'enregistrement (15m).
   store.setPanelInterval("panel-main", "1m");
   ok("duplicate", store.duplicateLayout(intraday.id).ok);
@@ -858,7 +858,7 @@ console.log("— store : switch / delete / restore-default");
   eq("capacité dépassée refusée", capStore.saveAsNewLayout("Cap 21"), { ok: false, error: "capacity" });
 }
 
-console.log("— store : capture des stacks par panneau à la sauvegarde");
+console.log("- store : capture des stacks par panneau à la sauvegarde");
 
 {
   memory = installStorage();
@@ -885,7 +885,7 @@ console.log("— store : capture des stacks par panneau à la sauvegarde");
   eq("stacks non gérés → null dans le record", store.getSnapshot().layouts[0]!.panels.map((p) => p.indicators), [null, null]);
 }
 
-console.log("— store : hydratation avec layout actif (v1 migré + v2)");
+console.log("- store : hydratation avec layout actif (v1 migré + v2)");
 
 {
   memory = installStorage();
@@ -920,7 +920,7 @@ console.log("— store : hydratation avec layout actif (v1 migré + v2)");
   eq("hydrate v2 : panneau actif restauré", store.getSnapshot().session.activePanelId, "panel-main");
 }
 
-console.log("— store : templates (CRUD + capacité)");
+console.log("- store : templates (CRUD + capacité)");
 
 {
   memory = installStorage();
@@ -949,7 +949,7 @@ console.log("— store : templates (CRUD + capacité)");
   ok("templates persistés après flush", memory.has(TEMPLATES_KEY));
 }
 
-console.log("— store : roundtrip hydrate→mutate→flush→hydrate");
+console.log("- store : roundtrip hydrate→mutate→flush→hydrate");
 
 {
   installStorage();

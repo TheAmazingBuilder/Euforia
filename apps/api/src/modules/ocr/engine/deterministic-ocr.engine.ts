@@ -1,10 +1,10 @@
 /**
- * Deterministic mock OCR engine (Phase 19 §57) — dev/test infrastructure,
+ * Deterministic mock OCR engine (Phase 19 §57) - dev/test infrastructure,
  * NEVER registered in production (same gate as the Accounts mock provider:
  * config.ocr.mockEngineEnabled defaults to non-production only).
  *
- * It is a PURE function of (checksum, extraction profile) — no clock reads,
- * no randomness — so the same screenshot always yields byte-identical
+ * It is a PURE function of (checksum, extraction profile) - no clock reads,
+ * no randomness - so the same screenshot always yields byte-identical
  * results (idempotency-friendly, tests rely on it).
  *
  * Controlled scenarios are selected by the FNV-1a bucket of the checksum,
@@ -13,7 +13,7 @@
  * bucket (test helper makeOcrFixturePng). Buckets:
  *
  *   % 50 === 0 → UNPROCESSABLE  (engine refuses the image)
- *   % 50 === 1 → malformed payload (contract violation — Nest must reject)
+ *   % 50 === 1 → malformed payload (contract violation - Nest must reject)
  *   otherwise  → COMPLETED with a coherent MT5-style field set
  *
  * The mock never claims to read pixels: its output documents the PIPELINE
@@ -65,7 +65,7 @@ export class DeterministicOcrEngine implements OcrEngine {
     }
 
     if (bucket === 1) {
-      // Deliberately type-broken payload — the Nest side MUST reject it with
+      // Deliberately type-broken payload - the Nest side MUST reject it with
       // EXTRACTION_FAILED (contract violation, never retried, §34/§54).
       throw new EngineMalformedResponseError("mock engine produced a contract-breaking payload (scenario bucket 1)");
     }
@@ -160,9 +160,9 @@ export class DeterministicOcrEngine implements OcrEngine {
   }
 
   /**
-   * ACCOUNT_POSITION mock — a coherent account snapshot: header fields + ONE
+   * ACCOUNT_POSITION mock - a coherent account snapshot: header fields + ONE
    * open-position candidate. Equity = balance + floating, free margin =
-   * equity − margin, margin level = equity / margin — the coherence the
+   * equity − margin, margin level = equity / margin - the coherence the
    * review UI (and its cross-field rules) can rely on. Same checksum yields
    * the same snapshot (deterministic, idempotency-friendly).
    */
@@ -240,7 +240,7 @@ export class DeterministicOcrEngine implements OcrEngine {
   }
 
   /**
-   * CHART_ANALYSIS mock — a coherent chart reading: symbol + timeframe +
+   * CHART_ANALYSIS mock - a coherent chart reading: symbol + timeframe +
    * OHLC (high >= max(open, close), low <= min(open, close)) + price = close
    * with explicit provenance + signed change % + visible indicator readings.
    */
@@ -314,10 +314,10 @@ export class DeterministicOcrEngine implements OcrEngine {
 }
 
 /**
- * Explicit "no engine available" adapter — registered when production has
+ * Explicit "no engine available" adapter - registered when production has
  * neither a sidecar URL nor an allowed mock. Every recognition attempt
  * fails with a TRANSIENT error that the service maps to OCR_UNAVAILABLE
- * (§35): an honest, explicit degradation — never a fake result (§57).
+ * (§35): an honest, explicit degradation - never a fake result (§57).
  */
 @Injectable()
 export class UnavailableOcrEngine implements OcrEngine {
@@ -330,7 +330,7 @@ export class UnavailableOcrEngine implements OcrEngine {
 
   async recognize(_request: EngineRecognizeRequest): Promise<EngineResponse> {
     throw new EngineMalformedResponseError(
-      "unreachable — the service checks engine availability before invoking",
+      "unreachable - the service checks engine availability before invoking",
     );
   }
 }

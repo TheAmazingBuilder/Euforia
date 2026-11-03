@@ -1,5 +1,5 @@
 /**
- * Verify — Academy Batch C (progress & motivation):
+ * Verify - Academy Batch C (progress & motivation):
  *   Weekly plan  : "This week" card on Overview with 3 bars, status chip.
  *   Milestones   : grid on Progress with earned/locked states + progress.
  *   Certifications: 12 rows, tier chips, exam flow start→answer→submit→tier.
@@ -23,7 +23,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
@@ -121,7 +121,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
     await page.waitForTimeout(1800);
     const figureCount = await page.locator("figure .chart-paper[data-shown]").count();
     check("Lesson diagrams mounted with reveal state", figureCount >= 1, `figures=${figureCount}`);
-    // Reveal fires whenever the figure enters the viewport — immediately when
+    // Reveal fires whenever the figure enters the viewport - immediately when
     // already in view, on scroll otherwise. Either way: all shown after scroll.
     const preScrollShown = await page.locator('figure .chart-paper[data-shown="true"]').count();
     await page.locator("figure .chart-paper[data-shown]").first().scrollIntoViewIfNeeded();

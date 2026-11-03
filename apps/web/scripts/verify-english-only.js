@@ -1,5 +1,5 @@
 /**
- * Verify — English-only mode (language switching retired).
+ * Verify - English-only mode (language switching retired).
  *
  * The FR pack, the header LanguageSelector, LocaleServerSync and the
  * Settings language row were REMOVED. The dict.* consumption pattern stays
@@ -29,7 +29,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/english-only";
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
 
-  // Simulate a user whose localStorage still carries the retired FR choice —
+  // Simulate a user whose localStorage still carries the retired FR choice -
   // the app must ignore it and boot EN (mirror rejected / ignored).
   await page.addInitScript(() => {
     try { window.localStorage.setItem("cosmoz:i18n:locale", "fr"); } catch {}
@@ -49,7 +49,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/english-only";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -65,14 +65,14 @@ const SHOTS = "/home/z/my-project/scripts/shots/english-only";
     await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 60_000 });
   } catch (e) {
     await page.screenshot({ path: `${SHOTS}/debug-login-stuck.png`, fullPage: true });
-    console.error("LOGIN STUCK — body snippet:", (await page.locator("body").innerText()).slice(0, 400));
+    console.error("LOGIN STUCK - body snippet:", (await page.locator("body").innerText()).slice(0, 400));
     console.error("CAPTURED ERRORS:", errors.join(" ; ") || "none");
     throw e;
   }
   await page.evaluate(() => { window.__spaProbe = "english-only"; });
   await page.waitForTimeout(800);
 
-  // ══ A. Header — selector removed, EN pinned, stale mirror ignored ═════════
+  // ══ A. Header - selector removed, EN pinned, stale mirror ignored ═════════
   check("A1 <html lang> = en despite stale 'fr' mirror", (await htmlLang()) === "en");
   check("A2 No language-selector-trigger in header",
     (await page.locator('[data-testid="language-selector-trigger"]').count()) === 0);
@@ -102,7 +102,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/english-only";
   check("C3 No FR leak ('Cours'/'Glossaire' absent)", !/Glossaire|Entraînement/.test(acTabs.join("|")));
   await page.screenshot({ path: `${SHOTS}/academy-en.png`, fullPage: false });
 
-  // ══ D. Settings → Localization card — language row removed ═══════════════
+  // ══ D. Settings → Localization card - language row removed ═══════════════
   await page.locator('nav[aria-label="Main navigation"] a[href="/settings"]').click();
   await page.locator('[data-testid="settings-search"]').waitFor({ state: "visible", timeout: 15_000 });
   await page.locator('[data-testid="settings-nav-localization"]').click();
@@ -130,7 +130,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/english-only";
   check("F1 No unexpected 4xx / page errors", errors.length === 0, errors.slice(0, 3).join(" ; "));
 
   const fails = results.filter((r) => r.startsWith("FAIL")).length;
-  console.log(`\n${results.length - fails}/${results.length} PASS — ${SHOTS}`);
+  console.log(`\n${results.length - fails}/${results.length} PASS - ${SHOTS}`);
   await browser.close();
   process.exit(fails === 0 ? 0 : 1);
 })().catch((err) => {

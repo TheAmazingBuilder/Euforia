@@ -23,30 +23,30 @@ import {
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon left tool rail — Drawing toolbar v2/v4 (TradingView parity).
+ * Oryon left tool rail - Drawing toolbar v2/v4 (TradingView parity).
  *
- * Structure (catalog-driven — lib/oryon/tools/catalog.ts): grouped flyouts
+ * Structure (catalog-driven - lib/oryon/tools/catalog.ts): grouped flyouts
  * (Cursors · Trend line tools · Fibonacci · Forecasting & measurement ·
- * Shapes · Text & notes), each rendered as a SPLIT control — the icon arms
+ * Shapes · Text & notes), each rendered as a SPLIT control - the icon arms
  * the group's last-used tool (TV behavior), the caret opens the flyout
  * menu. The flyout rows arm tools and carry a favorite star; favorites
  * surface in the floating bar over the chart (oryon-favorites-bar.tsx).
  * The rail bottom hosts history (undo/redo), the OBJECTS dock toggle (the
- * manager lives on the RIGHT utility rail — v4), the Show-favorites toggle
+ * manager lives on the RIGHT utility rail - v4), the Show-favorites toggle
  * and Remove-objects (clear-all, undoable).
  *
- * Scroll navigation (v4): NO visible scrollbar — when the pointer hovers
+ * Scroll navigation (v4): NO visible scrollbar - when the pointer hovers
  * the rail and more tools exist above/below the viewport, a small
  * directional arrow fades in at that edge (TradingView behavior); clicking
  * scrolls smoothly. Arrows appear only in the direction that can actually
  * move, and never block tools while hidden (pointer-events pass through).
  *
- * Keyboard: catalog shortcuts (Alt+T/H/V/F/R/E) arm tools globally — the
+ * Keyboard: catalog shortcuts (Alt+T/H/V/F/R/E) arm tools globally - the
  * ACTIVE panel's interaction layer consumes them; text fields own the
  * keyboard (the same guard as the drawing layer).
  *
  * State discipline: tool + favorites live in the drawings context;
- * undo/redo counts subscribe to the bound store — commits are rare,
+ * undo/redo counts subscribe to the bound store - commits are rare,
  * pointer drags never re-render this rail.
  */
 export function OryonToolRail({
@@ -55,7 +55,7 @@ export function OryonToolRail({
 }: {
   /** Whether the objects dock (right utility rail) currently shows. */
   objectsOpen: boolean;
-  /** Opens the objects dock — the manager itself lives on the right rail. */
+  /** Opens the objects dock - the manager itself lives on the right rail. */
   onOpenObjects: () => void;
 }) {
   const dict = useDict();
@@ -110,8 +110,8 @@ export function OryonToolRail({
     el.scrollBy({ top: direction * step, behavior: "smooth" });
   }, []);
 
-  /** Last-used tool per group — the icon arms it (TV behavior). Derived
-   *  during render (the sanctioned adjust-state-while-rendering pattern —
+  /** Last-used tool per group - the icon arms it (TV behavior). Derived
+   *  during render (the sanctioned adjust-state-while-rendering pattern -
    *  NOT an effect): a tool change is a state-to-state derivation. */
   const [lastUsed, setLastUsed] = React.useState<Partial<Record<OryonToolGroup["id"], OryonDrawingTool>>>({});
   const [prevTool, setPrevTool] = React.useState<OryonDrawingTool>(activeTool);
@@ -156,11 +156,11 @@ export function OryonToolRail({
     const count = activeStore.getSnapshot().drawings.length;
     if (count === 0) return;
     // Locked drawings survive the clear (the store refuses to drop their
-    // protection silently) — reported honestly in the toast.
+    // protection silently) - reported honestly in the toast.
     const locked = activeStore.getSnapshot().drawings.filter((d) => d.locked).length;
     activeStore.clearAll();
     setConfirmClear(false);
-    toast.success(`${S.clearAllHint} — ${count}`, {
+    toast.success(`${S.clearAllHint} - ${count}`, {
       testId: "oryon-drawings-clear-toast",
     });
     if (locked > 0) {
@@ -174,7 +174,7 @@ export function OryonToolRail({
       data-testid="oryon-tool-rail"
       className="group/rail relative hidden w-11 shrink-0 flex-col border-r border-border bg-surface md:flex"
     >
-      {/* Scroll body — scrollbar deliberately hidden; the hover arrows
+      {/* Scroll body - scrollbar deliberately hidden; the hover arrows
           below are the ONLY navigation chrome (TradingView parity). */}
       <div
         ref={scrollRef}
@@ -237,7 +237,7 @@ export function OryonToolRail({
                 onClick={onClearAll}
                 className="rounded-sm bg-loss/15 px-1 py-0.5 text-[9px] font-semibold leading-none text-loss hover:bg-loss/25"
               >
-                {dict.oryon.drawings.deleteAllConfirm.split("—")[0]?.trim() ?? "Confirm"}
+                {dict.oryon.drawings.deleteAllConfirm.split("-")[0]?.trim() ?? "Confirm"}
               </button>
               <button
                 type="button"
@@ -259,7 +259,7 @@ export function OryonToolRail({
         </div>
       </div>
 
-      {/* Hover navigation arrows — only the direction that can actually
+      {/* Hover navigation arrows - only the direction that can actually
           scroll, only while the pointer is over the rail. */}
       <RailNavArrow
         direction="up"
@@ -278,7 +278,7 @@ export function OryonToolRail({
 }
 
 /**
- * One directional navigation arrow — pinned to the rail's top/bottom edge,
+ * One directional navigation arrow - pinned to the rail's top/bottom edge,
  * revealed on rail hover (plus keyboard focus), pointer-transparent while
  * hidden so tools beneath stay clickable.
  */

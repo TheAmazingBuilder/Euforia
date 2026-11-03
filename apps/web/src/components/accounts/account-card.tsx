@@ -25,7 +25,7 @@ import {
  * environment stamp + the two financial metrics that matter at a glance
  * (balance, equity) + both status axes + freshness. Every value renders from
  * the details response; nothing is derived client-side, and a null metric
- * renders "—" with its "Not reported" label — never a fabricated zero.
+ * renders "-" with its "Not reported" label - never a fabricated zero.
  */
 
 export function AccountMoneyValue({
@@ -42,7 +42,7 @@ export function AccountMoneyValue({
   if (amount === null || amount === undefined) {
     return (
       <span className="font-mono text-sm tabular-nums text-muted-foreground" data-testid={testId}>
-        —
+        -
       </span>
     );
   }
@@ -117,11 +117,13 @@ export function AccountCard({
   syncing: boolean;
 }) {
   const snapshot = account.snapshot;
-  const openPositions = account.synchronization.lastRun?.positionsUpserted ?? 0;
+  // positionsUpserted is a sync-write count, not the current open-position total.
+  // Never present it as a live position count.
+  const positionsUpdated = account.synchronization.lastRun?.positionsUpserted;
   const positionsLabel =
-    account.synchronization.status === "UNKNOWN"
-      ? "No sync yet"
-      : `${openPositions} open position${openPositions === 1 ? "" : "s"} (last run)`;
+    account.synchronization.lastRun === null || account.synchronization.lastRun === undefined
+      ? "No sync run yet"
+      : `${positionsUpdated ?? 0} position record${positionsUpdated === 1 ? "" : "s"} updated in last sync`;
 
   return (
     <Card

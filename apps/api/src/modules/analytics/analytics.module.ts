@@ -1,5 +1,5 @@
 /**
- * Analytics bounded context (Phase 8) — derived measurements and analytical
+ * Analytics bounded context (Phase 8) - derived measurements and analytical
  * interpretations over canonical trading data.
  *
  * Core domain (Phase 0 §I): flat application-service + thin-controller
@@ -7,19 +7,19 @@
  * source is consumed through the owning context's PUBLIC contract
  * (TradingRepository / TradeReviewRepository / TradePlanRepository +
  * instrument-catalog port / AccountsRepository / PlaybookRepository /
- * IdentityRepository) — Analytics never writes, never duplicates a
+ * IdentityRepository) - Analytics never writes, never duplicates a
  * financial formula, never mutates another domain (§2/§4/§17/§29/§69).
  *
  * The aggregation engines are PURE domain functions (domain/): deterministic,
- * unit-testable, framework-free. Live queries only — no analytics tables,
+ * unit-testable, framework-free. Live queries only - no analytics tables,
  * no read models, no cache (journal-scale data; the filter bag changes per
- * request so a cache would be dead code — §36/§44 documented decision).
+ * request so a cache would be dead code - §36/§44 documented decision).
  *
- * NO FastAPI: no workload here justifies a Python round-trip yet (§39 —
+ * NO FastAPI: no workload here justifies a Python round-trip yet (§39 -
  * specialized statistical processing remains a documented future seam).
  *
  * Behavioral analytics V1 = deterministic thresholded signals (tail loss,
- * overtrading, loss streak, tilt timeline) — measured FACTS with evidence,
+ * overtrading, loss streak, tilt timeline) - measured FACTS with evidence,
  * never diagnoses, never AI/LLM (§23–§32/§49/§50).
  *
  * Out of scope forever in this context (§70): trade execution, order
@@ -55,7 +55,7 @@ import { AnalyticsService } from "./analytics.service";
     TradePlanningModule,
     TradeReviewModule,
     PlaybookModule,
-    // Phase 13 §21 — the economic-event context (phases/byImpact) reads
+    // Phase 13 §21 - the economic-event context (phases/byImpact) reads
     // the canonical Calendar through its public read port (no duplicate
     // event store, §57).
     CalendarModule,
@@ -63,7 +63,7 @@ import { AnalyticsService } from "./analytics.service";
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
   // Narrow contract (§26/§69): the Phase-07 metric-alerts engine consumes
-  // the suite as the authoritative per-scope metric source — the alert
+  // the suite as the authoritative per-scope metric source - the alert
   // engine computes no financial math of its own.
   exports: [AnalyticsService],
 })

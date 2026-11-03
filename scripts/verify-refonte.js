@@ -2,7 +2,7 @@
  * Design refonte verification:
  *  - full-page captures, all routes (dark-blue default)
  *  - dashboard on dark + light themes
- *  - equity range-chip interaction (30J) — differentiated curve
+ *  - equity range-chip interaction (30J) - differentiated curve
  *  - session toast artifact probe (viewport shot + DOM overlap check)
  *  - mobile 390 dashboard + sidebar collapsed state
  * Usage: node scripts/verify-refonte.js
@@ -33,7 +33,7 @@ async function settle(page) {
   fs.mkdirSync(OUT, { recursive: true });
   const browser = await chromium.launch();
 
-  // 1) Desktop captures — dark-blue
+  // 1) Desktop captures - dark-blue
   const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await ctx.newPage();
   const consoleErrors = [];
@@ -49,7 +49,7 @@ async function settle(page) {
     console.log("captured", name);
   }
 
-  // 2) Equity range chips — click 30J, capture card only
+  // 2) Equity range chips - click 30J, capture card only
   await page.goto(BASE + "/");
   await settle(page);
   const chip = page.getByRole("button", { name: "30J", exact: true });
@@ -63,7 +63,7 @@ async function settle(page) {
   });
   console.log("equity-30d", JSON.stringify(chartMeta));
 
-  // 3) Themes — dashboard dark + light
+  // 3) Themes - dashboard dark + light
   for (const theme of ["dark", "light"]) {
     await page.evaluate((t) => {
       localStorage.setItem("theme", t);
@@ -75,7 +75,7 @@ async function settle(page) {
   }
   await ctx.close();
 
-  // 4) Session toast probe — VIEWPORT shot (fixed toasts land bottom-right)
+  // 4) Session toast probe - VIEWPORT shot (fixed toasts land bottom-right)
   const ctx2 = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const p2 = await ctx2.newPage();
   await p2.goto(BASE + "/session");
@@ -113,7 +113,7 @@ async function settle(page) {
   console.log("timeline-overlap", JSON.stringify(overlap));
   await ctx2.close();
 
-  // 5) Mobile 390 — dashboard + collapsed sidebar desktop
+  // 5) Mobile 390 - dashboard + collapsed sidebar desktop
   const ctx3 = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const p3 = await ctx3.newPage();
   await p3.goto(BASE + "/");

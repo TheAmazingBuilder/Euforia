@@ -1,14 +1,16 @@
 # COSMOZ — development/deployment compose (Foundation).
 #
-#   docker compose up db            → PostgreSQL only (web + api run via pnpm)
-#   docker compose --profile full up → PostgreSQL + API container
+#   docker compose up db            → PostgreSQL only
+#   docker compose up redis          → Redis cache only
+#   docker compose up db redis       → PostgreSQL + Redis
+#   docker compose --profile full up → PostgreSQL + Redis + API container
 #
 # The web app keeps its own dev workflow (pnpm dev) and is intentionally not
 # containerized in Foundation — revisit at deployment phase.
 #
-# NOTE: the dev sandbox has no Docker; this compose is exercised only in
-# environments that have it. For the embedded dev database used in this
-# sandbox see apps/api/scripts/dev-db.mjs.
+# NOTE: this compose is optional (for environments that have Docker). Local
+# development now targets a developer-provided PostgreSQL on :5432 directly
+# via apps/api/.env - the embedded dev database was removed from the project.
 
 services:
   db:
@@ -29,6 +31,27 @@ services:
       timeout: 3s
       retries: 10
 
+  redis:
+    image: redis:7.4-alpine
+    # Cache-only instance: no persistence; bounded memory with LRU eviction.
+    command:
+      - redis-server
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - allkeys-lru
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
   api:
     build:
       context: .
@@ -38,6 +61,7 @@ services:
       NODE_ENV: production
       PORT: 4000
       DATABASE_URL: postgresql://cosmoz:cosmoz@db:5432/cosmoz
+      REDIS_URL: redis://redis:6379
       # The Next.js dev server origin — tighten for real deployments.
       CORS_ORIGINS: http://localhost:3000
       LOG_LEVEL: info
@@ -46,6 +70,8 @@ services:
       - "127.0.0.1:4000:4000"
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:

@@ -1,11 +1,11 @@
 /**
- * Academy learner-guidance rules — Continue Learning, Resume Reading and the
+ * Academy learner-guidance rules - Continue Learning, Resume Reading and the
  * rule-based recommendations. Pure functions over authored content + the
  * user's derived progress (Phase 11 §65/§66: deliberately simple, no AI, the
  * replacement seam for a future analytics-driven engine is HERE).
  *
  * Parity source: mocks/academy-engine.ts (continueLearning/resumeLearning/
- * recommendations) — verbatim semantics.
+ * recommendations) - verbatim semantics.
  */
 import type {
   AcademyContinueLearning,
@@ -83,7 +83,7 @@ export interface ResumeSeed {
   completedLessonIds: ReadonlySet<string>;
 }
 
-/** The unfinished lesson the user last had open — distinct from continueLearning. */
+/** The unfinished lesson the user last had open - distinct from continueLearning. */
 export function resumeLearning(seed: ResumeSeed): AcademyResume {
   const viewed = [...seed.viewedAt.entries()]
     .sort((a, b) => b[1].localeCompare(a[1]))
@@ -121,7 +121,7 @@ export function recommendations(seed: ContinueLearningSeed): AcademyRecommendati
     };
   };
 
-  // In-progress first (max 2) — recency does not matter for the reason text.
+  // In-progress first (max 2) - recency does not matter for the reason text.
   const unfinished = cards.filter(({ course }) => {
     const { done, total } = completionOf(course.id);
     return total > 0 && done < total;
@@ -132,7 +132,7 @@ export function recommendations(seed: ContinueLearningSeed): AcademyRecommendati
     picks.push({
       courseId: course.id,
       title: course.title,
-      reason: `In progress — ${done}/${total} lessons done.`,
+      reason: `In progress - ${done}/${total} lessons done.`,
       categoryId: course.categoryId,
     });
   }
@@ -145,7 +145,7 @@ export function recommendations(seed: ContinueLearningSeed): AcademyRecommendati
       picks.push({
         courseId: next.course.id,
         title: next.course.title,
-        reason: "Foundation track — recommended next for your level.",
+        reason: "Foundation track - recommended next for your level.",
         categoryId,
       });
     }
@@ -158,7 +158,7 @@ export function recommendations(seed: ContinueLearningSeed): AcademyRecommendati
     picks.push({
       courseId: advanced.course.id,
       title: advanced.course.title,
-      reason: "Advanced track — when the foundations hold.",
+      reason: "Advanced track - when the foundations hold.",
       categoryId: advanced.course.categoryId,
     });
   }

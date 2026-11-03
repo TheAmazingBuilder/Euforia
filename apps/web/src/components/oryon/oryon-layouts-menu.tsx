@@ -30,14 +30,14 @@ import { cn } from "@/lib/utils";
 /**
  * Oryon workspace-layout management (Phase 6 spec §4, §7, §10).
  *
- * A compact toolbar menu — routine switching stays one click, management
+ * A compact toolbar menu - routine switching stays one click, management
  * targets the ACTIVE layout (rename/duplicate/delete state that plainly in
  * the header). The default layout is a radio item like any other and a
  * code-level constant: restoring it never deletes saved records.
  *
  * Unsaved-changes policy (§10): the header shows an honest dirty dot; any
  * action that would REPLACE the arrangement (switch, restore-default) while
- * the active saved layout is dirty prompts first — save & proceed, or
+ * the active saved layout is dirty prompts first - save & proceed, or
  * discard explicitly. Nothing is silently lost.
  *
  * All persistence is browser-local (same disclosure as the other Oryon
@@ -78,12 +78,12 @@ export function OryonLayoutsMenu() {
     capacity: S.errorCapacity,
     not_found: S.errorNotFound,
     default_immutable: S.errorDefaultImmutable,
-    // Layout operations never hit the panel cap — the fallback copy keeps
+    // Layout operations never hit the panel cap - the fallback copy keeps
     // the record exhaustive without inventing a layouts-specific message.
     panel_capacity: S.errorCapacity,
   };
 
-  /** Radio change — guarded by the unsaved-changes policy when dirty.
+  /** Radio change - guarded by the unsaved-changes policy when dirty.
    *  Switching to the already-active layout is a no-op, but RESTORE-DEFAULT
    *  (targetId null) always resets: the live session may have drifted from
    *  the default arrangement even while the default is active. The

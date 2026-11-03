@@ -1,5 +1,5 @@
 /**
- * Oryon drawing engine — unit tests (bun).
+ * Oryon drawing engine - unit tests (bun).
  *
  * The repository has NO JS unit-test runner (Phase 1 audit): the honest
  * convention is bun-run TypeScript with plain assertions. These tests cover
@@ -83,29 +83,29 @@ function makeTrend(overrides: Partial<Extract<OryonDrawing, { type: "trend" }>> 
 // ── 1. geometry ──────────────────────────────────────────────────────────────
 
 console.log("\n[geometry]");
-eq("segment distance — on the line", distanceToSegment(5, 5, 0, 0, 10, 10), 0);
-eq("segment distance — perpendicular", distanceToSegment(5, 5, 0, 0, 0, 10), 5);
-eq("segment distance — clamped beyond B", distanceToSegment(15, 0, 0, 0, 10, 0), 5);
-eq("segment distance — degenerate (point)", distanceToSegment(3, 4, 0, 0, 0, 0), 5);
+eq("segment distance - on the line", distanceToSegment(5, 5, 0, 0, 10, 10), 0);
+eq("segment distance - perpendicular", distanceToSegment(5, 5, 0, 0, 0, 10), 5);
+eq("segment distance - clamped beyond B", distanceToSegment(15, 0, 0, 0, 10, 0), 5);
+eq("segment distance - degenerate (point)", distanceToSegment(3, 4, 0, 0, 0, 0), 5);
 
 const PLOT = { left: 0, top: 0, right: 1000, bottom: 500 };
-eq("ray exit — rightward", rayExitParameter(10, 0, 0, 250, PLOT), 100);
-eq("ray exit — leftward (opposite direction)", rayExitParameter(-10, 0, 500, 250, PLOT), 50);
-eq("ray distance — on the ray beyond B", distanceToRay(800, 250, 0, 250, 400, 250, PLOT), 0);
-eq("ray distance — behind A is NOT a hit", distanceToRay(50, 250, 300, 250, 400, 250, PLOT) > 100, true);
-eq("ray distance — off the line", distanceToRay(500, 300, 0, 250, 1000, 250, PLOT), 50);
+eq("ray exit - rightward", rayExitParameter(10, 0, 0, 250, PLOT), 100);
+eq("ray exit - leftward (opposite direction)", rayExitParameter(-10, 0, 500, 250, PLOT), 50);
+eq("ray distance - on the ray beyond B", distanceToRay(800, 250, 0, 250, 400, 250, PLOT), 0);
+eq("ray distance - behind A is NOT a hit", distanceToRay(50, 250, 300, 250, 400, 250, PLOT) > 100, true);
+eq("ray distance - off the line", distanceToRay(500, 300, 0, 250, 1000, 250, PLOT), 50);
 
 const rectA = { x: 100, y: 100 };
 const rectB = { x: 300, y: 200 };
-ok("rect hit — inside body", hitRect(200, 150, rectA, rectB));
-ok("rect hit — within tolerance of edge", hitRect(94, 150, rectA, rectB));
-ok("rect miss — outside", !hitRect(400, 300, rectA, rectB));
+ok("rect hit - inside body", hitRect(200, 150, rectA, rectB));
+ok("rect hit - within tolerance of edge", hitRect(94, 150, rectA, rectB));
+ok("rect miss - outside", !hitRect(400, 300, rectA, rectB));
 const norm = normalizeRect(rectB, rectA);
 ok("normalizeRect swaps corners", norm.left === 100 && norm.top === 100 && norm.right === 300 && norm.bottom === 200);
 
-ok("handle hit — center", hitHandle(10, 10, { x: 10, y: 10 }));
-ok("handle hit — within radius", hitHandle(16, 10, { x: 10, y: 10 }));
-ok("handle miss — beyond radius", !hitHandle(30, 10, { x: 10, y: 10 }));
+ok("handle hit - center", hitHandle(10, 10, { x: 10, y: 10 }));
+ok("handle hit - within radius", hitHandle(16, 10, { x: 10, y: 10 }));
+ok("handle miss - beyond radius", !hitHandle(30, 10, { x: 10, y: 10 }));
 
 eq("fib level 0 sits at priceB", fibLevelPrice(110, 100, 0), 100);
 eq("fib level 1 sits at priceA", fibLevelPrice(110, 100, 1), 110);
@@ -181,7 +181,7 @@ console.log("\n[history]");
   ok("new mutation clears the redo branch", !history.canRedo);
 }
 {
-  // Batch semantics — each drag (begin→end) records exactly ONE entry.
+  // Batch semantics - each drag (begin→end) records exactly ONE entry.
   const history = new DrawingHistory<number[]>();
   const initial: number[] = [];
   let state: number[] = initial;
@@ -198,7 +198,7 @@ console.log("\n[history]");
   const base: number[] = [];
   history2.beginBatch(base);
   history2.endBatch([...base, 1]);
-  history2.endBatch([...base, 1]); // Nested close — no extra entry.
+  history2.endBatch([...base, 1]); // Nested close - no extra entry.
   ok("nested batch closes commit once", history2.depth === 1);
 
   const history3 = new DrawingHistory<number[]>();
@@ -250,7 +250,7 @@ console.log("\n[store]");
   // loadAll clears history (no cross-instrument undo).
   store.loadAll([makeTrend(), makeTrend()]);
   ok("loadAll replaces the collection", store.drawings.length === 2);
-  ok("history cleared by loadAll — undo is a no-op", (store.undo(), store.drawings.length === 2));
+  ok("history cleared by loadAll - undo is a no-op", (store.undo(), store.drawings.length === 2));
   ok("history still empty after loadAll", !store.canUndo);
 }
 
@@ -329,9 +329,9 @@ console.log("\n[persistence]");
   ok("empty collection removes the key", !backing.has(`euforia.oryon.drawings.v1:${symbol}`));
 }
 
-// ── position-tool edge handles — the rr round-trip math (shared) ───────────
+// ── position-tool edge handles - the rr round-trip math (shared) ───────────
 // The direct-manipulation handles (target line → rr, stop line → stop price
-// with the target preserved) lean on oryonPositionRrBetween — the inverse
+// with the target preserved) lean on oryonPositionRrBetween - the inverse
 // of oryonPositionTargetPrice, clamped to the documented bounds.
 {
   console.log("\n── position edge-handle math ──");
@@ -351,7 +351,7 @@ console.log("\n[persistence]");
   eq("target inverted → RR_MIN", oryonPositionRrBetween(100, 90, 99), ORYON_POSITION_RR_MIN);
 }
 
-// ── batch discipline — one drag = ONE undo entry (regression) ──────────────
+// ── batch discipline - one drag = ONE undo entry (regression) ──────────────
 // commit() used to push unconditionally, so every batched drag recorded TWO
 // identical snapshots and consumed TWO undo presses. The batch (open at
 // grab, closed at release) must own the entry exclusively.

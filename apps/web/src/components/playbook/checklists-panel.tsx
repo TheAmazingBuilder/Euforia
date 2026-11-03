@@ -17,7 +17,7 @@ import { useI18n } from "@/i18n/i18n-provider";
 /**
  * Checklist templates (§16): required/optional ordered items per strategy (or
  * global). These templates are the SOURCE of the checklist frozen into each
- * trade's checklistSnap at entry time — templates evolve, history does not.
+ * trade's checklistSnap at entry time - templates evolve, history does not.
  */
 export function ChecklistsPanel({ strategies }: { strategies: Strategy[] }) {
   const { dict } = useI18n();

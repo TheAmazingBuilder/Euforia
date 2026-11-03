@@ -1,4 +1,4 @@
-/* Screenshots — Nofy upgrades: slash menu, export PDF, playbook & review integrations */
+/* Screenshots - Nofy upgrades: slash menu, export PDF, playbook & review integrations */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 

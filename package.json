@@ -6,9 +6,12 @@
     "dev": "turbo dev",
     "build": "turbo build",
     "lint": "turbo lint",
+    "typecheck": "turbo run typecheck",
     "test": "turbo test",
     "api:dev": "pnpm --filter @cosmoz/api dev",
-    "api:db:up": "pnpm --filter @cosmoz/api db:up"
+    "web:dev": "pnpm --filter web dev",
+    "market:dev": "cd mini-services/market-service && bun run dev",
+    "market:test": "cd mini-services/market-service && bun test"
   },
   "devDependencies": {
     "turbo": "^2"

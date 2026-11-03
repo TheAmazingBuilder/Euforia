@@ -38,12 +38,12 @@ import {
 import { LONG_SHORT_METRIC_OPTIONS, settingsGroupsFor, type SettingsGroup } from "@/lib/dashboard-customization/widget-settings";
 
 /**
- * Per-widget settings dialog (Phase 02 §6) — transactional configuration
+ * Per-widget settings dialog (Phase 02 §6) - transactional configuration
  * editing. The user edits a DRAFT seeded from the widget's current config;
  * Save validates it against the shared config schema (the exact contract
  * the persistence layer enforces) and only then applies it via onConfirm;
  * Cancel discards the draft untouched. An invalid save keeps the dialog
- * open with the first issue surfaced — user input is never lost.
+ * open with the first issue surfaced - user input is never lost.
  */
 
 interface WidgetSettingsDialogProps {
@@ -53,7 +53,7 @@ interface WidgetSettingsDialogProps {
   widgetName: string;
   /** Current resolved config (undefined = widget defaults). */
   config: DashboardWidgetConfig | undefined;
-  /** Called with a VALIDATED config — the caller owns persistence routing. */
+  /** Called with a VALIDATED config - the caller owns persistence routing. */
   onConfirm: (config: DashboardWidgetConfig) => void;
 }
 
@@ -73,7 +73,7 @@ export function WidgetSettingsDialog(props: WidgetSettingsDialogProps) {
 }
 
 /**
- * The form is MOUNTED per open (Radix unmounts closed content) — the draft
+ * The form is MOUNTED per open (Radix unmounts closed content) - the draft
  * seeds lazily from the widget's current config on every open, and Cancel
  * simply unmounts. No hydration effect, no stale draft between opens.
  */
@@ -332,7 +332,7 @@ function CheckboxField({
   checked: boolean;
   onCheckedChange: (checked: boolean) => void;
 }) {
-  // Slug id: letters/digits only — labels with "&" or punctuation stay
+  // Slug id: letters/digits only - labels with "&" or punctuation stay
   // valid, stable DOM ids (the P&L toggles).
   const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   return (
@@ -376,7 +376,7 @@ function DateRangeField({
           value={from}
           max={to || undefined}
           onChange={(event) => onChange(event.target.value, to)}
-          aria-label={`${label} — from`}
+          aria-label={`${label} - from`}
           data-testid="widget-settings-date-from"
           className="w-full"
         />
@@ -386,7 +386,7 @@ function DateRangeField({
           value={to}
           min={from || undefined}
           onChange={(event) => onChange(from, event.target.value)}
-          aria-label={`${label} — to`}
+          aria-label={`${label} - to`}
           data-testid="widget-settings-date-to"
           className="w-full"
         />
@@ -431,7 +431,7 @@ function MetricsListField({
 
       {draft.metrics.length === 0 && (
         <p className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-          No metric selected yet — add at least one below.
+          No metric selected yet - add at least one below.
         </p>
       )}
 
@@ -544,7 +544,7 @@ function StrategyListField({
 
       {selected.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-3 py-2 text-xs text-muted-foreground">
-          No strategy selected — the widget will wait for a selection.
+          No strategy selected - the widget will wait for a selection.
         </p>
       ) : (
         <ul className="flex flex-wrap gap-1.5">

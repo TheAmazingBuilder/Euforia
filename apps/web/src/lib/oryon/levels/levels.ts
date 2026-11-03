@@ -3,41 +3,41 @@ import type { Candle } from "@cosmoz/shared";
 import { normalizeCandles } from "@/lib/oryon/structure/pivots";
 
 /**
- * Oryon key-level engine (Phase 9 spec §5.1, §5.2, §5.4) — previous-day and
+ * Oryon key-level engine (Phase 9 spec §5.1, §5.2, §5.4) - previous-day and
  * previous-week reference levels.
  *
- * DATA SOURCE (an explicit, documented convention — spec §5.4): the levels
+ * DATA SOURCE (an explicit, documented convention - spec §5.4): the levels
  * are computed from the DAILY candle series the market service itself
  * serves (`interval: "1D"`), i.e. the datafeed's OWN day buckets. A
- * calendar day here is therefore the datafeed's UTC-midnight bucket — the
+ * calendar day here is therefore the datafeed's UTC-midnight bucket - the
  * authoritative convention of this repo's market data. The browser's local
  * timezone is NEVER consulted (§5.4 critical rule), and no exchange-local
  * session boundary is invented (§5.4: a calendar day is not a trading
- * session — for instruments whose exchange day differs, this is the
+ * session - for instruments whose exchange day differs, this is the
  * datafeed convention, disclosed in the UI source note).
  *
  * WEEK CONVENTION (documented, spec §5.4 "define period boundaries
- * explicitly"): weeks are ISO weeks — Monday 00:00 UTC to Sunday 24:00 UTC
- * — over the daily series. The CURRENT (partial) week never produces
+ * explicitly"): weeks are ISO weeks - Monday 00:00 UTC to Sunday 24:00 UTC
+ * - over the daily series. The CURRENT (partial) week never produces
  * levels; the previous week with available candles does.
  *
  * Correctness contract:
  *  - candles are sanitized (chronological, first-wins duplicates, invalid
- *    candles dropped — see normalizeCandles);
+ *    candles dropped - see normalizeCandles);
  *  - aggregation uses ONLY valid candles actually available to the app;
- *  - a missing day/week is SKIPPED (the previous existing period is used) —
+ *  - a missing day/week is SKIPPED (the previous existing period is used) -
  *    a weekend gap never produces a zero or a fabricated level;
- *  - `null` results mean "unavailable" — the UI shows an explicit state,
+ *  - `null` results mean "unavailable" - the UI shows an explicit state,
  *    never a guessed price (§11);
  *  - symbol isolation is structural: the engine sees one candle array for
- *    one symbol (the caller's query key guarantees it — §9.3).
+ *    one symbol (the caller's query key guarantees it - §9.3).
  */
 
 export interface OryonPeriodLevels {
   /** Period identity: UTC date key ("2026-10-09") for days, the Monday
    *  date key for weeks. */
   readonly periodKey: string;
-  /** Period open time (epoch ms, UTC) — informative. */
+  /** Period open time (epoch ms, UTC) - informative. */
   readonly periodStartMs: number;
   readonly high: number;
   readonly low: number;
@@ -100,7 +100,7 @@ export function computePreviousDayLevels(candles: readonly Candle[]): OryonPerio
   const data = normalizeCandles(candles);
   if (data.length === 0) return null;
   const lastDay = Math.floor(data[data.length - 1]!.t / DAY_MS);
-  // Walk the daily buckets backwards — at most the span of the data.
+  // Walk the daily buckets backwards - at most the span of the data.
   for (let day = lastDay - 1; day >= Math.floor(data[0]!.t / DAY_MS); day -= 1) {
     const levels = aggregatePeriod(data, day * DAY_MS, DAY_MS, utcDateKey(day * DAY_MS));
     if (levels !== null) return levels;

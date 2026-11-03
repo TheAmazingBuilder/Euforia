@@ -19,23 +19,23 @@ import { OryonPanelHeader } from "@/components/oryon/oryon-panel-header";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon chart grid (Phase 7 spec §5) — the CSS-grid container plus the
+ * Oryon chart grid (Phase 7 spec §5) - the CSS-grid container plus the
  * per-panel wrapper.
  *
  * Arrangements: one large chart, two side by side, two stacked, four in a
  * 2×2 grid. Below the md breakpoint everything degrades to a single-column
- * stack with a practical per-panel height — four tiny charts in a forced
+ * stack with a practical per-panel height - four tiny charts in a forced
  * grid would be unusable (spec §15).
  *
  * Chart lifecycle discipline: panels are keyed by their STABLE ids, so grid
- * transitions reorder/resize DOM nodes without unmounting charts — the
+ * transitions reorder/resize DOM nodes without unmounting charts - the
  * engines survive, their autoSize observers absorb the resize, and no
  * subscription is recreated. Adding/removing panels mounts/unmounts exactly
  * the affected panel.
  *
  * Active-chart model (spec §7): a pointer-down or focus anywhere inside a
  * panel activates it. The FIRST pointer-down on an inactive panel only
- * activates — drawing tools and selection need the panel to already be
+ * activates - drawing tools and selection need the panel to already be
  * active (the interaction controller gates on the flag; React state timing
  * makes the activation click itself non-drawing, a predictable semantic).
  */
@@ -70,8 +70,8 @@ export function OryonChartGrid({
 }
 
 /**
- * PURE instrument resolution (shared with the eco-approach bridge — the
- * same rule everywhere): an explicit symbol wins (resolved by SYMBOL — the
+ * PURE instrument resolution (shared with the eco-approach bridge - the
+ * same rule everywhere): an explicit symbol wins (resolved by SYMBOL - the
  * stable cross-session identity), otherwise the default selection (the
  * first active instrument the feed actually covers, then the first active
  * one). No hardcoded symbol, no invention.
@@ -143,7 +143,7 @@ export function OryonChartGridPanel({
   }, [active, panel.id, store]);
 
   /** Keyboard navigation activates a panel (spec §7). PROGRAMMATIC focus
-   *  moves do NOT — e.g. Radix restoring focus to a menu trigger after a
+   *  moves do NOT - e.g. Radix restoring focus to a menu trigger after a
    *  duplicate/remove action would otherwise steal activation back from
    *  the copy/survivor panel the store just activated. Mouse clicks are
    *  handled by the pointerdown capture above. */
@@ -166,7 +166,7 @@ export function OryonChartGridPanel({
   );
 
   // Engine destroyed (chart unmounted for an error/empty state, or the
-  // panel itself removed) — the sync registration and the toolbar's engine
+  // panel itself removed) - the sync registration and the toolbar's engine
   // map follow the SAME lifecycle, so a remounting chart re-registers
   // cleanly and no stale engine is ever addressed (spec §10/§14).
   const handleEngineGone = React.useCallback(() => {
@@ -194,7 +194,7 @@ export function OryonChartGridPanel({
   return (
     <section
       role="group"
-      aria-label={`${S.groupLabel}: ${instrument?.symbol ?? "—"} ${panel.interval}`}
+      aria-label={`${S.groupLabel}: ${instrument?.symbol ?? "-"} ${panel.interval}`}
       data-testid="oryon-panel"
       data-panel-id={panel.id}
       data-panel-index={index}

@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * The (auth) pages render their own premium split shell via AuthLayout —
+ * The (auth) pages render their own premium split shell via AuthLayout -
  * this group layout only carries shared metadata.
  */
 export default function AuthGroupLayout({

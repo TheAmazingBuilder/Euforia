@@ -1,4 +1,4 @@
-"""E2E ritual — Reports premium + Security Center.
+"""E2E ritual - Reports premium + Security Center.
 
 Covers:
 - REPORTS (desktop 1440 light): KPI band with deltas, equity curve, R
@@ -138,7 +138,7 @@ def with_downloads(page, action) -> list[pathlib.Path]:
 
 
 def export_download(page, item_testid: str) -> list[pathlib.Path]:
-    """Opens the export dropdown and picks the format — all inside the
+    """Opens the export dropdown and picks the format - all inside the
     expect_download window so the triggered download is captured."""
     got: list[pathlib.Path] = []
     unblock(page)
@@ -174,7 +174,7 @@ def main() -> None:
     with sync_playwright() as pw:
         browser = pw.chromium.launch(headless=True)
 
-        # ══ Desktop 1440 — light ══
+        # ══ Desktop 1440 - light ══
         ctx = browser.new_context(viewport={"width": 1440, "height": 900})
         page = ctx.new_page()
         page.on("console", track_console)
@@ -272,7 +272,7 @@ def main() -> None:
             step_fail("security: overview renders", "readiness missing")
         shot(page, "06-security-overview")
 
-        # Authentication — wrong password then correct
+        # Authentication - wrong password then correct
         security_tab(page, "authentication")
         page.fill("[data-testid='security-password-current']", "cosmoz123")
         page.fill("[data-testid='security-password-new']", "cosmoz456premium")
@@ -318,7 +318,7 @@ def main() -> None:
             step_fail("security: 2FA enabled", status.strip()[:80])
         shot(page, "10-security-2fa-enabled")
 
-        # Sessions — revoke non-current
+        # Sessions - revoke non-current
         security_tab(page, "sessions")
         shot(page, "11-security-sessions")
         try:
@@ -329,7 +329,7 @@ def main() -> None:
         except Exception as exc:
             step_fail("security: session revoked", str(exc)[:120])
 
-        # API keys — create with reauth, plaintext ONCE, then masked
+        # API keys - create with reauth, plaintext ONCE, then masked
         security_tab(page, "apikeys")
         unblock(page)
         page.click("[data-testid='security-api-key-create']")
@@ -357,7 +357,7 @@ def main() -> None:
             step_fail("security: plaintext dialog", "missing")
         shot(page, "12-security-apikeys")
 
-        # Events — filter by keys
+        # Events - filter by keys
         security_tab(page, "events")
         shot(page, "13-security-events")
         unblock(page)
@@ -387,7 +387,7 @@ def main() -> None:
         else:
             step_fail("security: connected accounts list integrations", conn_text[:80])
 
-        # Overview after mutations — readiness should reflect 2FA on
+        # Overview after mutations - readiness should reflect 2FA on
         security_tab(page, "overview")
         page.wait_for_timeout(900)
         overview_text = page.inner_text("[data-testid='security-readiness']")
@@ -397,7 +397,7 @@ def main() -> None:
             step_fail("security: readiness recomputed", overview_text[:80])
         shot(page, "16-security-overview-after")
 
-        # ══ Desktop — dark ══
+        # ══ Desktop - dark ══
         print("== DARK ==")
         set_theme(page, "dark")
         nav(page, "/security", settle=1800)

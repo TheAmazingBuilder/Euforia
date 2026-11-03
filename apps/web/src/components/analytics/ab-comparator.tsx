@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * A/B strategy comparator (module upgrade). Side-by-side, FACTUAL read-out of
- * two rows of the SAME server dataset — the module never crowns a "winner",
+ * two rows of the SAME server dataset - the module never crowns a "winner",
  * it exposes the deltas with sample-size honesty and lets the trader judge.
  * METRICS stays machine-only (keys + logic); labels resolve through
  * dict.analytics.abComparator.labels at render time (the dict.* pattern).
@@ -37,7 +37,7 @@ type Suite = AnalyticsSuiteResponse;
 interface ComparatorMetric {
   key: keyof AnalyticsDict["abComparator"]["labels"] & string;
   render: (row: AnalyticsStrategyRow, currency: AnalyticsSuiteResponse["currency"]) => string;
-  /** Higher-is-better (default) or lower-is-better — drives the highlight. */
+  /** Higher-is-better (default) or lower-is-better - drives the highlight. */
   better: "high" | "low";
   /** Null value can't be compared (insufficient data). */
   value: (row: AnalyticsStrategyRow) => number | null;
@@ -55,35 +55,35 @@ const METRICS: ComparatorMetric[] = [
   },
   {
     key: "winRate",
-    render: (row) => (row.winRate === null ? "—" : formatPercent(row.winRate, 0)),
+    render: (row) => (row.winRate === null ? "-" : formatPercent(row.winRate, 0)),
     better: "high",
     value: (row) => (row.winRate === null ? null : Number(row.winRate)),
     delta: true,
   },
   {
     key: "profitFactor",
-    render: (row) => (row.profitFactor === null ? "—" : formatNumber(row.profitFactor, 2)),
+    render: (row) => (row.profitFactor === null ? "-" : formatNumber(row.profitFactor, 2)),
     better: "high",
     value: (row) => (row.profitFactor === null ? null : Number(row.profitFactor)),
     delta: true,
   },
   {
     key: "expectancyR",
-    render: (row) => (row.expectancyR === null ? "—" : formatR(row.expectancyR)),
+    render: (row) => (row.expectancyR === null ? "-" : formatR(row.expectancyR)),
     better: "high",
     value: (row) => (row.expectancyR === null ? null : Number(row.expectancyR)),
     delta: true,
   },
   {
     key: "avgWinR",
-    render: (row) => (row.avgWinR === null ? "—" : formatR(row.avgWinR)),
+    render: (row) => (row.avgWinR === null ? "-" : formatR(row.avgWinR)),
     better: "high",
     value: (row) => (row.avgWinR === null ? null : Number(row.avgWinR)),
     delta: true,
   },
   {
     key: "avgLossR",
-    render: (row) => (row.avgLossR === null ? "—" : formatR(row.avgLossR)),
+    render: (row) => (row.avgLossR === null ? "-" : formatR(row.avgLossR)),
     better: "low",
     value: (row) => (row.avgLossR === null ? null : Number(row.avgLossR)),
     delta: true,
@@ -98,7 +98,7 @@ const METRICS: ComparatorMetric[] = [
   {
     key: "netPnl",
     render: (row, currency) =>
-      row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, currency),
+      row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, currency),
     better: "high",
     value: (row) => (row.netPnl === null ? null : Number(row.netPnl)),
     delta: true,
@@ -106,14 +106,14 @@ const METRICS: ComparatorMetric[] = [
   {
     key: "avgDurationMin",
     render: (row) =>
-      row.avgDurationMin === null ? "—" : row.avgDurationMin < 60 ? `${row.avgDurationMin}m` : `${Math.round(row.avgDurationMin / 60)}h`,
+      row.avgDurationMin === null ? "-" : row.avgDurationMin < 60 ? `${row.avgDurationMin}m` : `${Math.round(row.avgDurationMin / 60)}h`,
     better: "high",
     value: (row) => row.avgDurationMin,
     delta: false,
   },
   {
     key: "followedPlanPct",
-    render: (row) => (row.followedPlanPct === null ? "—" : formatPercent(row.followedPlanPct, 0)),
+    render: (row) => (row.followedPlanPct === null ? "-" : formatPercent(row.followedPlanPct, 0)),
     better: "high",
     value: (row) => (row.followedPlanPct === null ? null : Number(row.followedPlanPct)),
     delta: true,
@@ -128,10 +128,10 @@ export function AbComparator({ suite }: { suite: Suite }) {
   const [idAState, setIdA] = React.useState<string>("");
   const [idBState, setIdB] = React.useState<string>("");
 
-  // Default A/B = the two most-traded rows — derived at render (no effect):
+  // Default A/B = the two most-traded rows - derived at render (no effect):
   // an explicit selection sticks, an empty/invalid one falls back. "none"
   // is the select's canonical value for the Out-of-playbook bucket
-  // (strategyId null) — the same ?? convention the SelectItems use.
+  // (strategyId null) - the same ?? convention the SelectItems use.
   const sorted = React.useMemo(() => [...rows].sort((a, b) => b.trades - a.trades), [rows]);
   const resolveId = (current: string, fallbackIndex: number): string => {
     if (current !== "" && rows.some((row) => row.strategyId === current)) return current;
@@ -262,7 +262,7 @@ export function AbComparator({ suite }: { suite: Suite }) {
                         {bWins && <span aria-hidden="true" className="ml-1 text-accent">●</span>}
                       </td>
                       <td className="py-2 font-mono text-xs tabular-nums text-muted-foreground">
-                        {delta === null ? "—" : formatNumber(delta, 2)}
+                        {delta === null ? "-" : formatNumber(delta, 2)}
                       </td>
                     </tr>
                   );

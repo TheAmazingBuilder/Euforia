@@ -1,4 +1,4 @@
-"""E2E ritual — sectioned sidebar (task: restore save + sectioned rail).
+"""E2E ritual - sectioned sidebar (task: restore save + sectioned rail).
 
 Captures:
 - Desktop 1440x900, light + dark (via the app's own theme toggle)

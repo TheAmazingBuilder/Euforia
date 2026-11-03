@@ -1,15 +1,15 @@
 /**
- * Oryon indicator kernels — pure array math (Phase 3 spec §4B).
+ * Oryon indicator kernels - pure array math (Phase 3 spec §4B).
  *
  * Discipline:
- *  - NO imports from chart/browser/React modules — this file is independently
+ *  - NO imports from chart/browser/React modules - this file is independently
  *    testable (bun: scripts/oryon-indicator-tests.ts) and stays honest.
  *  - Conventions are DOCUMENTED per kernel and verified against
  *    hand-computed fixtures. No intermediate rounding (Phase 3 spec §6).
  *  - Warm-up values are `null`, never 0, never fabricated numbers.
  *
  * Floating-point: sliding sums are periodically refreshed (see smaKernel) and
- * the stddev kernel is a two-pass per-window computation — the numerically
+ * the stddev kernel is a two-pass per-window computation - the numerically
  * stable form (E[x²]−mean² is avoided deliberately: catastrophic
  * cancellation on instruments where σ ≪ mean).
  */
@@ -18,7 +18,7 @@
 export type Series = (number | null)[];
 
 /**
- * Simple Moving Average — arithmetic mean over the trailing window.
+ * Simple Moving Average - arithmetic mean over the trailing window.
  * Defined from index `period − 1`.
  */
 export function smaKernel(values: readonly number[], period: number): Series {
@@ -43,7 +43,7 @@ export function smaKernel(values: readonly number[], period: number): Series {
 }
 
 /**
- * Exponential Moving Average — documented initialization: the FIRST value
+ * Exponential Moving Average - documented initialization: the FIRST value
  * (index `period − 1`) is the SMA of the first `period` inputs; every later
  * value applies the smoothing factor k = 2/(period+1):
  *   ema[i] = value·k + ema[i−1]·(1−k)
@@ -68,7 +68,7 @@ export function emaKernel(values: readonly number[], period: number): Series {
  * EMA over a series with leading nulls (MACD signal line): the dense
  * sub-sequence of DEFINED values is extracted, EMA'd from its first defined
  * index, then mapped back to the original positions. For the MACD signal
- * this anchors the seed at the first defined MACD value — no warm-up holes
+ * this anchors the seed at the first defined MACD value - no warm-up holes
  * inside the smoothed window.
  */
 export function emaSparseKernel(values: readonly (number | null)[], period: number): Series {
@@ -91,7 +91,7 @@ export function emaSparseKernel(values: readonly (number | null)[], period: numb
  * Wilder smoothing (RSI / ATR): the first value (index `period − 1`) is the
  * arithmetic mean of the first `period` inputs; subsequent values apply
  *   w[i] = (w[i−1]·(period−1) + value) / period
- * — the classic Wilder recursion, equivalent to an EMA with k = 1/period.
+ * - the classic Wilder recursion, equivalent to an EMA with k = 1/period.
  */
 export function wilderKernel(values: readonly number[], period: number): Series {
   const out: Series = new Array<number | null>(values.length).fill(null);
@@ -110,7 +110,7 @@ export function wilderKernel(values: readonly number[], period: number): Series 
 
 /**
  * Population standard deviation over the trailing window (divide by `period`
- * — the TradingView Bollinger convention; sample σ would divide by p−1).
+ * - the TradingView Bollinger convention; sample σ would divide by p−1).
  * Two-pass per window: numerically stable for instruments where σ ≪ mean.
  * Defined from index `period − 1`.
  */

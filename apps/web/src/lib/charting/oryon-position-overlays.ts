@@ -13,24 +13,24 @@ import {
 } from "@/lib/oryon/positions/overlay";
 
 /**
- * Oryon position overlay manager (Phase 4 spec §8) — entry / SL / TP price
+ * Oryon position overlay manager (Phase 4 spec §8) - entry / SL / TP price
  * lines for open positions, drawn on the ACTIVE series with Lightweight
  * Charts v5's native price lines.
  *
  * Read-only by construction (spec §4): library price lines are non-interactive
- * — there is NO drag, NO click affordance, NO mutation path. They carry no
+ * - there is NO drag, NO click affordance, NO mutation path. They carry no
  * order semantics; they visualize broker-reported values and nothing else.
  *
  * Lifecycle contract (§8.6):
  *   - stable keys (`positionId:level`) → lines UPDATE IN PLACE on every
- *     snapshot (create/remove only when the structure changes — no churn,
+ *     snapshot (create/remove only when the structure changes - no churn,
  *     no duplicate lines after repeated updates);
  *   - `setSeries(null | series)` re-homes the overlay after a series rebuild
  *     (chart-type switch destroys the host series and its price lines with
- *     it — the manager replays its current specs onto the new series);
- *   - `clear()` removes everything the manager owns and nothing else —
+ *     it - the manager replays its current specs onto the new series);
+ *   - `clear()` removes everything the manager owns and nothing else -
  *     drawings, indicators and the main series are untouched;
- *   - theme changes restyle in place (never hex — resolved tokens only).
+ *   - theme changes restyle in place (never hex - resolved tokens only).
  */
 
 /** Resolved visual treatment per level (semantic tokens, PRD §12.1). */
@@ -60,7 +60,7 @@ export class OryonPositionOverlayManager {
   private series: ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | null = null;
   /** Currently attached price lines by stable key (manager-owned ONLY). */
   private lines = new Map<string, IPriceLine>();
-  /** Specs the attached lines currently render — the diff baseline. */
+  /** Specs the attached lines currently render - the diff baseline. */
   private specs: PositionLineSpec[] = [];
   private theme: ChartTheme | null = null;
 
@@ -71,7 +71,7 @@ export class OryonPositionOverlayManager {
 
   /**
    * Re-homes the overlay onto a (new) active series. A series rebuild
-   * destroys its price lines, so the whole current spec set is replayed —
+   * destroys its price lines, so the whole current spec set is replayed -
    * the overlay survives chart-type switches without callers knowing.
    */
   setSeries(series: ISeriesApi<"Candlestick"> | ISeriesApi<"Line"> | null): void {
@@ -101,7 +101,7 @@ export class OryonPositionOverlayManager {
           try {
             this.series.removePriceLine(line);
           } catch {
-            // Host series already gone (rebuild) — the map reset covers it.
+            // Host series already gone (rebuild) - the map reset covers it.
           }
           this.lines.delete(op.key);
         }
@@ -139,7 +139,7 @@ export class OryonPositionOverlayManager {
     this.specs = [];
   }
 
-  /** Detaches everything (engine destroy — the chart itself is going away). */
+  /** Detaches everything (engine destroy - the chart itself is going away). */
   destroy(): void {
     this.lines.clear();
     this.specs = [];

@@ -1,13 +1,13 @@
 /**
- * Trading Core data access (infrastructure) — Phase 4.
+ * Trading Core data access (infrastructure) - Phase 4.
  *
  * The ONLY place in the trading context that touches Prisma. All methods
- * return narrow row projections — no Prisma type crosses into services or
+ * return narrow row projections - no Prisma type crosses into services or
  * controllers (Phase 1 §10 boundary). Transactions protect meaningful
  * invariants only (§54): trade+executions creation, close legs, and the
  * reconciliation write-set. Reconciliation additionally serializes on the
  * account row (SELECT … FOR UPDATE) so concurrent syncs stay deterministic
- * (§55) — an in-database lock, not distributed locking.
+ * (§55) - an in-database lock, not distributed locking.
  */
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -141,7 +141,7 @@ export class TradingRepository {
   // ── Reads ─────────────────────────────────────────────────────────────────
 
   /**
-   * Ownership check is part of the lookup — foreign ids are simply not found
+   * Ownership check is part of the lookup - foreign ids are simply not found
    * (IDOR → honest 404, the established convention). Soft-deleted trades are
    * equally invisible: an archived journal entry no longer exists for reads.
    */
@@ -158,7 +158,7 @@ export class TradingRepository {
       userId: filters.userId,
       deletedAt: null,
       accountId: filters.accountId,
-      // The Trade lifecycle columns are TEXT (no Prisma enums) — the filters
+      // The Trade lifecycle columns are TEXT (no Prisma enums) - the filters
       // pass through as plain strings.
       status: filters.status,
       symbol: filters.symbol,
@@ -189,16 +189,16 @@ export class TradingRepository {
     return rows as TradeWithExecutions[];
   }
 
-  // ── Analytics reads (Phase 8 — additive public contract) ──────────────────
+  // ── Analytics reads (Phase 8 - additive public contract) ──────────────────
 
   /**
    * FULL closed-trade journal of one user (no pagination) for analytics
    * aggregation. The Analytics bounded context is a CONSUMER of canonical
-   * truth (Phase 8 §2): it reads the exact rows Trading Core owns — same
+   * truth (Phase 8 §2): it reads the exact rows Trading Core owns - same
    * narrow projection, ownership in the where-clause, soft-deleted rows
    * invisible like every other read. Journal-scale volumes make a single
    * fetch cheaper and simpler than paginated windows (live-query decision,
-   * Phase 8 §36 — no analytics tables, no read models).
+   * Phase 8 §36 - no analytics tables, no read models).
    */
   async listClosedJournalRows(userId: string): Promise<TradeRow[]> {
     const rows = await this.prisma.trade.findMany({
@@ -214,10 +214,10 @@ export class TradingRepository {
     return this.prisma.trade.count({ where: { userId, status: "OPEN", deletedAt: null } });
   }
 
-  // ── Calendar reads (Phase 13 — additive public contract, Phase 6/8/10 precedent) ──
+  // ── Calendar reads (Phase 13 - additive public contract, Phase 6/8/10 precedent) ──
 
   /**
-   * Narrow CLOSED-trade daily aggregates for the trading-calendar view —
+   * Narrow CLOSED-trade daily aggregates for the trading-calendar view -
    * the Calendar context recomputes NOTHING financial itself (Phase 4
    * §46): it reads the canonical persisted aggregates (tradingDate,
    * pnlNet, rMultiple) over a bounded trading-day window and buckets them
@@ -244,10 +244,10 @@ export class TradingRepository {
     });
   }
 
-  // ── Session Live reads (Phase 10 — additive public contract, Phase 6/8 precedent) ──
+  // ── Session Live reads (Phase 10 - additive public contract, Phase 6/8 precedent) ──
 
   /**
-   * Journal trades opened within a session window [from, to] — the Session
+   * Journal trades opened within a session window [from, to] - the Session
    * Live summary's only canonical input (tradeCount/markets/P&L/R). Same
    * discipline as every public read: ownership in the where-clause,
    * soft-deleted rows invisible, narrow projection (no Prisma types out).
@@ -284,7 +284,7 @@ export class TradingRepository {
   }
 
   /**
-   * Journal trades of ONE trading day (server-computed `tradingDate`) — the
+   * Journal trades of ONE trading day (server-computed `tradingDate`) - the
    * Session Live timeline's ENTRY/EXIT source rows. tradingDate is the
    * canonical day column (computed from entryAt + user timezone at capture,
    * Phase 4): the timeline never re-derives "today" client-side.
@@ -328,7 +328,7 @@ export class TradingRepository {
   /**
    * Instrument catalog lookup by unique ticker (symbol). The journal write
    * paths backfill the denormalized symbol column AND the instrumentId FK
-   * — an unknown symbol is an honest refusal (never an invented row, §20).
+   * - an unknown symbol is an honest refusal (never an invented row, §20).
    */
   async findInstrumentIdBySymbol(symbol: string): Promise<string | null> {
     const row = await this.prisma.instrument.findUnique({
@@ -394,7 +394,7 @@ export class TradingRepository {
     return row as TradeRow;
   }
 
-  /** Append exit legs to a manual trade + recompute aggregates — one transaction. */
+  /** Append exit legs to a manual trade + recompute aggregates - one transaction. */
   async closeTrade(data: {
     tradeId: string;
     accountId: string;
@@ -467,7 +467,7 @@ export class TradingRepository {
     });
   }
 
-  /** Soft delete (§57) — the journal history is never hard-deleted by the API. */
+  /** Soft delete (§57) - the journal history is never hard-deleted by the API. */
   async softDeleteTrade(tradeId: string, deletedAt: Date): Promise<void> {
     await this.prisma.trade.update({ where: { id: tradeId }, data: { deletedAt } });
   }
@@ -478,7 +478,7 @@ export class TradingRepository {
    * Apply a reconstruction plan for one account inside ONE transaction,
    * serialized on the account row. The unique constraints
    * (accountId, externalPositionId) / (accountId, externalDealId) are the
-   * ultimate idempotency backstop — a racing duplicate surfaces as P2002.
+   * ultimate idempotency backstop - a racing duplicate surfaces as P2002.
    */
   async applyReconciliation(
     accountId: string,
@@ -575,7 +575,7 @@ export class TradingRepository {
     },
   ): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      // Deterministic serialization per account (§55) — in-database row lock.
+      // Deterministic serialization per account (§55) - in-database row lock.
       await tx.$queryRaw`SELECT id FROM "TradingAccount" WHERE id = ${accountId}::uuid FOR UPDATE`;
 
       for (const planned of plan.tradesToCreate) {
@@ -665,6 +665,6 @@ function sortClause(sort: "entryAt" | "exitAt" | "pnlNet", order: "asc" | "desc"
       : sort === "exitAt"
         ? { exitAt: order }
         : { entryAt: order };
-  // Stable tie-breaker — deterministic pagination.
+  // Stable tie-breaker - deterministic pagination.
   return [primary, { id: "asc" }];
 }

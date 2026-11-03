@@ -79,6 +79,6 @@ for name, th in theme_log:
     print(f"{name:<12} data-theme={th}")
 print(json.dumps(theme, ensure_ascii=False, indent=2))
 print()
-print(f"=== MOBILE /trades : sw={sw_iw['sw']} iw={sw_iw['iw']} — éléments larges ===")
+print(f"=== MOBILE /trades : sw={sw_iw['sw']} iw={sw_iw['iw']} - éléments larges ===")
 for w in wide:
     print(f"w={w['w']:>5} right={w['right']:>5}  <{w['tag']}> {w['cls']}")

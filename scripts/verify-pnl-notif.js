@@ -1,9 +1,9 @@
 /**
- * Verify — pnlDisplay wiring (dashboard) + notification preferences in the
+ * Verify - pnlDisplay wiring (dashboard) + notification preferences in the
  * alert engine.
  *
  * IMPORTANT: the MSW mock store lives in browser memory and RESEEDS on every
- * full page load — so this script does ONE page.goto and then navigates
+ * full page load - so this script does ONE page.goto and then navigates
  * CLIENT-SIDE (sidebar links) to keep the session (same trick as
  * verify-settings.js).
  *
@@ -34,7 +34,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   const NAV = 'nav[aria-label="Main navigation"]';
   const gotoClient = async (href) => {
@@ -150,7 +150,7 @@ const BASE = "http://localhost:3000";
   const instrumentId = (instruments.find((i) => i.assetClass === "FOREX") ?? instruments[0]).id;
   const accountId = (accounts.find((a) => a.isDefault) ?? accounts[0]).id;
 
-  /** A closed trade sized at 5 % risk — always breaches MAX_RISK_PCT_PER_TRADE (2 %). */
+  /** A closed trade sized at 5 % risk - always breaches MAX_RISK_PCT_PER_TRADE (2 %). */
   const breachingTrade = () => ({
     variant: "closed",
     accountId,
@@ -193,7 +193,7 @@ const BASE = "http://localhost:3000";
   check("DELIVERED: new rule-violation alert arrives once re-enabled", after > during, `${during} → ${after}`);
 
   // ── 5. Console errors (socket.io 404s = market-service availability noise,
-  // pre-existing — the dashboard degrades to the polling fallback by design;
+  // pre-existing - the dashboard degrades to the polling fallback by design;
   // Chrome strips the URL from the console message, so match by count) ──────
   const resource404s = errors.filter((e) =>
     e.includes("Failed to load resource") && e.includes("404"),

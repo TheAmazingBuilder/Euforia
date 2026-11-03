@@ -44,21 +44,21 @@ import { OryonIconButton } from "@/components/oryon/oryon-icon-button";
 import { cn } from "@/lib/utils";
 
 /**
- * Oryon drawing object list — management UI (spec §10) + compact style
+ * Oryon drawing object list - management UI (spec §10) + compact style
  * editor (spec §11) for the selected object.
  *
  * Toolbar v4: the list is DOCKED on the right utility rail's "Objects"
- * panel (moved from the in-chart floating card — same component, same
+ * panel (moved from the in-chart floating card - same component, same
  * store contract, no duplicate surface). It fills the rail panel and
  * follows the ACTIVE chart's store through the drawings context.
  *
  * Synchronization: the list subscribes to the drawing store directly
- * (useSyncExternalStore) — commits are rare (drag end, toggle, style),
+ * (useSyncExternalStore) - commits are rare (drag end, toggle, style),
  * pointer drags never re-render this panel.
  *
  * Destructive discipline: per-object delete is instant but undoable
  * (history covers deletion); delete-ALL requires an explicit two-step
- * inline confirmation — no destructive action fires silently.
+ * inline confirmation - no destructive action fires silently.
  */
 
 const TYPE_ICONS: Record<OryonDrawing["type"], LucideIcon> = {
@@ -83,7 +83,7 @@ const TYPE_ICONS: Record<OryonDrawing["type"], LucideIcon> = {
 };
 
 /** Theme-token swatches live in the SHARED style presets (the right-click
- *  property editor reads the same list — the two surfaces can't drift). */
+ *  property editor reads the same list - the two surfaces can't drift). */
 const COLOR_CHOICES = ORYON_COLOR_CHOICES;
 
 const WIDTH_CHOICES = ORYON_WIDTH_CHOICES;
@@ -103,7 +103,7 @@ export function OryonDrawingObjectList({ store: storeOverride }: { store?: Oryon
   );
   const [confirmClear, setConfirmClear] = React.useState(false);
 
-  // No bound store yet (no active chart layer) — nothing to manage.
+  // No bound store yet (no active chart layer) - nothing to manage.
   if (store === null) return null;
 
   const selected = snapshot.selectedId !== null
@@ -218,7 +218,7 @@ function OryonDrawingRow({
         <button
           type="button"
           onClick={onSelect}
-          aria-label={`${typeLabel}${drawing.label !== null ? ` — ${drawing.label}` : ""}`}
+          aria-label={`${typeLabel}${drawing.label !== null ? ` - ${drawing.label}` : ""}`}
           className="flex min-w-0 flex-1 items-center gap-2 text-left"
         >
           <Icon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />

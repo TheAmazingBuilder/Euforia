@@ -45,7 +45,7 @@ import type { CropRegion } from "@/components/recognition/recognition-result";
 import { RecognitionStatusBadge } from "@/components/recognition/recognition-status-badge";
 
 /**
- * RecognitionWorkspace — the Import & Recognition orchestrator (PROMPT 3).
+ * RecognitionWorkspace - the Import & Recognition orchestrator (PROMPT 3).
  *
  * Workflow (§4): upload → preview → configure → processing → result →
  * review & correct → trade draft → confirm → success, with the history one
@@ -71,7 +71,7 @@ function WorkspaceInner() {
   const [profile, setProfile] = React.useState<OcrExtractionProfile>("TRADE_SUMMARY");
   const [editingField, setEditingField] = React.useState<string | null>(null);
   const [corrections, setCorrections] = React.useState<Record<string, string | null>>({});
-  // ACCOUNTS attachment (engine quality §3.1) — null = the default account.
+  // ACCOUNTS attachment (engine quality §3.1) - null = the default account.
   const [accountId, setAccountId] = React.useState<string | null>(null);
   // Grouped confirmation (§2.2): per-draft corrections + include decisions.
   const [activeCandidate, setActiveCandidate] = React.useState(0);
@@ -83,7 +83,7 @@ function WorkspaceInner() {
 
   // ── server state ─────────────────────────────────────────────────────────
   const list = useOcrRecognitionsInfinite();
-  // V2 §62 — pages live in the React Query cache (no component-state sync).
+  // V2 §62 - pages live in the React Query cache (no component-state sync).
   const historyItems: OcrRecognition[] = list.data
     ? list.data.pages.flatMap((page: { items: OcrRecognition[] }) => page.items)
     : [];
@@ -93,7 +93,7 @@ function WorkspaceInner() {
   const confirm = useConfirmOcrRecognition();
   const reprocess = useReprocessOcrRecognition();
   const deleteJob = useDeleteOcrRecognition();
-  // V2 §58 — explicit duplicate acknowledgments. Render-time derivation
+  // V2 §58 - explicit duplicate acknowledgments. Render-time derivation
   // resets them when the focused job changes (no cascading effect).
   const [acks, setAcks] = React.useState<{ jobId: string | null; screenshot: boolean; trade: boolean }>({
     jobId: null,
@@ -110,7 +110,7 @@ function WorkspaceInner() {
   const recognition = focusedJob.data?.recognition ?? null;
 
   // Resolved preview bytes for the focused job (authenticated fetch, §37).
-  // The fetch itself is async (setState in callbacks — never in the effect
+  // The fetch itself is async (setState in callbacks - never in the effect
   // body); a missing jobId simply yields null via render-level derivation.
   const [jobImageUrl, setJobImageUrl] = React.useState<string | null>(null);
   React.useEffect(() => {
@@ -150,7 +150,7 @@ function WorkspaceInner() {
   );
 
   // Step resolution is DERIVED during render from the job (no effect, no
-  // cascading render) — a processing job that settles jumps to the result,
+  // cascading render) - a processing job that settles jumps to the result,
   // a confirmed job reopened from history shows its read-only record, and
   // a fresh confirmation shows success. Survives refresh on ?job=.
   const step: RecognitionStep = (() => {
@@ -277,7 +277,7 @@ function WorkspaceInner() {
     );
   }
 
-  /** Region re-scan (engine quality §2.4) — results are ephemeral guidance. */
+  /** Region re-scan (engine quality §2.4) - results are ephemeral guidance. */
   const handleRecrop = (region: CropRegion) => {
     if (!recognition) return;
     recrop.mutate(
@@ -290,7 +290,7 @@ function WorkspaceInner() {
   };
 
   // ── derived overview data ────────────────────────────────────────────────
-  // V2 §62 — the history table reads the ACCUMULATED pages (Load more);
+  // V2 §62 - the history table reads the ACCUMULATED pages (Load more);
   // single-page consumers (overview recent strip) keep list.data directly.
   const items: OcrRecognition[] =
     historyItems.length > 0 ? historyItems : list.data?.pages[0]?.items ?? [];
@@ -367,7 +367,7 @@ function WorkspaceInner() {
         }
         onOpen={(id) => {
           // Opening a record must never inherit the wizard's stale step
-          // (e.g. "success" from a just-confirmed job) — reset to
+          // (e.g. "success" from a just-confirmed job) - reset to
           // "overview" so the derivation shows the read-only record.
           setStepRaw("overview");
           setParams({ job: id });
@@ -545,7 +545,7 @@ function WorkspaceInner() {
 
   return (
     <div className="flex flex-col gap-6" data-testid="recognition-overview">
-      {/* Upload hero — the entry point IS the product (§10), console redesign:
+      {/* Upload hero - the entry point IS the product (§10), console redesign:
           the dropzone wears viewfinder corners; modes are numbered columns. */}
       {items.length === 0 ? (
         <div className="flex flex-col gap-6">
@@ -580,7 +580,7 @@ function WorkspaceInner() {
               items={recent}
               onOpen={(id) => {
           // Opening a record must never inherit the wizard's stale step
-          // (e.g. "success" from a just-confirmed job) — reset to
+          // (e.g. "success" from a just-confirmed job) - reset to
           // "overview" so the derivation shows the read-only record.
           setStepRaw("overview");
           setParams({ job: id });
@@ -592,7 +592,7 @@ function WorkspaceInner() {
         </div>
       )}
 
-      {/* Stat band — one ruled strip, never sibling cards (§9). */}
+      {/* Stat band - one ruled strip, never sibling cards (§9). */}
       {items.length > 0 ? (
         <section aria-label={dict.overview.stats.analyzed} className="stat-strip">
           <div className="stat-cell">
@@ -614,10 +614,10 @@ function WorkspaceInner() {
         </section>
       ) : null}
 
-      {/* V2 §1/§2/§18 — the multi-screenshot flow (one event, several shots). */}
+      {/* V2 §1/§2/§18 - the multi-screenshot flow (one event, several shots). */}
       <SetWorkspace dict={dict} />
 
-      {/* Storage + retention indicator (engine quality §4.2 — now live). */}
+      {/* Storage + retention indicator (engine quality §4.2 - now live). */}
       <StorageIndicator dict={dict} />
 
     </div>
@@ -625,9 +625,9 @@ function WorkspaceInner() {
 }
 
 /**
- * HeroModes — the three recognition modes as a ruled capability list
+ * HeroModes - the three recognition modes as a ruled capability list
  * (console redesign): mono INDEX, icon in a bordered square, and what the
- * engine reads in each mode. Informational — the real selection happens in
+ * engine reads in each mode. Informational - the real selection happens in
  * the configure step.
  */
 function HeroModes({ dict, compact = false }: { dict: ReturnType<typeof useDict>["recognition"]; compact?: boolean }) {
@@ -660,13 +660,13 @@ function HeroModes({ dict, compact = false }: { dict: ReturnType<typeof useDict>
 
 // ── Shared pieces ────────────────────────────────────────────────────────────
 
-/** Retention + storage indicator (engine quality §4.2) — the overview footer,
+/** Retention + storage indicator (engine quality §4.2) - the overview footer,
  * console redesign: a ruled strip with a thin usage meter. */
 function StorageIndicator({ dict }: { dict: ReturnType<typeof useDict>["recognition"] }) {
   const storage = useOcrStorage();
   if (storage.isLoading || storage.isError || !storage.data || storage.data.assetCount === 0) return null;
   const data = storage.data;
-  // The quota the mock contract serves (10 MB) — the meter shows the used
+  // The quota the mock contract serves (10 MB) - the meter shows the used
   // share; without a quota the bar stays empty rather than guessing.
   const quotaBytes = 10 * 1024 * 1024;
   const usedPct = Math.min(100, Math.round((data.usedBytes / quotaBytes) * 100));
@@ -692,7 +692,7 @@ function StorageIndicator({ dict }: { dict: ReturnType<typeof useDict>["recognit
   );
 }
 
-/** Ruled step indicator — 01 UPLOAD → 02 REVIEW → 03 CONFIRM (§4 workflow),
+/** Ruled step indicator - 01 UPLOAD → 02 REVIEW → 03 CONFIRM (§4 workflow),
  * console redesign: mono indices with hairline connectors and honest states. */
 function StepShell({
   dict,
@@ -825,7 +825,7 @@ function EmptyPanel({
 }
 
 /**
- * Tab navigation — Overview | History (§30). Rendered above every branch;
+ * Tab navigation - Overview | History (§30). Rendered above every branch;
  * switching tabs clears any focused job (the URL stays the single source).
  */
 export function RecognitionWorkspace() {

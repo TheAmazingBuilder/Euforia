@@ -1,10 +1,10 @@
 /**
- * Session Live application service (B9) — trading-session lifecycle,
+ * Session Live application service (B9) - trading-session lifecycle,
  * saved analyses and key levels. READ-ONLY relative to any broker: every
  * endpoint mutates application-owned documentation entities ONLY. There is
  * deliberately NO order/execution path (§2/§50 negative capability).
  *
- * End-summary (§43): only metrics supported by real data — journal trades
+ * End-summary (§43): only metrics supported by real data - journal trades
  * in the session window, discipline violations, the deterministic eco
  * calendar, logbook notes and saved analyses. Everything unavailable
  * stays null/0-honest.
@@ -40,7 +40,7 @@ import { SessionLiveRepository, type SessionLiveRow } from "./session-live.repos
 const TRADING_ERROR = TRADE_ERROR_CODES;
 
 // NOTE: EVENT_KINDS is reserved for the B9→B5/B6 bridges (note/level push
-// events) — the values mirror the mock's SessionLiveEventKind union.
+// events) - the values mirror the mock's SessionLiveEventKind union.
 
 type StartSessionInput = z.infer<typeof startSessionInputSchema>;
 type UpdateSessionInput = z.infer<typeof updateSessionInputSchema>;
@@ -90,7 +90,7 @@ export class SessionLiveService {
 
   // ── sessions ──────────────────────────────────────────────────────────────
 
-  /** GET /session-live/sessions — active session + history (newest first). */
+  /** GET /session-live/sessions - active session + history (newest first). */
   async state(userId: string): Promise<SessionLiveStateResponse> {
     const rows = await this.repository.listByKind(userId, "SESSION");
     const sessions = rows.map((row) => row.data as unknown as TradingSession);
@@ -101,7 +101,7 @@ export class SessionLiveService {
     return { active, history };
   }
 
-  /** POST /session-live/sessions — one active session at a time (409). */
+  /** POST /session-live/sessions - one active session at a time (409). */
   async startSession(userId: string, input: StartSessionInput): Promise<TradingSessionResponse> {
     const existing = await this.activeSession(userId);
     if (existing !== null) {
@@ -116,7 +116,7 @@ export class SessionLiveService {
       status: "ACTIVE",
       startedAt: now,
       endedAt: null,
-      primarySymbol: input.primarySymbol ?? "—",
+      primarySymbol: input.primarySymbol ?? "-",
       primaryTimeframe: input.primaryTimeframe ?? "5m",
       tradingWindow: input.tradingWindow ?? "OTHER",
       strategyId: input.strategyId ?? null,
@@ -133,7 +133,7 @@ export class SessionLiveService {
     this.pushEvent(
       session,
       "SESSION_STARTED",
-      `Session started — ${session.primarySymbol} ${session.primaryTimeframe}`,
+      `Session started - ${session.primarySymbol} ${session.primaryTimeframe}`,
       session.sessionObjective,
     );
     await this.repository.insert(userId, "SESSION", session.id, session as unknown as never);
@@ -152,7 +152,7 @@ export class SessionLiveService {
     return row;
   }
 
-  /** PATCH /session-live/sessions/:id — bias / objective / notes while active. */
+  /** PATCH /session-live/sessions/:id - bias / objective / notes while active. */
   async updateSession(userId: string, sessionId: string, input: UpdateSessionInput): Promise<TradingSessionResponse> {
     const row = await this.loadActiveSession(userId, sessionId);
     const session = row.data as unknown as TradingSession;
@@ -169,7 +169,7 @@ export class SessionLiveService {
   }
 
   /**
-   * POST /session-live/sessions/:id/end — §43 summary: only metrics with
+   * POST /session-live/sessions/:id/end - §43 summary: only metrics with
    * real data behind them (journal, discipline, eco, notes, analyses).
    */
   async endSession(userId: string, sessionId: string, input: EndSessionInput): Promise<EndSessionResponse> {
@@ -184,7 +184,7 @@ export class SessionLiveService {
     session.updatedAt = endedAt;
     this.pushEvent(session, "SESSION_ENDED", "Session ended", null);
 
-    // §43 — metrics supported by real data only.
+    // §43 - metrics supported by real data only.
     const [all, violations, noteRows, analysisRows] = await Promise.all([
       this.trades.listTrades(userId, {}),
       this.discipline.listByKind(userId, "VIOLATION"),
@@ -205,7 +205,7 @@ export class SessionLiveService {
     const markets = [
       ...new Set(await Promise.all(windowTrades.map((trade) => this.symbolOf(trade.instrumentId)))),
     ];
-    if (markets.length === 0 && session.primarySymbol !== "—") markets.push(session.primarySymbol);
+    if (markets.length === 0 && session.primarySymbol !== "-") markets.push(session.primarySymbol);
     const violationCount = violations.filter((violation) =>
       inWindow(String((violation.data as { occurredAt?: string })["occurredAt"] ?? "")),
     ).length;
@@ -282,7 +282,7 @@ export class SessionLiveService {
       this.pushEvent(
         session,
         "ANALYSIS_SAVED",
-        `Analysis saved — ${analysis.symbol} ${analysis.timeframe}`,
+        `Analysis saved - ${analysis.symbol} ${analysis.timeframe}`,
         `Bias ${analysis.bias}`,
       );
       await this.repository.updateData(session.id, session as unknown as never);

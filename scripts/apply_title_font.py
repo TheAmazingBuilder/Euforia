@@ -41,8 +41,8 @@ with open(ag, "r", encoding="utf-8") as f:
     content = f.read()
 subs = [
     (
-        "Fonts: next/font/google — Space Grotesk (headings), Inter (UI), JetBrainsMono (ALL numbers)",
-        "Fonts: next/font/google — Schibsted Grotesk (headings; page titles render ExtraBold 800 per brand reference), Inter (UI), JetBrainsMono (ALL numbers)",
+        "Fonts: next/font/google - Space Grotesk (headings), Inter (UI), JetBrainsMono (ALL numbers)",
+        "Fonts: next/font/google - Schibsted Grotesk (headings; page titles render ExtraBold 800 per brand reference), Inter (UI), JetBrainsMono (ALL numbers)",
     ),
     ('--font-heading: "Space Grotesk", sans-serif;', '--font-heading: "Schibsted Grotesk", sans-serif;'),
     (

@@ -4,12 +4,12 @@ import { clearAccessToken, getAccessToken } from "@/lib/auth/token-store";
 import { refreshAccessToken } from "@/lib/auth/refresh";
 
 /**
- * Typed fetch wrapper — the ONLY place in the app that touches `fetch`.
+ * Typed fetch wrapper - the ONLY place in the app that touches `fetch`.
  * Components never call it directly; they consume hooks from lib/api/queries.
  *
  * Authentication layer (spec §9, §12, §13): every request carries the
  * in-memory access token when present; a 401 triggers ONE single-flight
- * refresh and ONE retry of the original request — never a second refresh
+ * refresh and ONE retry of the original request - never a second refresh
  * (no infinite loops), never a parallel refresh storm.
  */
 
@@ -26,8 +26,8 @@ export class ApiError extends Error {
 }
 
 /**
- * User-facing message from a thrown error — prefers the server's
- * `error` field (e.g. "This strategy has trades attached — pause or
+ * User-facing message from a thrown error - prefers the server's
+ * `error` field (e.g. "This strategy has trades attached - pause or
  * retire it instead.") over the generic transport message.
  */
 export function apiErrorMessage(error: unknown, fallback: string): string {
@@ -57,13 +57,13 @@ export interface ApiRequestOptions {
   query?: ApiQuery;
   body?: unknown;
   signal?: AbortSignal;
-  /** Internal: the request already survived one refresh-retry — do not loop. */
+  /** Internal: the request already survived one refresh-retry - do not loop. */
   _authRetried?: boolean;
 }
 
 /**
  * Auth endpoints manage their own error semantics (login/register/reset…)
- * — the 401 refresh interceptor must not interfere with them. /auth/me is
+ * - the 401 refresh interceptor must not interfere with them. /auth/me is
  * deliberately NOT exempt: its 401 is what triggers the cookie-based
  * refresh + retry on session restore (spec §9).
  */
@@ -103,7 +103,7 @@ async function execute<TResponse>(
   const token = getAccessToken();
   const headers: Record<string, string> = {};
   if (body !== undefined) headers["Content-Type"] = "application/json";
-  // Never log the token (§52) — attach silently, forget immediately.
+  // Never log the token (§52) - attach silently, forget immediately.
   if (token) headers.Authorization = `Bearer ${token}`;
 
   let response: Response;
@@ -111,6 +111,10 @@ async function execute<TResponse>(
     response = await fetch(buildApiUrl(path, query), {
       method,
       headers,
+      // Auth refresh uses an HttpOnly cookie. Include it for same-origin proxy
+      // requests and for an explicitly configured cross-origin API (which must
+      // separately allow credentials via CORS).
+      credentials: "include",
       body: body === undefined ? undefined : JSON.stringify(body),
       signal,
     });
@@ -158,7 +162,7 @@ export async function apiRequest<TResponse>(
     // One shared refresh for every concurrent 401 (§13).
     const refreshed = await refreshAccessToken();
     if (!refreshed) {
-      // SESSION_EXPIRED was emitted — AuthProvider owns the UX from here.
+      // SESSION_EXPIRED was emitted - AuthProvider owns the UX from here.
       clearAccessToken();
       throw error;
     }

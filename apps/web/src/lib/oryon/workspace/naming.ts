@@ -1,15 +1,15 @@
 /**
- * Oryon workspace configuration naming — pure helpers (Phase 6 spec §4, §6).
+ * Oryon workspace configuration naming - pure helpers (Phase 6 spec §4, §6).
  *
  * Shared by workspace layouts AND chart templates: both are user-named
  * records with the same validation policy and the same duplicate policy.
  *
  * Duplicate-name policy (documented product decision): names are unique
  * CASE-INSENSITIVELY within their collection. " EURUSD " and "eurusd" are
- * the same name after trimming — a create/rename that collides is REJECTED
+ * the same name after trimming - a create/rename that collides is REJECTED
  * with an inline error instead of silently creating a confusing twin.
  *
- * These functions never throw and never touch storage — the store layers
+ * These functions never throw and never touch storage - the store layers
  * them into mutation results.
  */
 
@@ -18,7 +18,7 @@ export const ORYON_CONFIG_NAME_MAX = 48;
 
 /**
  * Normalizes a user-supplied name. Returns null when the name is empty
- * after trimming or exceeds the contract cap — the two invalid shapes.
+ * after trimming or exceeds the contract cap - the two invalid shapes.
  */
 export function normalizeConfigName(raw: string): string | null {
   const trimmed = raw.trim();

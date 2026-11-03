@@ -5,7 +5,7 @@ import { strategySchema } from "./strategy";
 import { tagSchema } from "./tag";
 
 /**
- * Backup payload — Priorité 3, feature 12. A plain JSON snapshot of the
+ * Backup payload - Priorité 3, feature 12. A plain JSON snapshot of the
  * user's authored data (trades, strategies, tags) for device-local backup
  * and later re-import. `schemaVersion` lets future imports migrate safely.
  */

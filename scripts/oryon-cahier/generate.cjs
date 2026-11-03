@@ -1,4 +1,4 @@
-/** Générateur — Cahier des charges Oryon (skill docx : recette R4 + GO-1, 3 sections, TDM). */
+/** Générateur - Cahier des charges Oryon (skill docx : recette R4 + GO-1, 3 sections, TDM). */
 const {
   Document, Packer, Paragraph, TextRun, Table, TableRow, TableCell,
   Header, Footer, PageNumber, NumberFormat, AlignmentType, HeadingLevel,
@@ -18,10 +18,10 @@ const blocks = [
   ...require("./content4.cjs"),
 ];
 
-// ── Helpers de titre de couverture (design-system.md — code obligatoire) ────
+// ── Helpers de titre de couverture (design-system.md - code obligatoire) ────
 function splitTitleLines(title, charsPerLine) {
   if (title.length <= charsPerLine) return [title];
-  const breakAfter = new Set([..."，。、；：！？", ..."的与和及之在于为", ..."-_—–·/", ..." \t"]);
+  const breakAfter = new Set([..."，。、；：！？", ..."的与和及之在于为", ..."-_-–·/", ..." \t"]);
   const lines = [];
   let remaining = title;
   while (remaining.length > charsPerLine) {
@@ -74,7 +74,7 @@ function calcTitleLayout(title, maxWidthTwips, preferredPt = 40, minPt = 24) {
 
 const emptyPara = () => new Paragraph({ spacing: { before: 0, after: 0 }, children: [] });
 
-// ── Recette R4 : Top Color Block (design-system.md — code validé, non modifié) ──
+// ── Recette R4 : Top Color Block (design-system.md - code validé, non modifié) ──
 function buildCoverR4(config) {
   const Pal = config.palette;
   const padL = 1200, padR = 800;
@@ -180,7 +180,7 @@ const pageFooter = () => new Footer({ children: [new Paragraph({
 })] });
 const docHeader = () => new Header({ children: [new Paragraph({
   alignment: AlignmentType.RIGHT,
-  children: [new TextRun({ text: "Oryon — Cahier des charges", size: 18, color: "808080", font: FONT })],
+  children: [new TextRun({ text: "Oryon - Cahier des charges", size: 18, color: "808080", font: FONT })],
 })] });
 
 // ── Configuration ────────────────────────────────────────────────────────────
@@ -190,14 +190,14 @@ const pgMargin = { top: 1440, bottom: 1440, left: 1701, right: 1417 };
 const coverConfig = {
   englishLabel: "CAHIER DES CHARGES",
   title: "Module Oryon",
-  subtitle: "Station d'analyse graphique de trading — spécification fonctionnelle et technique",
+  subtitle: "Station d'analyse graphique de trading - spécification fonctionnelle et technique",
   metaLines: [
-    "Application : Euforia — client web (Next.js)",
-    "Module : Oryon — station d'analyse graphique",
-    "Statut : Proposition v1.0 — à valider",
+    "Application : Euforia - client web (Next.js)",
+    "Module : Oryon - station d'analyse graphique",
+    "Statut : Proposition v1.0 - à valider",
     "Date : 10 octobre 2026",
   ],
-  footerLeft: "Euforia — document de travail",
+  footerLeft: "Euforia - document de travail",
   footerRight: "Lecture seule par conception",
   palette: P,
 };
@@ -205,7 +205,7 @@ const coverConfig = {
 // ── Document ─────────────────────────────────────────────────────────────────
 const doc = new Document({
   creator: "Euforia",
-  title: "Cahier des charges — Module Oryon",
+  title: "Cahier des charges - Module Oryon",
   description: "Spécification fonctionnelle et technique du module Oryon (station d'analyse graphique, lecture seule)",
   styles: { default: {
     document: {
@@ -228,11 +228,11 @@ const doc = new Document({
     }] },
   ]},
   sections: [
-    { // Section 1 — Couverture (marges 0, aucun pied de page, pas de pageNumbers)
+    { // Section 1 - Couverture (marges 0, aucun pied de page, pas de pageNumbers)
       properties: { page: { size: pgSize, margin: { top: 0, bottom: 0, left: 0, right: 0 } } },
       children: buildCoverR4(coverConfig),
     },
-    { // Section 2 — Table des matières (romains, redémarre à I)
+    { // Section 2 - Table des matières (romains, redémarre à I)
       properties: {
         type: SectionType.NEXT_PAGE,
         page: { size: pgSize, margin: pgMargin, pageNumbers: { start: 1, formatType: NumberFormat.UPPER_ROMAN } },
@@ -255,7 +255,7 @@ const doc = new Document({
         }),
       ],
     },
-    { // Section 3 — Corps (arabes, redémarre à 1)
+    { // Section 3 - Corps (arabes, redémarre à 1)
       properties: {
         type: SectionType.NEXT_PAGE,
         page: { size: pgSize, margin: pgMargin, pageNumbers: { start: 1, formatType: NumberFormat.DECIMAL } },
@@ -272,9 +272,9 @@ const OUT_DOCX = "/home/z/my-project/download/Oryon-Cahier-des-charges-v1.0.docx
 const OUT_MD = "/home/z/my-project/docs/oryon/cahier-des-charges.md";
 
 const metaMd = [
-  "Statut : Proposition v1.0 — à valider",
+  "Statut : Proposition v1.0 - à valider",
   "Date : 10 octobre 2026",
-  "Application : Euforia — client web (Next.js)",
+  "Application : Euforia - client web (Next.js)",
   "Contrainte cardinale : lecture seule",
 ];
 
@@ -282,7 +282,7 @@ Packer.toBuffer(doc).then((buf) => {
   fs.mkdirSync(path.dirname(OUT_DOCX), { recursive: true });
   fs.mkdirSync(path.dirname(OUT_MD), { recursive: true });
   fs.writeFileSync(OUT_DOCX, buf);
-  fs.writeFileSync(OUT_MD, H.renderMd(blocks, "Cahier des charges — Module Oryon", metaMd));
+  fs.writeFileSync(OUT_MD, H.renderMd(blocks, "Cahier des charges - Module Oryon", metaMd));
   const counts = blocks.reduce((acc, b) => { acc[b.t] = (acc[b.t] || 0) + 1; return acc; }, {});
   console.log("DOCX écrit :", OUT_DOCX, "(" + buf.length + " octets)");
   console.log("MD écrit :", OUT_MD);

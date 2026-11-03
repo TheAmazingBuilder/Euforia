@@ -1,7 +1,7 @@
 /**
  * Security-event recording (Phase 2 mandate §30; shared security.ts §10).
  *
- * The log is APPEND-ONLY: this service exposes append + reads — no update,
+ * The log is APPEND-ONLY: this service exposes append + reads - no update,
  * no delete. Events carry sanitized human context and NEVER contain
  * passwords, tokens, MFA secrets or recovery codes (§30).
  * Login history rows share the same metadata discipline (§31).
@@ -31,7 +31,7 @@ export type SecurityEventType =
   | "REAUTH_OK"
   | "REAUTH_FAILED"
   | "ACCOUNT_DELETION_REQUESTED"
-  // Accounts / Trading Connectivity (Phase 3 §39) — connection lifecycle and
+  // Accounts / Trading Connectivity (Phase 3 §39) - connection lifecycle and
   // sync failures are security-sensitive. Sync success lives in the run
   // records (observability) to keep the audit log signal-dense.
   | "TRADING_ACCOUNT_CONNECTED"
@@ -59,7 +59,7 @@ export class SecurityEventService {
     context: string;
     outcome?: "SUCCESS" | "FAILURE";
   }): Promise<void> {
-    // Append-only — failures of the write itself must not break the caller,
+    // Append-only - failures of the write itself must not break the caller,
     // but are surfaced to logs for observability (§54).
     try {
       await this.repository.appendSecurityEvent({

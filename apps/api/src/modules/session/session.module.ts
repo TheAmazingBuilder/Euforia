@@ -1,5 +1,5 @@
 /**
- * Session bounded context (B5 — trade-entry-ux.md §9): the trading day's
+ * Session bounded context (B5 - trade-entry-ux.md §9): the trading day's
  * server-assembled event timeline + mood strip, and the session logbook
  * (timestamped in-session notes).
  *
@@ -7,7 +7,7 @@
  * facts are CONSUMED from their owning contexts (§26/§39): journal trades
  * and plan-modification events via the Trades read contract, rule-breach
  * alerts via Discipline's repository contract. "Today" is SERVER-resolved
- * from the user's timezone — the client never derives the trading date.
+ * from the user's timezone - the client never derives the trading date.
  */
 import { Module } from "@nestjs/common";
 import { PrismaModule } from "../../infrastructure/prisma/prisma.module";

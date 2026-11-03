@@ -1,4 +1,4 @@
-/** Coach page across the three themes — desktop screenshots. */
+/** Coach page across the three themes - desktop screenshots. */
 const { chromium } = require("playwright");
 
 const BASE = "http://localhost:3000";

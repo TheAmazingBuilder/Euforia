@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils";
  * Trade Quality / Mistakes & Rules / Economic Events / Advanced Statistics /
  * Monte Carlo / Reports tabs (MASTER PROMPT §16–§18, §20, §21, §24, §25, §26).
  * Simulations are always labelled SIMULATION; missing data is declared, never
- * fabricated (§34). Labels resolve through dict.analytics.* — machine
+ * fabricated (§34). Labels resolve through dict.analytics.* - machine
  * composition stays in the component (the dict.* pattern).
  */
 
@@ -35,7 +35,7 @@ import { csvCell } from "@cosmoz/shared";
 
 type Suite = AnalyticsSuiteResponse;
 
-/** CSV export of the filtered dataset (§26 — export where the app supports it). */
+/** CSV export of the filtered dataset (§26 - export where the app supports it). */
 function exportCsv(suite: Suite): void {
   const header = ["index", "date", "symbol", "r", "cumR"];
   const rows = suite.cumulativeR.map((point) => [
@@ -56,7 +56,7 @@ function exportCsv(suite: Suite): void {
 }
 
 /**
- * OCR quality card (engine quality §3.2) — the Import & Recognition funnel
+ * OCR quality card (engine quality §3.2) - the Import & Recognition funnel
  * and the correction hot-spots, fed by GET /ocr/analytics. Rendered inside
  * the Quality tab: recognition quality is a quality signal of the journal
  * itself.
@@ -97,7 +97,7 @@ function OcrQualityCard() {
           <div className="flex flex-col gap-1">
             <p className="ledger-label">{R.analytics.avgConfidence}</p>
             <p className="font-mono text-xl tabular-nums">
-              {data.avgConfidence === null ? "—" : `${Math.round(data.avgConfidence * 100)}%`}
+              {data.avgConfidence === null ? "-" : `${Math.round(data.avgConfidence * 100)}%`}
             </p>
           </div>
         </div>
@@ -167,7 +167,7 @@ export function QualityTab({ suite }: { suite: Suite }) {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
         <MetricCard
           label={T.planFollowed}
-          value={followedPct === null ? "—" : formatPercent(followedPct, 0)}
+          value={followedPct === null ? "-" : formatPercent(followedPct, 0)}
           definition={T.planFollowedDef}
           tone={followedPct !== null && Number(followedPct) >= 0.8 ? "profit" : "neutral"}
           sub={`${quality.planFollowed.followed} ${T.followedWord} · ${quality.planFollowed.violated} ${T.violatedWord} · ${quality.planFollowed.unknown} ${T.unknownWord}`}
@@ -175,19 +175,19 @@ export function QualityTab({ suite }: { suite: Suite }) {
         />
         <MetricCard
           label={T.avgMfe}
-          value={quality.mfe.avgR === null ? "—" : `+${formatNumber(quality.mfe.avgR, 2)}R`}
+          value={quality.mfe.avgR === null ? "-" : `+${formatNumber(quality.mfe.avgR, 2)}R`}
           definition={T.avgMfeDef}
           insufficient={quality.mfe.avgR === null}
         />
         <MetricCard
           label={T.avgMae}
-          value={quality.mae.avgR === null ? "—" : formatR(quality.mae.avgR)}
+          value={quality.mae.avgR === null ? "-" : formatR(quality.mae.avgR)}
           definition={T.avgMaeDef}
           insufficient={quality.mae.avgR === null}
         />
         <MetricCard
           label={T.mfeCapture}
-          value={quality.mfe.capturePct === null ? "—" : formatPercent(quality.mfe.capturePct, 0)}
+          value={quality.mfe.capturePct === null ? "-" : formatPercent(quality.mfe.capturePct, 0)}
           definition={T.mfeCaptureDef}
           tone={quality.mfe.capturePct !== null && Number(quality.mfe.capturePct) >= 0.6 ? "profit" : "neutral"}
           insufficient={quality.mfe.capturePct === null}
@@ -341,7 +341,7 @@ export function EventsTab({ suite }: { suite: Suite }) {
             <p className="text-sm text-muted-foreground">
               {T.coveragePrefix}{" "}
               <span className="font-mono">{coverage.from ?? "?"} → {coverage.to ?? "?"}</span>
-              {coverage.unclassifiedTrades > 0 && <> — {coverage.unclassifiedTrades} {T.tradesOutsideTail}</>}
+              {coverage.unclassifiedTrades > 0 && <> - {coverage.unclassifiedTrades} {T.tradesOutsideTail}</>}
             </p>
           </CardContent>
         </Card>
@@ -364,9 +364,9 @@ export function EventsTab({ suite }: { suite: Suite }) {
                 <span className="min-w-0 truncate text-xs">{phase.label}</span>
                 <span className="flex shrink-0 items-center gap-3 font-mono text-xs tabular-nums">
                   <span className={cn(phase.trades < 10 && "text-warning")}>{phase.trades} {SH.tradesSuffix}</span>
-                  <span>{phase.winRate === null ? "—" : formatPercent(phase.winRate, 0)} {SH.winSuffix}</span>
+                  <span>{phase.winRate === null ? "-" : formatPercent(phase.winRate, 0)} {SH.winSuffix}</span>
                   <span className={phase.avgR === null ? "text-muted-foreground" : Number(phase.avgR) >= 0 ? "text-profit" : "text-loss"}>
-                    {phase.avgR === null ? "—" : formatR(phase.avgR)}
+                    {phase.avgR === null ? "-" : formatR(phase.avgR)}
                   </span>
                 </span>
               </div>
@@ -393,9 +393,9 @@ export function EventsTab({ suite }: { suite: Suite }) {
                 <span className="text-xs font-medium">{impact.label}</span>
                 <span className="flex shrink-0 items-center gap-3 font-mono text-xs tabular-nums">
                   <span className={cn(impact.trades < 10 && "text-warning")}>{impact.trades} {SH.tradesSuffix}</span>
-                  <span>{impact.winRate === null ? "—" : formatPercent(impact.winRate, 0)} {SH.winSuffix}</span>
+                  <span>{impact.winRate === null ? "-" : formatPercent(impact.winRate, 0)} {SH.winSuffix}</span>
                   <span className={impact.avgR === null ? "text-muted-foreground" : Number(impact.avgR) >= 0 ? "text-profit" : "text-loss"}>
-                    {impact.avgR === null ? "—" : formatR(impact.avgR)}
+                    {impact.avgR === null ? "-" : formatR(impact.avgR)}
                   </span>
                 </span>
               </div>
@@ -418,34 +418,34 @@ export function AdvancedTab({ suite }: { suite: Suite }) {
       <div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
         <MetricCard
           label={T.sharpe}
-          value={summary.sharpe === null ? "—" : formatNumber(summary.sharpe, 2)}
+          value={summary.sharpe === null ? "-" : formatNumber(summary.sharpe, 2)}
           definition={summary.sharpeNote}
           tone={summary.sharpe !== null && Number(summary.sharpe) >= 1 ? "profit" : "neutral"}
           insufficient={summary.sharpe === null}
         />
         <MetricCard
           label={T.sortino}
-          value={summary.sortino === null ? "—" : formatNumber(summary.sortino, 2)}
+          value={summary.sortino === null ? "-" : formatNumber(summary.sortino, 2)}
           definition={summary.sortinoNote}
           tone={summary.sortino !== null && Number(summary.sortino) >= 1.5 ? "profit" : "neutral"}
           insufficient={summary.sortino === null}
         />
         <MetricCard
           label={T.sqn}
-          value={summary.sqn === null ? "—" : formatNumber(summary.sqn, 2)}
+          value={summary.sqn === null ? "-" : formatNumber(summary.sqn, 2)}
           definition={T.sqnDef}
           tone={summary.sqn !== null && Number(summary.sqn) >= 2 ? "profit" : "neutral"}
           insufficient={summary.sqn === null}
         />
         <MetricCard
           label={T.stddevR}
-          value={advanced.r.stddev === null ? "—" : formatNumber(advanced.r.stddev, 2)}
+          value={advanced.r.stddev === null ? "-" : formatNumber(advanced.r.stddev, 2)}
           definition={T.stddevRDef}
           insufficient={advanced.r.stddev === null}
         />
         <MetricCard
           label={T.skewKurtosis}
-          value={`${advanced.r.skewness === null ? "—" : formatNumber(advanced.r.skewness, 2)} / ${advanced.r.kurtosis === null ? "—" : formatNumber(advanced.r.kurtosis, 2)}`}
+          value={`${advanced.r.skewness === null ? "-" : formatNumber(advanced.r.skewness, 2)} / ${advanced.r.kurtosis === null ? "-" : formatNumber(advanced.r.kurtosis, 2)}`}
           definition={T.skewKurtosisDef}
           insufficient={advanced.r.skewness === null}
         />
@@ -477,7 +477,7 @@ export function AdvancedTab({ suite }: { suite: Suite }) {
               ].map(([label, value]) => (
                 <div key={label as string} className="flex items-center justify-between gap-2 border-b border-border/40 py-1">
                   <span className="text-muted-foreground">{label}</span>
-                  <span>{value === null || value === undefined ? "—" : formatNumber(value as string, 2)}</span>
+                  <span>{value === null || value === undefined ? "-" : formatNumber(value as string, 2)}</span>
                 </div>
               ))}
             </div>
@@ -500,14 +500,14 @@ export function AdvancedTab({ suite }: { suite: Suite }) {
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{T.longestWinRun}</p>
                 <p className="font-mono text-2xl font-semibold tabular-nums text-profit">{advanced.streaks.longestWin}</p>
                 <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {SH.avgLower} {advanced.streaks.avgWin === null ? "—" : formatNumber(advanced.streaks.avgWin, 1)}
+                  {SH.avgLower} {advanced.streaks.avgWin === null ? "-" : formatNumber(advanced.streaks.avgWin, 1)}
                 </p>
               </div>
               <div className="rounded-lg border border-border bg-surface-raised p-3 text-center">
                 <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{T.longestLossRun}</p>
                 <p className="font-mono text-2xl font-semibold tabular-nums text-loss">{advanced.streaks.longestLoss}</p>
                 <p className="font-mono text-[11px] tabular-nums text-muted-foreground">
-                  {SH.avgLower} {advanced.streaks.avgLoss === null ? "—" : formatNumber(advanced.streaks.avgLoss, 1)}
+                  {SH.avgLower} {advanced.streaks.avgLoss === null ? "-" : formatNumber(advanced.streaks.avgLoss, 1)}
                 </p>
               </div>
             </div>
@@ -659,7 +659,7 @@ export function ReportsTab({
                       <td className="py-2.5 pr-3 font-mono text-xs">{row.key}</td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">{row.trades}</td>
                       <td className="py-2.5 pr-3 font-mono text-xs tabular-nums">
-                        {row.winRate === null ? "—" : formatPercent(row.winRate, 0)}
+                        {row.winRate === null ? "-" : formatPercent(row.winRate, 0)}
                       </td>
                       <td
                         className={cn(
@@ -676,7 +676,7 @@ export function ReportsTab({
                             row.netPnl === null ? "" : Number(row.netPnl) >= 0 ? "text-profit" : "text-loss",
                           )}
                         >
-                          {row.netPnl === null ? "—" : formatSignedMoney(row.netPnl, currency)}
+                          {row.netPnl === null ? "-" : formatSignedMoney(row.netPnl, currency)}
                         </td>
                       )}
                     </tr>
@@ -699,7 +699,7 @@ export function ReportsTab({
 
       <QuarterlyReportDialog open={reportOpen} onOpenChange={setReportOpen} suite={suite} />
 
-      {/* Dashboard Customization Phase 08 — export center + snapshots. Both
+      {/* Dashboard Customization Phase 08 - export center + snapshots. Both
           render from the SAME filtered server dataset (one truth). */}
       <ExportCenter suite={suite} />
       <SnapshotsPanel suite={suite} filters={filters} />

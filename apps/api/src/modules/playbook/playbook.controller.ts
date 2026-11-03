@@ -1,5 +1,5 @@
 /**
- * Playbook controllers (B10) — strategies (with versioning), setups,
+ * Playbook controllers (B10) - strategies (with versioning), setups,
  * checklist templates, operating rules, templates library and the module
  * aggregates. Mirrors `mocks/handlers/playbook.ts` + the catalogs
  * GET /strategies route (23 routes).
@@ -36,19 +36,19 @@ import { PlaybookService } from "./playbook.service";
 export class PlaybookMetaController {
   constructor(private readonly playbook: PlaybookService) {}
 
-  /** GET /playbook/overview — counts, recency, performance, health. */
+  /** GET /playbook/overview - counts, recency, performance, health. */
   @Get("overview")
   async overview(@CurrentUser() principal: AuthPrincipal) {
     return this.playbook.overview(principal.userId);
   }
 
-  /** GET /playbook/templates — starting-point library (no perf claims). */
+  /** GET /playbook/templates - starting-point library (no perf claims). */
   @Get("templates")
   async templates() {
     return this.playbook.listTemplates();
   }
 
-  /** POST /playbook/templates/instantiate — DRAFT strategy from a template. */
+  /** POST /playbook/templates/instantiate - DRAFT strategy from a template. */
   @Post("templates/instantiate")
   @HttpCode(HttpStatus.CREATED)
   async instantiate(

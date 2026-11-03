@@ -110,7 +110,7 @@ import { parseCsvFile, type CsvParseResult } from "./csv-parse";'''
 src = src.replace(val_anchor, val_new, 1)
 
 # ── 3. inject the extension block right before the final `return {` ─────────
-# the final return is at the end of createMockStore — find last occurrence
+# the final return is at the end of createMockStore - find last occurrence
 idx = src.rfind("\n  return {")
 assert idx != -1, "final return not found"
 block = "\n  // ═══ RESTORED DOMAINS (Academy-save wiring) ═══\n" + csv_state + "\n".join(PARTS) + "\n"

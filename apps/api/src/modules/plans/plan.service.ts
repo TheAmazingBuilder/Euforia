@@ -1,10 +1,10 @@
 /**
- * Trade Plan application service (Phase 11) — documented reasoning, not
+ * Trade Plan application service (Phase 11) - documented reasoning, not
  * execution. Lifecycle rules live HERE (the transition table from the shared
  * contract), never as arbitrary frontend string updates; every write is
  * owner-scoped; hypothetical levels never touch canonical trade facts; the
  * plan-vs-actual comparison reads canonical trade facts read-only and emits
- * honest nulls for anything unavailable (§9.2 — no fabricated deviations).
+ * honest nulls for anything unavailable (§9.2 - no fabricated deviations).
  */
 import { Injectable } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
@@ -138,7 +138,7 @@ export class PlanService {
     });
   }
 
-  // ── Edit (DRAFT/ACTIVE only — the repository enforces it) ──────────────────
+  // ── Edit (DRAFT/ACTIVE only - the repository enforces it) ──────────────────
 
   async patch(userId: string, id: string, input: UpdateAnalysisPlanInput): Promise<AnalysisPlanMutatedResponse> {
     await this.requireRow(userId, id);
@@ -254,7 +254,7 @@ export class PlanService {
     const row = await this.requireRow(userId, id);
     if (row.tradeId !== null && row.tradeId !== input.tradeId) {
       throw new BusinessRuleError(
-        "This plan is already linked to another trade — detach it first.",
+        "This plan is already linked to another trade - detach it first.",
         PLAN_ERROR_CODES.PLAN_TRADE_ALREADY_LINKED,
       );
     }
@@ -295,7 +295,7 @@ export class PlanService {
     return { ok: true };
   }
 
-  // ── Plan vs actual (facts, never judgments — §9.2) ─────────────────────────
+  // ── Plan vs actual (facts, never judgments - §9.2) ─────────────────────────
 
   private async buildComparison(userId: string, plan: AnalysisPlan): Promise<AnalysisPlanDetailResponse["comparison"]> {
     const trade: TradeRowForFacts | null = plan.tradeId === null ? null : await this.trades.getTradeRowForUser(plan.tradeId, userId);
@@ -331,7 +331,7 @@ export class PlanService {
         exitAt: iso(trade.exitAt),
       },
       direction: {
-        planned: null, // plans carry scenarios, not a single direction field — honest null
+        planned: null, // plans carry scenarios, not a single direction field - honest null
         actual: trade.direction === "BUY" || trade.direction === "SELL" ? trade.direction : null,
         match: null,
       },
@@ -378,7 +378,7 @@ export class PlanService {
 
   /**
    * Trade linkage at CREATE: the create contract carries no tradeId (a plan
-   * starts unlinked by design — §4.2), so this is always null today and kept
+   * starts unlinked by design - §4.2), so this is always null today and kept
    * as the single seam for a future "create from trade" entry point.
    */
   private async resolveTradeLink(userId: string, _tradeId: null, _symbol: string): Promise<string | null> {

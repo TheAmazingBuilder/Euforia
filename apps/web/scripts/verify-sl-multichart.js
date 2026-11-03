@@ -1,5 +1,5 @@
 /**
- * Verify — Session Live multi-chart synchronisé (increment ①).
+ * Verify - Session Live multi-chart synchronisé (increment ①).
  *
  * Covers:
  *   A. Baseline layout 1 (identical single-chart workspace, no toolbar).
@@ -38,7 +38,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/sl-multichart";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const attrOf = (locator, name) => locator.getAttribute(name);

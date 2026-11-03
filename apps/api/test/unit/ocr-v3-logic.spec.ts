@@ -1,5 +1,5 @@
 /**
- * OCR V3 pure-logic unit tests — multi-screenshot fusion (correlation
+ * OCR V3 pure-logic unit tests - multi-screenshot fusion (correlation
  * evidence, aggregation gate, fused draft + conflicts, timeline) and the
  * deterministic quality score. No I/O, no Nest, no DB.
  */
@@ -116,7 +116,7 @@ describe("aggregateEvidence", () => {
     expect(autoConfirmed).toBe(false);
   });
 
-  it("requires BOTH identity gates — direction mismatch blocks auto-confirm", () => {
+  it("requires BOTH identity gates - direction mismatch blocks auto-confirm", () => {
     const pairs = [
       correlatePair(
         member({ jobId: "a", values: { symbol: { value: "XAUUSD", confidence: 90 }, direction: { value: "BUY", confidence: 90 } } }),
@@ -200,7 +200,7 @@ describe("fuseMembers", () => {
     expect(() => fuseMembers(nine)).toThrow(RangeError);
   });
 
-  it("is deterministic — the same input always produces the same output (§77)", () => {
+  it("is deterministic - the same input always produces the same output (§77)", () => {
     const build = () =>
       fuseMembers([
         member({ jobId: "a", values: { symbol: { value: "XAUUSD", confidence: 90 }, direction: { value: "BUY", confidence: 88 } } }),
@@ -302,7 +302,7 @@ describe("computeQuality", () => {
     expect(withConsistency.overall).toBeGreaterThanOrEqual(withoutConsistency.overall);
   });
 
-  it("is deterministic — the same input always produces the same score (§77)", () => {
+  it("is deterministic - the same input always produces the same score (§77)", () => {
     const input = {
       trades: [
         {

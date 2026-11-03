@@ -1,5 +1,5 @@
 /**
- * e2e harness — boots the REAL AppModule over Fastify and exposes
+ * e2e harness - boots the REAL AppModule over Fastify and exposes
  * fastify `inject()` for HTTP-level assertions. Shared wiring with
  * production (createAdapter + configureApp) is reused verbatim.
  */
@@ -9,18 +9,24 @@ import { AppModule } from "../../src/app.module";
 import { configureApp, createAdapter } from "../../src/app.setup";
 import { loadAppConfig } from "../../src/config/app-config";
 import { PrismaService } from "../../src/infrastructure/prisma/prisma.service";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import { ProbeController } from "./probe.controller";
 
 export interface TestAppOptions {
   /**
    * Replace the Prisma capability with a stub whose `ping` returns the given
-   * value — used to simulate infrastructure outages at the health seam
+   * value - used to simulate infrastructure outages at the health seam
    * (PrismaClient reconnects lazily, so a real outage cannot be simulated).
    */
   prismaPing?: () => Promise<boolean>;
 }
 
 export async function buildTestApp(options: TestAppOptions = {}): Promise<NestFastifyApplication> {
+  MailerService.clearTestTransportOverride();
+  // Explicitly pin auth delivery behavior before the memoized config is read.
+  process.env.AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
+  process.env.SMTP_USER = "";
+  process.env.SMTP_APP_PASSWORD = "";
   const config = loadAppConfig();
 
   const builder = Test.createTestingModule({

@@ -1,5 +1,5 @@
 /**
- * Authentication event bus (spec §57) — a deliberately minimal, typed
+ * Authentication event bus (spec §57) - a deliberately minimal, typed
  * emitter so the centralized AuthProvider can react to lifecycle changes
  * that happen deep inside the API layer (refresh success, session expiry,
  * forced logout) without any component wiring.

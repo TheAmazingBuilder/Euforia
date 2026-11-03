@@ -1,5 +1,5 @@
 /**
- * Oryon Phase 8 temporal tests — session engine, event domain, temporal
+ * Oryon Phase 8 temporal tests - session engine, event domain, temporal
  * display and the per-panel context store mutations.
  *
  * Run: bun run scripts/oryon-temporal-tests.ts
@@ -64,7 +64,7 @@ function eq(name: string, actual: unknown, expected: unknown): void {
   ok(`${name} (${a === b ? "ok" : `${a} !== ${b}`})`, a === b);
 }
 
-/** Fake localStorage — the store's persistence adapters need the DOM API. */
+/** Fake localStorage - the store's persistence adapters need the DOM API. */
 function installStorage(): Map<string, string> {
   const memory = new Map<string, string>();
   (globalThis as { window?: unknown }).window = {
@@ -86,9 +86,9 @@ function utcMs(y: number, m: number, d: number, hh = 0, mm = 0): number {
   return Date.UTC(y, m - 1, d, hh, mm);
 }
 
-// ── 1. Zone offsets (Intl — DST-aware, no fixed offsets) ─────────────────────
+// ── 1. Zone offsets (Intl - DST-aware, no fixed offsets) ─────────────────────
 
-console.log("— offsets de zone (Intl, DST)");
+console.log("- offsets de zone (Intl, DST)");
 
 eq("New York hiver → UTC-5", zoneOffsetMs(utcMs(2026, 1, 15), "America/New_York"), -5 * HOUR);
 eq("New York été → UTC-4", zoneOffsetMs(utcMs(2026, 7, 15), "America/New_York"), -4 * HOUR);
@@ -124,9 +124,9 @@ eq(
 );
 eq("weekday de la clé (lundi 1 juin 2026)", weekdayOfDateKey("2026-06-01"), 1);
 
-// ── 2. Intervalles de session — définitions réelles ──────────────────────────
+// ── 2. Intervalles de session - définitions réelles ──────────────────────────
 
-console.log("— intervalles de session");
+console.log("- intervalles de session");
 
 const london = sessionDefinitionById("london")!;
 const ny = sessionDefinitionById("newyork")!;
@@ -175,7 +175,7 @@ const sydney = sessionDefinitionById("sydney")!;
   );
 
   // Sydney, local Monday 2026-06-01 (AEST): 07:00–16:00 local spans UTC
-  // May 31 21:00 → Jun 1 06:00 — TWO clipped bands inside the UTC day
+  // May 31 21:00 → Jun 1 06:00 - TWO clipped bands inside the UTC day
   // (the tail of Monday + the head of Tuesday's session). Documented
   // behavior of zone-honest computation on a UTC-bounded window.
   const sydneyDay = sessionIntervalsForUtcRange(sydney, utcMs(2026, 6, 1), utcMs(2026, 6, 2));
@@ -208,7 +208,7 @@ const sydney = sessionDefinitionById("sydney")!;
   }
 
   // Indicative honesty: a public holiday (Christmas, Friday 2026-12-25)
-  // still resolves a session — NO holiday calendar is claimed (§4.2), the
+  // still resolves a session - NO holiday calendar is claimed (§4.2), the
   // UI states "indicative". The engine must not silently fake a closure.
   const christmas = sessionIntervalsForUtcRange(ny, utcMs(2026, 12, 25), utcMs(2026, 12, 26));
   eq(
@@ -220,7 +220,7 @@ const sydney = sessionDefinitionById("sydney")!;
 
 // ── 3. Cross-midnight + bornes + métadonnées manquantes ─────────────────────
 
-console.log("— cross-midnight, bornes, indisponibilités");
+console.log("- cross-midnight, bornes, indisponibilités");
 
 {
   // Synthetic cross-midnight definition (§4.2 capability test): 22:00–06:00
@@ -274,7 +274,7 @@ console.log("— cross-midnight, bornes, indisponibilités");
 
 // ── 4. Bandes multi-sessions + périmètre par classe d'actif ────────────────
 
-console.log("— bandes et périmètre");
+console.log("- bandes et périmètre");
 
 {
   // FOREX gets all four definitions, ordered Sydney→NY by display order.
@@ -284,7 +284,7 @@ console.log("— bandes et périmètre");
   eq("SYNTHETIC → aucune (24/7, honnête)", sessionsForAssetClass("SYNTHETIC"), []);
 
   // Bands over a London+NY overlap window (10:00–14:00 UTC winter Monday):
-  // London [08:00–17:00) and NY [13:00–22:00) both cover 13:00–14:00 —
+  // London [08:00–17:00) and NY [13:00–22:00) both cover 13:00–14:00 -
   // two overlapping bands, alpha-composited by the renderer (§5).
   const bands = computeSessionBands([london, ny], utcMs(2026, 1, 5, 10), utcMs(2026, 1, 5, 14));
   eq(
@@ -298,9 +298,9 @@ console.log("— bandes et périmètre");
   ok("bandes : tokens de thème (jamais de hex)", bands.every((b) => !b.colorToken.startsWith("#")));
 }
 
-// ── 5. Événements économiques — validation et filtres (§6, §10) ──────────────
+// ── 5. Événements économiques - validation et filtres (§6, §10) ──────────────
 
-console.log("— domaine des événements");
+console.log("- domaine des événements");
 
 const validEvent: EcoEvent = {
   id: "9b2f6a1e-3c4d-4e5f-8a9b-1c2d3e4f5a6b",
@@ -357,7 +357,7 @@ eq("devise : pas de match par sous-chaîne", eventMatchesCurrency(validEvent, "U
 eq("devise : null = toutes", eventMatchesCurrency(validEvent, null), true);
 
 {
-  // Half-open span: [from, to) — the event AT from is IN, the one AT to is OUT.
+  // Half-open span: [from, to) - the event AT from is IN, the one AT to is OUT.
   const from = utcMs(2026, 6, 2);
   const to = utcMs(2026, 6, 3);
   const inRange = [
@@ -366,7 +366,7 @@ eq("devise : null = toutes", eventMatchesCurrency(validEvent, null), true);
     { ...validEvent, id: "evt-3", scheduledAt: "2026-06-03T00:00:00.000Z" },
   ];
   eq(
-    "borne : [from, to) — from inclus, to exclu",
+    "borne : [from, to) - from inclus, to exclu",
     eventsInUtcSpan(inRange, from, to).map((e) => e.id),
     [validEvent.id, "evt-2"],
   );
@@ -411,9 +411,9 @@ eq("devise : null = toutes", eventMatchesCurrency(validEvent, null), true);
   eq("sans doublons → ordre stable", dedupeEventsById([validEvent]).length, 1);
 }
 
-// ── 6. Affichage temporel — fuseau utilisateur (§9.1) ────────────────────────
+// ── 6. Affichage temporel - fuseau utilisateur (§9.1) ────────────────────────
 
-console.log("— affichage et fuseaux");
+console.log("- affichage et fuseaux");
 
 ok("zone valide reconnue", isValidIanaZone("America/Toronto"));
 ok("zone inconnue rejetée", !isValidIanaZone("Mars/Olympus"));
@@ -437,7 +437,7 @@ eq("zone invalide → chaîne vide", formatInstantInZone(utcMs(2026, 6, 1), "Nop
 
 // ── 7. Store : mutations de contexte par panneau (Phase 8 §12) ───────────────
 
-console.log("— store : contexte de panneau");
+console.log("- store : contexte de panneau");
 
 {
   const memory = installStorage();
@@ -449,7 +449,7 @@ console.log("— store : contexte de panneau");
     eventMinImportance: "HIGH",
   };
 
-  // Dirty tracking is measured against the ACTIVE SAVED layout — the
+  // Dirty tracking is measured against the ACTIVE SAVED layout - the
   // default layout is immutable by design (Phase 6), so a saved layout
   // must be active first for the dirty flag to move at all.
   // saveAsNewLayout saves the CURRENT session and activates the record

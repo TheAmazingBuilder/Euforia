@@ -1,7 +1,7 @@
 /**
- * Unit — OCR domain logic (Phase 19 §13–§21): decimal normalization,
+ * Unit - OCR domain logic (Phase 19 §13–§21): decimal normalization,
  * symbol/timestamp normalization, confidence banding, domain validation,
- * correction semantics, idempotency key derivation. Pure functions — no
+ * correction semantics, idempotency key derivation. Pure functions - no
  * Nest, no DB.
  */
 import { describe, expect, it } from "vitest";
@@ -58,7 +58,7 @@ describe("normalizeDecimal (§14 exact financial semantics)", () => {
     expect(normalizeDecimal("1,234,567")).toMatchObject({ normalized: "1234567", status: "VALID" });
   });
 
-  it("keeps a single 3-digit separator AMBIGUOUS — never silently resolved (§14)", () => {
+  it("keeps a single 3-digit separator AMBIGUOUS - never silently resolved (§14)", () => {
     const result = normalizeDecimal("1.234");
     expect(result.status).toBe("AMBIGUOUS");
     expect(result.normalized).toBeNull();
@@ -102,7 +102,7 @@ describe("normalizeSymbol (§15 no broker merge)", () => {
     expect(normalizeSymbol("xau/usd")).toBe("XAUUSD");
   });
 
-  it("does NOT merge known broker aliases — raw value stays preserved upstream", () => {
+  it("does NOT merge known broker aliases - raw value stays preserved upstream", () => {
     // GOLD stays GOLD; mapping to XAUUSD would be inventing a broker mapping.
     expect(normalizeSymbol("GOLD")).toBe("GOLD");
     expect(normalizeSymbol("XAUUSDm")).toBe("XAUUSDM");

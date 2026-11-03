@@ -34,13 +34,14 @@ export * from "./schemas/api";
 export * from "./schemas/market";
 export * from "./schemas/broker";
 export * from "./schemas/settings";
-export * from "./schemas/integration";
 export * from "./schemas/security";
 export * from "./schemas/auth";
 export * from "./schemas/monitoring";
 export * from "./schemas/playbook";
 export * from "./schemas/tradeReview";
 export * from "./schemas/academy";
+export * from "./schemas/tasky";
+export * from "./schemas/personal-events";
 export * from "./schemas/nofy";
 export * from "./schemas/sessionLive";
 export * from "./schemas/trading-account";
@@ -51,13 +52,13 @@ export * from "./schemas/goal";
 export * from "./schemas/metricAlerts";
 export * from "./schemas/performanceSnapshots";
 // Phase 4/5/7+ domain contracts consumed by the NestJS API through
-// src/shared/contracts (relative source re-export — see that file).
+// src/shared/contracts (relative source re-export - see that file).
 export * from "./schemas/trading-core";
 export * from "./schemas/trade-planning";
 export * from "./schemas/replay";
 export * from "./replay/engine";
 export * from "./schemas/plans";
-// Phase 05 — deterministic performance-insights engine (API suite + MSW
+// Phase 05 - deterministic performance-insights engine (API suite + MSW
 // mirror share the ONE implementation so mock parity can never drift).
 export * from "./analytics/insights";
 
@@ -69,10 +70,9 @@ export * from "./utils/risk-reward";
 export * from "./utils/format";
 export * from "./utils/dates";
 export * from "./utils/rules";
-export * from "./utils/integrations";
 export * from "./utils/csv";
 
-// Academy content — the single source of truth for the pedagogical corpus
+// Academy content - the single source of truth for the pedagogical corpus
 // (categories, courses, lessons, quizzes, glossary, pattern exemplars,
 // scenarios). Served by the NestJS module; the browser mock re-exports it.
 export * from "./content/academy/catalog";

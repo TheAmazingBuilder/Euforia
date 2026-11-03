@@ -1,5 +1,5 @@
 /**
- * OCR V2 — multi-engine arbitration (quality suggestion #2).
+ * OCR V2 - multi-engine arbitration (quality suggestion #2).
  *
  * The engine port is a clean seam (deterministic + FastAPI adapters prove
  * it); arbitration plugs a SECOND engine alongside the primary and merges
@@ -9,7 +9,7 @@
  *   - when both engines agree on the normalized value, confidence is the
  *     max of the two (agreement is itself a signal) and a note records it;
  *   - when they disagree BEYOND the agreement margin (both confident but
- *     different), the primary wins and a note records the disagreement —
+ *     different), the primary wins and a note records the disagreement -
  *     the primary pipeline remains authoritative (§52: no silent swaps);
  *   - fields only the secondary found join with a provenance note when
  *     their confidence passes the secondary floor.
@@ -17,7 +17,7 @@
  * The merge is a PURE function (unit-tested with fixture responses); the
  * ArbitratingOcrEngine wrapper only wires the two calls together. With
  * `OCR_SECONDARY_ENGINE=none` (the default) the factory registers the
- * primary engine alone — behavior is byte-identical to V1.
+ * primary engine alone - behavior is byte-identical to V1.
  */
 import { Injectable } from "@nestjs/common";
 import {
@@ -78,14 +78,14 @@ export function arbitrateFields(
     const margin = Math.abs(field.confidence - counterpart.confidence);
     if (field.confidence >= counterpart.confidence || margin <= ARBITRATION_AGREEMENT_MARGIN) {
       // Primary is at least as credible, or the race is too close to
-      // overturn it — the primary stays, the disagreement is on record.
+      // overturn it - the primary stays, the disagreement is on record.
       stats.disagreements += 1;
       merged.push({
         ...field,
         notes: withNote(field.notes, "DISAGREEMENT_PRIMARY_KEPT"),
       });
     } else {
-      // Secondary is CLEARLY more confident on this field — its read wins
+      // Secondary is CLEARLY more confident on this field - its read wins
       // (still machine data: full domain re-validation happens downstream).
       stats.disagreements += 1;
       merged.push({ ...counterpart, notes: withNote(counterpart.notes, "SECONDARY_ONLY") });
@@ -108,7 +108,7 @@ function withNote(notes: string[], note: ArbitrationNote): string[] {
   return [...notes, note].slice(0, 8);
 }
 
-/** Pure per-trade merge (multi-trade V2) — keyed by trade index. */
+/** Pure per-trade merge (multi-trade V2) - keyed by trade index. */
 export function arbitrateTrades(
   primary: EngineTrade[],
   secondary: EngineTrade[],
@@ -138,9 +138,9 @@ function emptyStats(): ArbitrationStats {
 }
 
 /**
- * Wrapping engine — the primary pipeline stays authoritative; the secondary
+ * Wrapping engine - the primary pipeline stays authoritative; the secondary
  * call is BEST-EFFORT (its failure never fails the recognition, only a log
- * + a skipped arbitration — the primary answer carries the response alone).
+ * + a skipped arbitration - the primary answer carries the response alone).
  */
 @Injectable()
 export class ArbitratingOcrEngine implements OcrEngine {
@@ -157,7 +157,7 @@ export class ArbitratingOcrEngine implements OcrEngine {
     };
     // `=== true` keeps the optional-flag semantics honest: an engine that
     // omits the member simply does not support documents (undefined is falsy
-    // either way — this is a type-level narrowing, not a behavior change).
+    // either way - this is a type-level narrowing, not a behavior change).
     this.supportsDocuments = primary.supportsDocuments === true && secondary.supportsDocuments === true;
   }
 
@@ -216,7 +216,7 @@ function mergeTradeLists(
   // Keep the flat fields consistent with trade #1 (the V1 wire mirror).
   const first = trades[0];
   if (first !== undefined) {
-    // The flat list was already arbitrated globally; leave it untouched —
+    // The flat list was already arbitrated globally; leave it untouched -
     // the wire mapper reads trades[] first when present.
     void primaryFlat;
     void mergedFlat;

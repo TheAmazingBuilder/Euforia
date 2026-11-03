@@ -2,7 +2,7 @@ import type { RuleType } from "../enums";
 import type { JsonValue, JsonObject } from "../schemas/primitives";
 
 /**
- * Rule param metadata — the pure, React-free description of what each
+ * Rule param metadata - the pure, React-free description of what each
  * RuleType needs in its `params` JSON (data-model.md "Domaine 7").
  * The discipline UI renders its param editor FROM this table and the mock
  * store validates against it, so client and mock can never drift.
@@ -48,7 +48,7 @@ const MINUTES: RuleParamField = {
   suffix: "min",
 };
 
-/** Ordered param fields for a rule type — drives the [Add rule] editor. */
+/** Ordered param fields for a rule type - drives the [Add rule] editor. */
 export function ruleParamFields(type: RuleType): RuleParamField[] {
   switch (type) {
     case "MAX_TRADES_PER_DAY":
@@ -136,7 +136,7 @@ export const RULE_TYPE_LABELS: Record<RuleType, string> = {
   NO_NEWS_WINDOW: "No-news window",
 };
 
-/** "Max trades per day · 3" — compact one-line rule description. */
+/** "Max trades per day · 3" - compact one-line rule description. */
 export function describeRule(type: RuleType, params: JsonValue | null): string {
   const object = params !== null && typeof params === "object" && !Array.isArray(params)
     ? (params as JsonObject)
@@ -159,7 +159,7 @@ const ordinalSuffix = (n: number): string => {
  * Freeze-the-moment context → human sentence for the violation log.
  * Example: MAX_TRADES_PER_DAY with `{ tradesToday: 4, limit: 3 }` →
  * "4th trade of the day, limit 3". Unknown shapes fall back to a generic
- * `key: value` listing — the context JSON is the source of truth.
+ * `key: value` listing - the context JSON is the source of truth.
  */
 export function describeViolationContext(type: RuleType, context: JsonValue | null): string {
   const object = context !== null && typeof context === "object" && !Array.isArray(context)

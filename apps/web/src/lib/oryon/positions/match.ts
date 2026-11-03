@@ -3,13 +3,13 @@ import type { BrokerPosition } from "@cosmoz/shared";
 /**
  * Position ↔ chart instrument matching (Phase 4 spec §8.5).
  *
- * Rule: EXACT canonical equality only — trim + uppercase, nothing else.
+ * Rule: EXACT canonical equality only - trim + uppercase, nothing else.
  * Substring matching is forbidden ("BTCUSD" must never claim "BTCUSDT":
  * they are different instruments on different venues), and no fuzzy
  * normalization (strip separators, collapse suffixes) is attempted without
  * a verified provider mapping. A position whose symbol does not match the
  * active chart instrument EXACTLY is listed in the panel but is never
- * drawn on the chart — an absent overlay is honest, a wrong overlay is not.
+ * drawn on the chart - an absent overlay is honest, a wrong overlay is not.
  */
 
 /** Canonical comparison form of a symbol (trim + uppercase, no other edit). */
@@ -38,7 +38,7 @@ export function positionsForChart(
 
 /**
  * Compact on-chart label for a position (price-line titles must stay short
- * — they are painted over the candles). Uses the trailing numeric segment
+ * - they are painted over the candles). Uses the trailing numeric segment
  * of the position id when present ("…-2" → "#2"), else the id tail.
  * Pure: no DOM, no chart API.
  */

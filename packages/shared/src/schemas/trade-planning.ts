@@ -10,7 +10,7 @@ import {
 } from "./primitives";
 
 /**
- * Trade Planning contract (Phase 5) — the planned trade, BEFORE execution.
+ * Trade Planning contract (Phase 5) - the planned trade, BEFORE execution.
  *
  * Architectural distinctions (Phase 5 mandate §1/§6):
  *
@@ -19,9 +19,9 @@ import {
  * A TradePlan is the trader's INTENTION (entry/stop/target/risk/checklist
  * decided before execution). A Trade (Phase 4) is the journalized ACTUAL
  * execution. A plan may be drafted, committed, validated, cancelled,
- * abandoned — or executed differently from what was planned. Cosmoz never
+ * abandoned - or executed differently from what was planned. Cosmoz never
  * assumes a plan becomes a trade, never overwrites the plan with actual
- * execution data, and never places orders (§30 — execution stays external).
+ * execution data, and never places orders (§30 - execution stays external).
  *
  * Boundaries (§65–§69): no post-trade review, no behavioral analytics, no
  * backtesting, no Playbook module, no session-live duplication, no broker
@@ -34,14 +34,14 @@ import {
 // ── Lifecycle enums ──────────────────────────────────────────────────────────
 
 /**
- * TradePlan lifecycle (§7 — explicit, guarded state machine):
+ * TradePlan lifecycle (§7 - explicit, guarded state machine):
  *
  *   DRAFT → PLANNED → VALIDATED → (future: EXECUTED via a linked Trade)
  *     ↓        ↓             ↓
  *   ABANDONED CANCELLED   CANCELLED
  *
  * EXECUTED is RESERVED vocabulary (mirrors the Phase 4 TradeStatus.PLANNED
- * precedent): no API path produces it in this phase — a plan becomes
+ * precedent): no API path produces it in this phase - a plan becomes
  * EXECUTED only when a future phase links a canonical Trade to it.
  * EXPIRED / PARTIALLY_EXECUTED are deferred until the product has a
  * scheduler / execution linkage (§63).
@@ -60,7 +60,7 @@ export type TradePlanStatus = z.infer<typeof tradePlanStatusSchema>;
 export const tradePlanEntryTypeSchema = z.enum(["MARKET", "LIMIT", "STOP"]);
 export type TradePlanEntryType = z.infer<typeof tradePlanEntryTypeSchema>;
 
-// ── Pre-trade validation results (§21 — machine-readable, never "invalid") ──
+// ── Pre-trade validation results (§21 - machine-readable, never "invalid") ──
 
 /** Severity of one validation finding. ERROR blocks the VALIDATED transition. */
 export const tradePlanValidationSeveritySchema = z.enum(["ERROR", "WARNING"]);
@@ -68,11 +68,11 @@ export type TradePlanValidationSeverity = z.infer<typeof tradePlanValidationSeve
 
 /**
  * Stable codes for the pre-trade validation battery. Values surface in the
- * persisted validation snapshot and the validate-endpoint response — never
+ * persisted validation snapshot and the validate-endpoint response - never
  * raw exception text, never database internals.
  */
 export const TRADE_PLAN_VALIDATION_ISSUE_CODES = {
-  /** No stop loss configured — planned risk cannot be computed (§11). */
+  /** No stop loss configured - planned risk cannot be computed (§11). */
   STOP_LOSS_MISSING: "STOP_LOSS_MISSING",
   /** Stop is on the wrong side of entry for the direction (§11). */
   STOP_LOSS_INVALID_DIRECTION: "STOP_LOSS_INVALID_DIRECTION",
@@ -80,7 +80,7 @@ export const TRADE_PLAN_VALIDATION_ISSUE_CODES = {
   TAKE_PROFIT_INVALID_DIRECTION: "TAKE_PROFIT_INVALID_DIRECTION",
   /** Balance is required (risk-percent mode / % derivation) but unavailable. */
   BALANCE_UNAVAILABLE: "BALANCE_UNAVAILABLE",
-  /** No specification row for the symbol — monetary risk unknown (§15). */
+  /** No specification row for the symbol - monetary risk unknown (§15). */
   INSTRUMENT_SPECIFICATION_MISSING: "INSTRUMENT_SPECIFICATION_MISSING",
   /** Quote currency ≠ account currency and no FX rate is available (§16). */
   CURRENCY_CONVERSION_UNAVAILABLE: "CURRENCY_CONVERSION_UNAVAILABLE",
@@ -92,7 +92,7 @@ export const TRADE_PLAN_VALIDATION_ISSUE_CODES = {
   RISK_LIMIT_EXCEEDED: "RISK_LIMIT_EXCEEDED",
   /** A required checklist item was not checked at validation time (§23). */
   CHECKLIST_INCOMPLETE: "CHECKLIST_INCOMPLETE",
-  /** No take profit — planned R:R cannot be computed (informational). */
+  /** No take profit - planned R:R cannot be computed (informational). */
   RISK_REWARD_UNAVAILABLE: "RISK_REWARD_UNAVAILABLE",
 } as const;
 export type TradePlanValidationIssueCode =
@@ -108,7 +108,7 @@ export const tradePlanValidationIssueSchema = z.object({
 });
 export type TradePlanValidationIssue = z.infer<typeof tradePlanValidationIssueSchema>;
 
-// ── Checklist snapshot (§24/§25 — planning-time state, frozen) ───────────────
+// ── Checklist snapshot (§24/§25 - planning-time state, frozen) ───────────────
 
 /**
  * One checklist item evaluation captured at planning/validation time. The
@@ -136,7 +136,7 @@ export type TradePlanChecklistSnapshot = z.infer<typeof tradePlanChecklistSnapsh
 
 /**
  * Authoritative planned-risk block (§13). Every value is computed by the
- * backend risk engine at write time — clients may PREVIEW (§57) but the
+ * backend risk engine at write time - clients may PREVIEW (§57) but the
  * server's numbers win. `null` = not computable from the given inputs
  * (the validation battery explains why via issues).
  */
@@ -162,11 +162,11 @@ export const tradePlanRiskViewSchema = z.object({
 });
 export type TradePlanRiskView = z.infer<typeof tradePlanRiskViewSchema>;
 
-/** Sizing input — the shared capture vocabulary (quantity | risk_percent | risk_amount). */
+/** Sizing input - the shared capture vocabulary (quantity | risk_percent | risk_amount). */
 export const tradePlanSizeInputSchema = tradeSizeModeSchema;
 export type TradePlanSizeInput = z.infer<typeof tradePlanSizeInputSchema>;
 
-/** List row — identity, configuration and the derived risk block. */
+/** List row - identity, configuration and the derived risk block. */
 export const tradePlanSummarySchema = z.object({
   id: uuidSchema,
   userId: uuidSchema,
@@ -180,14 +180,14 @@ export const tradePlanSummarySchema = z.object({
   currency: z.string().min(3).max(3),
   /** Planned execution timeframe label, e.g. "M15" (optional, free-form). */
   timeframe: z.string().max(16).nullable(),
-  /** Cross-context Playbook strategy REFERENCE — not an owned entity (§26). */
+  /** Cross-context Playbook strategy REFERENCE - not an owned entity (§26). */
   strategyId: uuidSchema.nullable(),
   entryPrice: decimalStringSchema,
   stopLoss: decimalStringSchema.nullable(),
   takeProfit: decimalStringSchema.nullable(),
   /** Sizing INPUT as provided by the trader (distinct from derived risk, §39). */
   size: tradePlanSizeInputSchema,
-  /** Authoritative derived risk (§39 — never recomputed by clients). */
+  /** Authoritative derived risk (§39 - never recomputed by clients). */
   risk: tradePlanRiskViewSchema,
   /** null = no checklist attached; otherwise all-required-checked state. */
   checklistComplete: z.boolean().nullable(),
@@ -200,7 +200,7 @@ export const tradePlanSummarySchema = z.object({
 });
 export type TradePlanSummary = z.infer<typeof tradePlanSummarySchema>;
 
-/** Full plan — summary + rationale + frozen checklist + validation snapshot. */
+/** Full plan - summary + rationale + frozen checklist + validation snapshot. */
 export const tradePlanDetailSchema = tradePlanSummarySchema.extend({
   /** Trader's rationale / thesis captured at planning time. */
   rationale: z.string().max(4000).nullable(),
@@ -216,7 +216,7 @@ export const tradePlanDetailSchema = tradePlanSummarySchema.extend({
   validatedAt: isoDateTimeSchema.nullable(),
   cancelledAt: isoDateTimeSchema.nullable(),
   abandonedAt: isoDateTimeSchema.nullable(),
-  /** Echoed idempotency key (§40) — null when the create carried none. */
+  /** Echoed idempotency key (§40) - null when the create carried none. */
   clientRequestId: uuidSchema.nullable(),
 });
 export type TradePlanDetail = z.infer<typeof tradePlanDetailSchema>;
@@ -225,7 +225,7 @@ export type TradePlanDetail = z.infer<typeof tradePlanDetailSchema>;
 
 /**
  * Create a Trade Plan. The plan starts as DRAFT (or PLANNED when commitNow)
- * — creation never validates by itself (§37: no automatic validation) and
+ * - creation never validates by itself (§37: no automatic validation) and
  * never executes anything (§30). Directional integrity (SL/TP sides) is
  * enforced server-side (§11/§12): meaningless risk configurations are
  * rejected, never stored with silently negative/zero risk.
@@ -260,7 +260,7 @@ export type CreateTradePlanInput = z.infer<typeof createTradePlanInputSchema>;
 /**
  * Patch a plan. Only DRAFT and PLANNED plans are mutable (§38): after the
  * plan is validated (or later executed) the original planning snapshot is
- * preserved — cancel and re-plan instead. Every edit recomputes the derived
+ * preserved - cancel and re-plan instead. Every edit recomputes the derived
  * risk server-side (§39).
  */
 export const updateTradePlanInputSchema = z
@@ -292,7 +292,7 @@ export const commitTradePlanInputSchema = z.object({
 export type CommitTradePlanInput = z.infer<typeof commitTradePlanInputSchema>;
 
 /**
- * List query — composable filters + the established pagination envelope
+ * List query - composable filters + the established pagination envelope
  * (§55: one pagination convention, evolved, not duplicated).
  */
 export const listTradePlansQuerySchema = z.object({
@@ -339,11 +339,11 @@ export type ValidateTradePlanResponse = z.infer<typeof validateTradePlanResponse
 /**
  * Stable machine codes for the Trade Planning domain. Values surface in the
  * error envelope `code` field; database errors never do. Cross-user access is
- * an honest 404 (TRADE_PLAN_NOT_FOUND) per the established IDOR convention —
+ * an honest 404 (TRADE_PLAN_NOT_FOUND) per the established IDOR convention -
  * ACCESS_DENIED is never distinguished from NOT_FOUND.
  */
 export const TRADE_PLANNING_ERROR_CODES = {
-  /** Plan does not exist — or exists but is not yours (IDOR → honest 404). */
+  /** Plan does not exist - or exists but is not yours (IDOR → honest 404). */
   TRADE_PLAN_NOT_FOUND: "TRADE_PLAN_NOT_FOUND",
   /** The operation is invalid for the plan's current lifecycle state (→ 422). */
   TRADE_PLAN_INVALID_STATE: "TRADE_PLAN_INVALID_STATE",
@@ -355,7 +355,7 @@ export const TRADE_PLANNING_ERROR_CODES = {
   INSTRUMENT_SPECIFICATION_UNAVAILABLE: "INSTRUMENT_SPECIFICATION_UNAVAILABLE",
   /** Money math needs a cross-currency rate that is not available (§16 → 422). */
   CURRENCY_CONVERSION_UNAVAILABLE: "CURRENCY_CONVERSION_UNAVAILABLE",
-  /** Account does not exist — or is not yours (IDOR → honest 404). */
+  /** Account does not exist - or is not yours (IDOR → honest 404). */
   ACCOUNT_NOT_FOUND: "ACCOUNT_NOT_FOUND",
 } as const;
 export type TradePlanningErrorCode =

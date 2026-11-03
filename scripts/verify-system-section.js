@@ -14,26 +14,27 @@ const BASE = "http://localhost:3000";
   });
 
   const checks = [];
-  const ok = (name, cond) => checks.push(`${cond ? "PASS" : "FAIL"} — ${name}`);
+  const ok = (name, cond) => checks.push(`${cond ? "PASS" : "FAIL"} - ${name}`);
 
   // 1. Sidebar sections render on dashboard
   await page.goto(BASE + "/", { waitUntil: "networkidle" });
   await page.waitForTimeout(1500);
-  for (const title of ["Trading", "Trade Review", "Insights", "System"]) {
+  for (const title of ["Trading", "Trade Review", "Insights", "Workspace"]) {
     ok(`section « ${title} » visible`, await page.locator(`text=${title}`).first().isVisible().catch(() => false));
   }
   await page.screenshot({ path: "scripts/shots/system-sidebar-dashboard.png" });
 
-  // 2. SYSTEM section contains the 4 entries, in order
-  const systemOrder = ["Monitoring", "Settings", "Integrations", "Security"];
+  // 2. Workspace keeps user-facing pages; SYSTEM is hidden from traders.
+  const workspaceOrder = ["Settings", "Integrations", "Security"];
   const navText = await page.locator("nav[aria-label='Main navigation']").innerText();
   let last = -1, ordered = true;
-  for (const label of systemOrder) {
+  for (const label of workspaceOrder) {
     const idx = navText.indexOf(label);
     if (idx < 0 || idx < last) ordered = false;
     last = idx;
   }
-  ok("SYSTEM = Monitoring → Settings → Integrations → Security (ordre)", ordered);
+  ok("Workspace = Settings → Integrations → Security (ordre)", ordered);
+  ok("SYSTEM hidden for standard users", (await page.locator("nav[aria-label='Main navigation'] a[href='/monitoring']").count()) === 0);
   ok(
     "Coach tab removed (aucun lien /coach)",
     (await page.locator('a[href="/coach"]').count()) === 0,
@@ -42,29 +43,23 @@ const BASE = "http://localhost:3000";
   // 3. Monitoring page
   await page.goto(BASE + "/monitoring", { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
-  ok("Monitoring — h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Monitoring");
-  ok(
-    "Monitoring — status board (nouveau contrat)",
-    (await page.locator('[data-testid="monitoring-status-board"]').count()) > 0 &&
-      (await page.locator('[data-testid="status-row-api"]').count()) > 0 &&
-      (await page.locator('[data-testid="status-row-market-data"]').count()) > 0,
-  );
+  ok("Monitoring - access denied for standard user", (await page.locator("h1").innerText().catch(() => "")).trim() === "Restricted area");
   await page.screenshot({ path: "scripts/shots/system-monitoring.png" });
 
   // 4. Integrations page
   await page.goto(BASE + "/integrations", { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
-  ok("Integrations — h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Integrations");
-  ok("Integrations — Deriv connected", await page.locator("text=Deriv").first().isVisible());
-  ok("Integrations — 4 providers", (await page.locator("text=Binance").count()) > 0 && (await page.locator("text=cTrader Open API").count()) > 0);
+  ok("Integrations - h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Integrations");
+  ok("Integrations - Deriv connected", await page.locator("text=Deriv").first().isVisible());
+  ok("Integrations - 4 providers", (await page.locator("text=Binance").count()) > 0 && (await page.locator("text=cTrader Open API").count()) > 0);
   await page.screenshot({ path: "scripts/shots/system-integrations.png" });
 
-  // 5. Security page — Security Center (9 tabs, protection checklist)
+  // 5. Security page - Security Center (9 tabs, protection checklist)
   await page.goto(BASE + "/security", { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
-  ok("Security — h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Security");
+  ok("Security - h1", (await page.locator("h1").innerText().catch(() => "")).trim() === "Security");
   ok(
-    "Security — centre de protection (onglets + checklist)",
+    "Security - centre de protection (onglets + checklist)",
     (await page.locator('[data-testid="security-tablist"] [role="tab"]').count()) === 9 &&
       (await page.locator('[data-testid^="protection-"]').count()) === 7,
   );

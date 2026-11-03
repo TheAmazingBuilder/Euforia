@@ -50,6 +50,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { isoToLocalInput, localInputToISO } from "@/lib/utils/datetime";
 import { useIsDesktop } from "@/lib/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { useI18n } from "@/i18n/i18n-provider";
 
 const EXIT_REASONS = ["TP", "SL", "MANUAL", "TRAILING", "PARTIAL", "MARGIN"] as const;
@@ -81,7 +82,7 @@ function Readout({
           (!tone || tone === "muted") && "text-foreground",
         )}
       >
-        {value ?? "—"}
+        {value ?? "-"}
       </p>
     </div>
   );
@@ -96,12 +97,12 @@ interface TradeDetailDrawerProps {
 }
 
 /**
- * Trade detail surface — the record's full page: plan vs reality, editable
+ * Trade detail surface - the record's full page: plan vs reality, editable
  * notes, tag chips, screenshot gallery with upload, and the module actions
  * (edit / close / delete).
  *
  * Width contract: on desktop the details open as a FULL-WIDTH centered
- * dialog — the numbers get room, the plan/reality grid becomes a single
+ * dialog - the numbers get room, the plan/reality grid becomes a single
  * row and notes/screenshots sit side by side. Below the `lg` breakpoint the
  * same content opens as a full-width right sheet (mobile keeps one column).
  */
@@ -238,33 +239,33 @@ export function TradeDetailDrawer({
     );
   };
 
-  // ── Shared content — identical sections in both surfaces ─────────────────
+  // ── Shared content - identical sections in both surfaces ─────────────────
 
   const verdictSection = (
     <section className="grid grid-cols-2 gap-2 sm:grid-cols-4 xl:grid-cols-8">
       <Readout
         label={T.netPnl}
-        value={trade.pnlNet === null ? "—" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
+        value={trade.pnlNet === null ? "-" : formatSignedMoney(trade.pnlNet, currency, { digits: 2 })}
         tone={trade.pnlNet === null ? "muted" : Number(trade.pnlNet) >= 0 ? "profit" : "loss"}
       />
       <Readout
         label={T.rMultiple}
-        value={trade.rMultiple === null ? "—" : formatR(trade.rMultiple)}
+        value={trade.rMultiple === null ? "-" : formatR(trade.rMultiple)}
         tone={trade.rMultiple === null ? "muted" : Number(trade.rMultiple) >= 0 ? "profit" : "loss"}
       />
       <Readout label={T.entry} value={formatNumber(trade.entryPrice, priceDigits)} />
-      <Readout label={T.exit} value={trade.exitPrice === null ? "—" : formatNumber(trade.exitPrice, priceDigits)} />
+      <Readout label={T.exit} value={trade.exitPrice === null ? "-" : formatNumber(trade.exitPrice, priceDigits)} />
       <Readout
         label={T.initialStop}
-        value={trade.initialStop === null ? "—" : formatNumber(trade.initialStop, priceDigits)}
+        value={trade.initialStop === null ? "-" : formatNumber(trade.initialStop, priceDigits)}
       />
       <Readout
         label={T.takeProfit}
-        value={trade.initialTP === null ? "—" : formatNumber(trade.initialTP, priceDigits)}
+        value={trade.initialTP === null ? "-" : formatNumber(trade.initialTP, priceDigits)}
       />
       <Readout
         label={T.risked}
-        value={trade.riskAmount === null ? "—" : formatNumber(trade.riskAmount, 2)}
+        value={trade.riskAmount === null ? "-" : formatNumber(trade.riskAmount, 2)}
       />
       <Readout label={T.fees} value={formatNumber(trade.fees, 2)} />
     </section>
@@ -284,7 +285,7 @@ export function TradeDetailDrawer({
     </section>
   );
 
-  // Psychology — honest read-out of the trade's own columns (emotions,
+  // Psychology - honest read-out of the trade's own columns (emotions,
   // confidence, plan adherence). Hidden entirely when nothing was logged.
   const hasPsychology =
     trade.emotionBefore !== null ||
@@ -501,7 +502,7 @@ export function TradeDetailDrawer({
   const actionFooter = (
     <div className="flex items-center gap-2 border-t border-border bg-surface p-3">
       <Button
-        variant="outline"
+        variant="edit"
         size="sm"
         className="gap-1.5"
         onClick={() => onEdit(trade)}
@@ -547,7 +548,7 @@ export function TradeDetailDrawer({
           <DialogHeader>
             <DialogTitle className="font-heading">{T.deleteTitle}</DialogTitle>
             <DialogDescription>
-              {instrument?.symbol} {trade.direction} ·{" "}
+              {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : ""} {trade.direction} ·{" "}
               {isoToLocalInput(trade.entryAt).slice(0, 10)} {T.deleteBody}
             </DialogDescription>
           </DialogHeader>
@@ -653,7 +654,7 @@ export function TradeDetailDrawer({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <SheetTitle className="flex items-center gap-2 font-heading text-lg font-semibold">
-                    {instrument?.symbol ?? T.fallbackTitle}
+                    {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : T.fallbackTitle}
                     <span
                       className={cn(
                         "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide",
@@ -694,7 +695,7 @@ export function TradeDetailDrawer({
     );
   }
 
-  // Desktop (≥ lg): FULL-WIDTH centered dialog — plan/reality on one row,
+  // Desktop (≥ lg): FULL-WIDTH centered dialog - plan/reality on one row,
   // notes and evidence side by side. Built-in close button, no custom X.
   return (
     <>
@@ -705,7 +706,7 @@ export function TradeDetailDrawer({
         >
           <DialogHeader className="gap-1 border-b border-border p-4 pr-14 pb-3">
             <DialogTitle className="flex items-center gap-2 font-heading text-lg font-semibold">
-              {instrument?.symbol ?? T.fallbackTitle}
+              {instrument ? formatInstrumentSymbol(instrument.symbol, instrument.assetClass) : T.fallbackTitle}
               <span
                 className={cn(
                   "rounded-full border px-2 py-0.5 font-mono text-[10px] font-semibold uppercase tracking-wide",

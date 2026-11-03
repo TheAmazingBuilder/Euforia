@@ -1,5 +1,5 @@
 /**
- * Verify Feature 9 — Notification center.
+ * Verify Feature 9 - Notification center.
  * Probes: bell opens panel, alerts listed, unread badge, click marks read,
  * mark-all-read empties badge, panel closes on outside click.
  */
@@ -22,7 +22,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // 1. Bell visible with badge
   const bell = page.locator('[data-testid="notification-bell"]');
@@ -45,7 +45,7 @@ const BASE = "http://localhost:3000";
   check("Unread badge shows count", badgeBefore !== null, `badge=${badgeBefore}`);
 
   // 5. Click first item → marks read (badge decrements, or stays at the
-  //    « 9+ » cap when enough unread remain — the network call is the truth).
+  //    « 9+ » cap when enough unread remain - the network call is the truth).
   const firstItem = items.first();
   const readResponse = page.waitForResponse(
     (resp) => resp.url().includes("/read") && resp.request().method() === "PATCH",

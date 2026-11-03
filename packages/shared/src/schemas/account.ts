@@ -20,7 +20,7 @@ export const propFirmConfigSchema = z.object({
 
 export type PropFirmConfig = z.infer<typeof propFirmConfigSchema>;
 
-/** Account — data-model.md "Domaine 2". */
+/** Account - data-model.md "Domaine 2". */
 export const accountSchema = z.object({
   id: uuidSchema,
   userId: uuidSchema,

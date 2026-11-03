@@ -1,13 +1,13 @@
 /**
- * Deterministic RFC-4122 v5-style UUID (SHA-1, name + namespace) —
+ * Deterministic RFC-4122 v5-style UUID (SHA-1, name + namespace) -
  * stdlib-only implementation (node:crypto).
  *
  * WHY HERE: derived timeline rows (ENTRY/EXIT) need stable, contract-valid
- * ids (shared sessionEventSchema.id = uuid) WITHOUT persisting them — the
+ * ids (shared sessionEventSchema.id = uuid) WITHOUT persisting them - the
  * same trade always yields the same event id (idempotency §63, replay-safe).
  * analytics-math owns its own copy for Monte-Carlo grouping; extracting one
  * shared helper is NOT worth a cross-context dependency today (Phase 10
- * audit note — no analytics import from a closed module).
+ * audit note - no analytics import from a closed module).
  */
 import { createHash } from "node:crypto";
 

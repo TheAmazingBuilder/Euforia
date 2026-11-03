@@ -1,5 +1,5 @@
 /**
- * Priority 2 verification — coach weekly report, pre-trade checklist,
+ * Priority 2 verification - coach weekly report, pre-trade checklist,
  * stop efficiency (MAE/MFE), discipline streaks.
  * Run: node scripts/verify-priority2.js   (dev server must be on :3000)
  */
@@ -16,8 +16,8 @@ function check(label, condition, detail = "") {
     ok.push(label);
     console.log(`  ✓ ${label}`);
   } else {
-    errors.push(`${label}${detail ? ` — ${detail}` : ""}`);
-    console.log(`  ✗ ${label}${detail ? ` — ${detail}` : ""}`);
+    errors.push(`${label}${detail ? ` - ${detail}` : ""}`);
+    console.log(`  ✗ ${label}${detail ? ` - ${detail}` : ""}`);
   }
 }
 
@@ -37,8 +37,8 @@ function check(label, condition, detail = "") {
     if (res.status() >= 400) consoleIssues.push(`HTTP ${res.status()} ${res.url()}`);
   });
 
-  // ── 1. Dashboard — Coach weekly report ────────────────────────────────────
-  console.log("\n[1] Dashboard — Coach weekly report");
+  // ── 1. Dashboard - Coach weekly report ────────────────────────────────────
+  console.log("\n[1] Dashboard - Coach weekly report");
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
   const report = page.getByTestId("coach-weekly-report");
@@ -56,8 +56,8 @@ function check(label, condition, detail = "") {
   check("streaks list 4 pillars", /Clean days/.test(streakText) && /Journaling/.test(streakText) && /Grading/.test(streakText) && /Checklist/.test(streakText));
   await page.screenshot({ path: `${OUT}/p2-dashboard-report.png`, fullPage: true });
 
-  // ── 2. Playbook — checklist editor ───────────────────────────────────────
-  console.log("\n[2] Playbook — checklist editor");
+  // ── 2. Playbook - checklist editor ───────────────────────────────────────
+  console.log("\n[2] Playbook - checklist editor");
   await page.goto(`${BASE}/playbook`, { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
   // Open first strategy detail
@@ -77,7 +77,7 @@ function check(label, condition, detail = "") {
     check("edit dialog opens", editorVisible);
     const itemCount = await formDialog.locator('input[aria-label^="Checklist item"]').count();
     check("checklist items editable", itemCount >= 3, `items=${itemCount}`);
-    // Toggle one item to optional and back — anchor by POSITION inside the
+    // Toggle one item to optional and back - anchor by POSITION inside the
     // fieldset (the title changes with the state, so title-based locators
     // would silently re-resolve to the next button).
     const toggle = formDialog.locator("fieldset button[aria-pressed]").first();
@@ -108,8 +108,8 @@ function check(label, condition, detail = "") {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(300);
 
-  // ── 3. Capture — checklist guard-rail ────────────────────────────────────
-  console.log("\n[3] Capture — pre-trade checklist gating");
+  // ── 3. Capture - checklist guard-rail ────────────────────────────────────
+  console.log("\n[3] Capture - pre-trade checklist gating");
   await page.goto(`${BASE}/trades`, { waitUntil: "networkidle" });
   await page.waitForTimeout(800);
   await page.keyboard.press("n"); // open trade modal
@@ -118,7 +118,7 @@ function check(label, condition, detail = "") {
   const modalOpen = await form.isVisible().catch(() => false);
   check("trade modal opens (hotkey N)", modalOpen);
 
-  // Fill instrument first (combobox) — wait for the listbox, pick option 1
+  // Fill instrument first (combobox) - wait for the listbox, pick option 1
   const instrumentInput = page.locator('[role=combobox]').first();
   await instrumentInput.click();
   const firstOption = page.locator('[role="option"]').first();
@@ -133,12 +133,12 @@ function check(label, condition, detail = "") {
   );
 
   // Entry price + stop so the form is otherwise valid. REALISTIC stop:
-  // EURUSD (first option) has contractSize 100000 — a 1.00-wide stop yields
+  // EURUSD (first option) has contractSize 100000 - a 1.00-wide stop yields
   // < 0.01 lots and the sizer correctly refuses to suggest (min lot would
   // blow the risk budget). 2 pips keeps the auto-size computable.
   await page.locator("#trade-entry-price").fill("100");
   await page.locator("#trade-stop").fill("99.998");
-  // Exit time must be AFTER the default entry time (now) — push it +2h.
+  // Exit time must be AFTER the default entry time (now) - push it +2h.
   const exitLocal = new Date(Date.now() + 2 * 3_600_000 - new Date().getTimezoneOffset() * 60_000)
     .toISOString()
     .slice(0, 16);
@@ -176,7 +176,7 @@ function check(label, condition, detail = "") {
   check("all items toggleable", allPressed);
   const disabledAfter = await submit.isDisabled();
   // The sizer needs the balance query (useStatsOverview) to land before it
-  // can auto-size — wait for the "risk % + stop" hint to clear, then re-check.
+  // can auto-size - wait for the "risk % + stop" hint to clear, then re-check.
   await page
     .waitForFunction(() => !document.body.textContent?.includes("risk % + stop for auto-size"), { timeout: 8000 })
     .catch(() => {});
@@ -194,8 +194,8 @@ function check(label, condition, detail = "") {
   await page.keyboard.press("Escape");
   await page.waitForTimeout(400);
 
-  // ── 4. Analytics — stop efficiency ───────────────────────────────────────
-  console.log("\n[4] Analytics — stop efficiency (What-If)");
+  // ── 4. Analytics - stop efficiency ───────────────────────────────────────
+  console.log("\n[4] Analytics - stop efficiency (What-If)");
   await page.goto(`${BASE}/analytics`, { waitUntil: "networkidle" });
   await page.waitForTimeout(800);
   await page.getByRole("tab", { name: /what-if/i }).click();
@@ -216,8 +216,8 @@ function check(label, condition, detail = "") {
   );
   await page.screenshot({ path: `${OUT}/p2-stop-efficiency.png`, fullPage: true });
 
-  // ── 5. Discipline — streaks ──────────────────────────────────────────────
-  console.log("\n[5] Discipline — process streaks");
+  // ── 5. Discipline - streaks ──────────────────────────────────────────────
+  console.log("\n[5] Discipline - process streaks");
   await page.goto(`${BASE}/discipline`, { waitUntil: "networkidle" });
   await page.waitForTimeout(900);
   const streakCard = page.getByTestId("discipline-streaks");

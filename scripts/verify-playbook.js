@@ -1,11 +1,11 @@
 /**
- * verify-playbook.js — Playbook module (MASTER PROMPT) end-to-end verification.
+ * verify-playbook.js - Playbook module (MASTER PROMPT) end-to-end verification.
  *
  * Contract under test:
  *  - 7 tabs (§4) persisted in the URL (?tab=): Overview, My Strategies, Setups,
  *    Rules, Checklists, Performance, Templates
  *  - Overview (§5): counts tiles, performance summary (server money + currency),
- *    completeness-to-fix (§20 — indicators, never a performance judgment)
+ *    completeness-to-fix (§20 - indicators, never a performance judgment)
  *  - My Strategies (§6): cards, status filters, detail dialog, duplicate dialog
  *  - Setups (§9) grouped by strategy with expandable detail; Rules (§13);
  *    Checklists (§16) with required/optional items
@@ -15,7 +15,7 @@
  *  - CRUD: create strategy via the full form, delete via detail dialog
  *  - light theme + mobile 390 · 0 console errors
  *
- * MSW caveat: the mock store RESEEDS on every full page load — mutations made
+ * MSW caveat: the mock store RESEEDS on every full page load - mutations made
  * here stay alive only while the SPA session lives (asserted in-session).
  */
 const path = require("path");

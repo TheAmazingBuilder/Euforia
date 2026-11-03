@@ -1,5 +1,5 @@
 /**
- * TradingView-style chart color palette — the picker grid behind the chart
+ * TradingView-style chart color palette - the picker grid behind the chart
  * settings (Symbol → candles) and any future direct-manipulation color chip.
  *
  * PURE: no React, no DOM. The generation is deterministic (fixed bases +
@@ -8,8 +8,8 @@
  * composed separately (8-digit hex) so the grid stays an alpha-free lookup.
  *
  * Grid shape (matches the reference screenshot):
- *   row 0        — grayscale ramp white → black (10 steps)
- *   rows 1..6    — 10 base hues, each repeated with a lightness ramp:
+ *   row 0        - grayscale ramp white → black (10 steps)
+ *   rows 1..6    - 10 base hues, each repeated with a lightness ramp:
  *                  vivid base, pastel, light, rich, deep, dark
  */
 
@@ -50,7 +50,7 @@ const RAMP: ReadonlyArray<{ dl: number; ds: number }> = [
   { dl: -26, ds: 0.95 }, // dark
 ];
 
-// ── hex ↔ hsl (pure, int-rounded — the ramp needs no floating output) ────────
+// ── hex ↔ hsl (pure, int-rounded - the ramp needs no floating output) ────────
 
 export function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
   const m = /^#([0-9a-fA-F]{6})$/.exec(hex);
@@ -106,7 +106,7 @@ export function hexAlpha(hex: string): number {
   return parseInt(m[1], 16) / 255;
 }
 
-/** Strips an alpha pair — the RGB base of a stored color. */
+/** Strips an alpha pair - the RGB base of a stored color. */
 export function hexBase(hex: string): string | null {
   const m = /^#([0-9a-fA-F]{6})(?:[0-9a-fA-F]{2})?$/.exec(hex);
   return m === null ? null : `#${m[1]!.toLowerCase()}`;
@@ -127,9 +127,9 @@ export function composeHexAlpha(hex: string, alpha: number): string | null {
 // ── the grid ─────────────────────────────────────────────────────────────────
 
 /**
- * The full picker grid — 7 rows × 10 columns, row-major. Deterministic:
+ * The full picker grid - 7 rows × 10 columns, row-major. Deterministic:
  * grayscale row verbatim, then each RAMP step applied across ALL base hues
- * (one row per step — vivid, pastel, light, rich, deep, dark).
+ * (one row per step - vivid, pastel, light, rich, deep, dark).
  */
 export function oryonTvPalette(): string[][] {
   const rows: string[][] = [[...TV_GRAY_ROW]];
@@ -143,7 +143,7 @@ export function oryonTvPalette(): string[][] {
         const hsl = hexToHsl(base);
         // Lightness capped at 92: beyond that the chroma collapses toward
         // white and the hue becomes numerically meaningless (a pastel of
-        // the indigo base drifted 10° at l=99 — the hue is preserved here).
+        // the indigo base drifted 10° at l=99 - the hue is preserved here).
         return hsl === null ? base : hslToHex(hsl.h, hsl.s * ds, Math.min(92, hsl.l + dl));
       }),
     );
@@ -151,7 +151,7 @@ export function oryonTvPalette(): string[][] {
   return rows;
 }
 
-// ── custom (recent) swatches — browser-local, tiny, honest ───────────────────
+// ── custom (recent) swatches - browser-local, tiny, honest ───────────────────
 
 const CUSTOM_KEY = "euforia.oryon.custom-colors.v1";
 const CUSTOM_MAX = 8;
@@ -188,7 +188,7 @@ export function addCustomColor(hex: string): string[] {
   try {
     window.localStorage.setItem(CUSTOM_KEY, JSON.stringify(next));
   } catch {
-    // Quota/eviction — the session keeps the list in memory.
+    // Quota/eviction - the session keeps the list in memory.
   }
   return next;
 }

@@ -1,5 +1,5 @@
 /**
- * Shell probe — header sidebar toggle (collapse affordance moved from the
+ * Shell probe - header sidebar toggle (collapse affordance moved from the
  * rail's bottom button into the Topbar, reference "Collspase header.png").
  * Checks: toggle present in header, rail width 240<->72 on click, state
  * persists across reload, no "Collapse" button left inside the sidebar.
@@ -13,10 +13,10 @@ let failed = 0;
 function check(label, ok, extra = "") {
   if (ok) {
     passed += 1;
-    console.log(`  ✓ ${label}${extra ? ` — ${extra}` : ""}`);
+    console.log(`  ✓ ${label}${extra ? ` - ${extra}` : ""}`);
   } else {
     failed += 1;
-    console.log(`  ✗ ${label}${extra ? ` — ${extra}` : ""}`);
+    console.log(`  ✗ ${label}${extra ? ` - ${extra}` : ""}`);
   }
 }
 

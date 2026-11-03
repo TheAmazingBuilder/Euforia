@@ -1,37 +1,37 @@
-# PRODUCT.md — COSMOZ
-
-> Durable product truth (impeccable `init`, degraded mode — launcher binary
-> unavailable in sandbox; facts gathered from the running product and the
-> project worklog, not invented).
+# PRODUCT.md — Euforia
 
 ## What it is
-COSMOZ is a personal **trading journal and behavioral coach**. The trader logs
-every execution (forex, crypto, synthetic indices on Deriv), grades the
-decision *before* seeing the result, and the app answers with analytics,
-discipline alerts and a conversational coach grounded in the journal's own
-data.
 
-## Audience & scene
-One operator: a dedicated retail trader reviewing their own book. Sessions
-happen at a desk, market hours, often at night; reviews happen after close.
-The visitor and the operator are the same person — the product talks to them
-like a demanding coach, not a casino lobby.
+Euforia is a personal trading journal and behavioral review workspace. A trader records executions from external broker platforms, documents the plan and decision, reviews the result, and uses analytics and discipline tools to improve process quality.
 
-## Success looks like
-- Every trade captured with its context (setup, emotion, grade) in under 30s.
-- The trader can trust the record: numbers are exact, tabular, auditable.
-- Discipline (process, risk budget, rule adherence) is scored *before* P&L.
-- The coach quotes the journal's real numbers back at the trader.
+Euforia is **not an order-execution platform**. Broker integrations are read-only and do not place, modify or close orders.
 
-## Non-negotiables (constraints)
-- Three themes must keep working: `dark-blue` (default), `dark`, `light`.
-- Zero hardcoded hex in `.tsx` — all color lives in token files.
-- Mocked backend (MSW) in dev; PWA + JSON backup already shipped.
-- French UI language. Professional, calm, stoic tone — no hype, no
-  gamified P&L ("gamify the process, never the P&L").
-- Preserve: all routes, behavior, data semantics (R-multiples, grades A–F,
-  ghost trades, violations), keyboard flows (⌘K, N, ?), accessibility.
+## Core product areas
 
-## Register
-**Operate** — the visitor completes a task. Scanability, consistency and
-exactness outrank expression; brand lives in precise details.
+- Journal and trade capture: executions, screenshots, notes, tags, plans and reviews.
+- Accounts: broker/prop-account metadata and read-only synchronization where a real adapter is configured.
+- Discipline and review: rules, violations, grading, lessons, goals and process analytics.
+- Oryon: charting, analysis, drawings, alerts and journal linkage. Market coverage depends on the active public/provider feeds.
+- Academy and Nofy: learning content and trading knowledge notes.
+- Tasky and Personal Events: user-owned planning and events.
+- OCR: chart/statement recognition through the FastAPI sidecar, with user confirmation before persistence.
+
+## Runtime truth
+
+- The web app calls the real NestJS API; mock mode/MSW is not part of the current runtime.
+- PostgreSQL is the system of record. Redis is optional cache/infrastructure.
+- The market service currently uses Binance Spot and Deriv public feeds. Catalog presence does not imply that an instrument has live quote/candle coverage.
+- Oryon's private positions stream is explicitly marked simulated until it is sourced from a real broker bridge.
+- Provider adapters, background synchronization, OCR and email require the relevant local/deployment configuration and credentials.
+
+## Success criteria
+
+- Journal data is accurate, auditable and exportable.
+- Risk and review calculations use shared/server-side business rules.
+- The UI distinguishes missing, stale, simulated and live data.
+- No UI implies that an order was executed by Euforia.
+- Security boundaries (ownership, verification, MFA, session revocation, secret handling) remain enforced.
+
+## Product posture
+
+Professional, calm and precise. Improve process quality, not excitement around P&L.

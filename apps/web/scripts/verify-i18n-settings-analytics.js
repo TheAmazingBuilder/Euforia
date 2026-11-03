@@ -1,5 +1,5 @@
 /**
- * Verify — i18n migration of the SETTINGS module (view shell + cards) and the
+ * Verify - i18n migration of the SETTINGS module (view shell + cards) and the
  * full ANALYTICS module (view shell, filters, overview/performance/risk,
  * dimensions panels, behavior panels incl. A/B comparator, strategy table and
  * the quarterly report dialog).
@@ -16,11 +16,11 @@
  *      tab FR ("Performance par stratégie" + Comparateur A/B), reports tab FR,
  *      quarterly report dialog FR (title + print button + sheet header).
  *   F. Risk tab FR (drawdowns + planned R:R titles).
- *   G. Restore EN via the header — analytics "Overview" + settings back to EN.
+ *   G. Restore EN via the header - analytics "Overview" + settings back to EN.
  *   H. Console/network cleanliness (no unexpected 4xx, no page errors).
  *
  * SPA-only after the initial entry (sidebar clicks; ONE reload allowed for
- * persistence — the mock jar persists server-side state across reloads).
+ * persistence - the mock jar persists server-side state across reloads).
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script */
 const { chromium } = require("playwright");
@@ -48,7 +48,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-settings-analytics";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);

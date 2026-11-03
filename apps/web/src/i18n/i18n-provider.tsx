@@ -13,20 +13,20 @@ import {
 import { en, type Dictionary } from "@/i18n/dictionaries/en";
 
 /**
- * I18nProvider — the dictionary engine (English-only application).
+ * I18nProvider - the dictionary engine (English-only application).
  *
  * The locale machinery is KEPT but pinned: `setLocale` accepts only "en"
  * (a no-op at runtime), so the whole `dict.*` consumer surface keeps
  * working untouched. The French pack and the language switcher were
- * removed by product decision — one language, zero switching chrome.
+ * removed by product decision - one language, zero switching chrome.
  */
 
 const PACKS: Record<Locale, Dictionary> = { en };
 
 /**
- * Locale as an EXTERNAL STORE (the app's established pattern — see
+ * Locale as an EXTERNAL STORE (the app's established pattern - see
  * lib/utils/preferences.ts): module state + useSyncExternalStore. The boot
- * mirror read happens lazily inside getSnapshot — hydration renders the EN
+ * mirror read happens lazily inside getSnapshot - hydration renders the EN
  * server snapshot, then React switches to the client snapshot WITHOUT a
  * hydration mismatch and without any setState-in-effect cascade.
  */
@@ -64,7 +64,7 @@ type I18nContextValue = {
   locale: Locale;
   /** Switch the runtime language (re-renders the app in place). */
   setLocale: (locale: Locale) => void;
-  /** The ACTIVE dictionary — use for structured values (arrays, objects). */
+  /** The ACTIVE dictionary - use for structured values (arrays, objects). */
   dict: Dictionary;
   /** Translate a leaf string by dot path, e.g. t("auth.login.title"). */
   t: (path: string, vars?: Record<string, string | number>) => string;
@@ -130,7 +130,7 @@ export function useI18n(): I18nContextValue {
   return value;
 }
 
-/** Structured dictionary access — for arrays/objects (e.g. auth.pillars). */
+/** Structured dictionary access - for arrays/objects (e.g. auth.pillars). */
 export function useDict(): Dictionary {
   return useI18n().dict;
 }

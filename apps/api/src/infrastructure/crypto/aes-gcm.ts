@@ -7,10 +7,10 @@
  * identity TotpService's (`v1.<iv>.<tag>.<ciphertext>`, base64url parts) so
  * a future unification is mechanical. Each consumer supplies its OWN key:
  * identity keeps AUTH_MFA_ENCRYPTION_KEY, accounts uses
- * ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY — key separation by domain.
+ * ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY - key separation by domain.
  *
  * The key MUST be exactly 32 bytes (validated at the env boundary).
- * Tampered or corrupted payloads decrypt to `null` — never throw, never leak.
+ * Tampered or corrupted payloads decrypt to `null` - never throw, never leak.
  */
 import { createCipheriv, createDecipheriv, randomBytes } from "node:crypto";
 

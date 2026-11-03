@@ -1,14 +1,14 @@
 /**
- * System catalogs for the trade journal context (B3 — Domaine 4).
+ * System catalogs for the trade journal context (B3 - Domaine 4).
  *
  * - SYSTEM_MISTAKES is the Tier-1 error taxonomy: a SEEDED, IMMUTABLE system
  *   catalog (`isSystem: true`, `userId: null`). The ids are fixed literals
  *   (not random) so TradeMistake join rows stay referentially stable across
- *   restarts and environments — the resolve route addresses mistakes by them.
+ *   restarts and environments - the resolve route addresses mistakes by them.
  * - STARTER_TAGS is the lazily-seeded per-user tag starter set (the capture
  *   form "Add details" chips); users freely add their own on top (POST /tags).
  *
- * Both mirror `apps/web/src/mocks/fixtures/catalog.ts` — the MSW engine and
+ * Both mirror `apps/web/src/mocks/fixtures/catalog.ts` - the MSW engine and
  * this backend must never disagree on the catalog content.
  */
 import type { Mistake, Tag } from "../../shared/contracts";
@@ -18,14 +18,14 @@ export interface SystemMistake extends Mistake {
   userId: null;
 }
 
-/** Fixed literal UUIDs — stable references for the seeded system catalog. */
+/** Fixed literal UUIDs - stable references for the seeded system catalog. */
 export const SYSTEM_MISTAKES: readonly SystemMistake[] = [
   {
     id: "00000000-0000-4000-8000-000000000001",
     key: "moved_stop",
     category: "MANAGEMENT",
     label: "Stop moved against you",
-    description: "Stop widened after entry — risk exceeded the plan.",
+    description: "Stop widened after entry - risk exceeded the plan.",
     severity: 4,
     isSystem: true,
     userId: null,
@@ -36,7 +36,7 @@ export const SYSTEM_MISTAKES: readonly SystemMistake[] = [
     key: "revenge_trade",
     category: "BEHAVIOR",
     label: "Revenge trade",
-    description: "Bigger-than-usual size shortly after a loss — emotional re-entry.",
+    description: "Bigger-than-usual size shortly after a loss - emotional re-entry.",
     severity: 5,
     isSystem: true,
     userId: null,
@@ -101,7 +101,7 @@ export function systemMistakeIdByKey(key: string): string | null {
   return found?.id ?? null;
 }
 
-/** Starter tag chips ("Add details") — seeded once, per user, on first read. */
+/** Starter tag chips ("Add details") - seeded once, per user, on first read. */
 export interface StarterTagDef {
   name: string;
   category: Tag["category"];

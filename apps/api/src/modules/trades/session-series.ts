@@ -1,12 +1,12 @@
 /**
- * Session price series (B3) — the deterministic projection behind
+ * Session price series (B3) - the deterministic projection behind
  * GET /trades/:id/session-series.
  *
  * HONESTY CONTRACT (Phase 4 §68 carries over): Euforia has NO market-data
  * provider, so this endpoint does NOT pretend to return ticks. It builds a
  * DETERMINISTIC SYNTHETIC PATH anchored on the trade's REAL recorded points
  * (entry, exit, MFE, MAE) and interpolated in between with a seeded walk
- * (seed = trade id — the same trade always yields the same series). The
+ * (seed = trade id - the same trade always yields the same series). The
  * consumer renders it as the trade projection chart; recorded plan/reality
  * levels ride along so the drawing never contradicts the journal.
  *
@@ -16,7 +16,7 @@
  */
 import type { TradeSessionSeriesResponse } from "../../shared/contracts";
 
-/** mulberry32 — small, fast, deterministic PRNG (same constants everywhere). */
+/** mulberry32 - small, fast, deterministic PRNG (same constants everywhere). */
 function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -78,7 +78,7 @@ export function computeSessionSeries(
     walk.push(current);
   }
 
-  // Anchor the walk on the REAL recorded points — the projection hugs the
+  // Anchor the walk on the REAL recorded points - the projection hugs the
   // journal's truth at entry/exit/MFE/MAE and interpolates elsewhere.
   const anchors: Array<[number, number]> = [[entryIndex, entryPrice]];
   if (exitIndex !== null && exitPrice !== null) anchors.push([exitIndex, exitPrice]);
@@ -107,7 +107,7 @@ export function computeSessionSeries(
     price: toDecimalString(Number(price.toFixed(digits))),
   }));
   return {
-    symbol: instrument?.symbol ?? "—",
+    symbol: instrument?.symbol ?? "-",
     digits,
     direction: trade.direction as TradeSessionSeriesResponse["direction"],
     from: points[0]!.t,

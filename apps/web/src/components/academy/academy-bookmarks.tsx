@@ -10,7 +10,7 @@ import { useAcademyBookmarks, useToggleBookmark } from "@/lib/api/queries";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Bookmarks panel — the dedicated shelf for starred lessons and glossary
+ * Bookmarks panel - the dedicated shelf for starred lessons and glossary
  * terms. Rows deep-link into the reader/glossary; the trailing button
  * removes the bookmark in place. Hue follows the bookmarked item's track.
  */

@@ -4,7 +4,7 @@
  * Every route requires a valid, non-revoked session unless marked @Public().
  * The backend is the AUTHORITATIVE authorization layer (Phase 2 mandate §40):
  * a valid access token must map to an ACTIVE user with an unrevoked,
- * unexpired session — a stolen token from a signed-out session is worthless.
+ * unexpired session - a stolen token from a signed-out session is worthless.
  *
  * Error semantics match the frontend interceptor contract (AppError → filter):
  *   401 { error: "Unauthorized", code: "INVALID_TOKEN", message: "Not authenticated." }
@@ -63,7 +63,20 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedError("Not authenticated.", "INVALID_TOKEN");
     }
 
-    request[CURRENT_USER] = { userId: payload.sub, sessionId: payload.sid };
+    request[CURRENT_USER] = { userId: payload.sub, sessionId: payload.sid, role: principal.userRole };
+    return true;
+  }
+}
+
+
+/** Restricts explicitly administrative controllers after global authentication. */
+@Injectable()
+export class AdminGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const request = context.switchToHttp().getRequest<FastifyRequest & { [CURRENT_USER]?: AuthPrincipal }>();
+    if (request[CURRENT_USER]?.role !== "ADMIN") {
+      throw new ForbiddenError("Administrator access is required.", "ADMIN_REQUIRED");
+    }
     return true;
   }
 }

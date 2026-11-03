@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Store + fixtures fixes (round 3 — v2)."""
+"""Store + fixtures fixes (round 3 - v2)."""
 from pathlib import Path
 
 STORE = Path("/home/z/my-project/apps/web/src/mocks/store.ts")
@@ -10,7 +10,7 @@ def rep(old, new, n=1):
     assert old in src, f"STORE ANCHOR NOT FOUND: {old[:90]!r}"
     src = src.replace(old, new, n)
 
-# 1. duplicate `type Account,` import (mine) — remove the second occurrence
+# 1. duplicate `type Account,` import (mine) - remove the second occurrence
 first = src.find("  type Account,\n")
 second = src.find("  type Account,\n", first + 1)
 assert second != -1
@@ -25,7 +25,7 @@ if "type ToggleLikeResponse," not in src:
   type ToggleFollowResponse,
 } from "@cosmoz/shared";""")
 
-# 3. ext block: drop my redeclarations — the store already defines
+# 3. ext block: drop my redeclarations - the store already defines
 #    instrumentById / closedTrades in the same scope.
 ext_idx = src.find("// ═══ RESTORED DOMAINS (Academy-save wiring) ═══")
 assert ext_idx != -1
@@ -36,7 +36,7 @@ for decl in (
 ):
     if decl in ext:
         ext = ext.replace(decl, "", 1)
-# strategyById may also already exist — check head
+# strategyById may also already exist - check head
 if "const strategyById = new Map(" in head:
     ext = ext.replace(
         "const strategyById = new Map(data.strategies.map((strategy) => [strategy.id, strategy]));\n", "", 1)
@@ -114,7 +114,7 @@ old_events = """  const events: RiskOverviewResponse["events"] = [
       id: violation.id,
       kind: "VIOLATION" as const,
       severity: violation.severity,
-      title: `Rule violation — ${violation.ruleId.slice(0, 8)}`,
+      title: `Rule violation - ${violation.ruleId.slice(0, 8)}`,
       message: violation.detail ?? "A standing risk rule was breached.",
       createdAt: violation.createdAt,
       acknowledgedAt: violation.acknowledgedAt,
@@ -138,7 +138,7 @@ new_events = """  const ruleById = new Map(data.rules.map((rule) => [rule.id, ru
       id: violation.id,
       kind: "VIOLATION" as const,
       severity: ruleById.get(violation.ruleId)?.severity ?? ("WARN" as const),
-      title: `Rule violation — ${ruleById.get(violation.ruleId)?.type ?? "risk rule"}`,
+      title: `Rule violation - ${ruleById.get(violation.ruleId)?.type ?? "risk rule"}`,
       message: violation.userNote ?? "A standing risk rule was breached.",
       createdAt: violation.occurredAt,
       acknowledgedAt: violation.acknowledgedAt,

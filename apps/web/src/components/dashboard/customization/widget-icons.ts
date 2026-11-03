@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 
 /**
- * Icon resolution for the widget registry — registry stays metadata-only
+ * Icon resolution for the widget registry - registry stays metadata-only
  * (iconId strings), the UI layer owns the Lucide mapping.
  */
 const WIDGET_ICONS: Record<string, LucideIcon> = {

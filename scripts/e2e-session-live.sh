@@ -1,8 +1,8 @@
 #!/bin/bash
-# E2E — Session Live V1 (mission §29/§30) — single-call runner v2:
+# E2E - Session Live V1 (mission §29/§30) - single-call runner v2:
 # server lifecycle + browser checks in one Bash session. Reconnection is
 # tested by KILLING the real market service (WS loss + poll loss), then
-# restarting it — full resync path (§18).
+# restarting it - full resync path (§18).
 B="agent-browser"
 SHOTS=/home/z/my-project/apps/web/scripts/shots/t16
 mkdir -p "$SHOTS"
@@ -60,7 +60,7 @@ $B find role option click --name "1H" >/dev/null 2>&1
 sleep 2
 echo "interval now: $($B eval "(() => document.querySelector('[data-testid=price-chart]')?.dataset.interval ?? 'MISSING')()" 2>/dev/null)"
 
-echo "== symbol switch to BTCUSDT (REAL feed — expect LIVE badge) =="
+echo "== symbol switch to BTCUSDT (REAL feed - expect LIVE badge) =="
 $B find role combobox click --name "Select symbol" >/dev/null 2>&1
 sleep 1
 $B find role option click --name "BTCUSDT" >/dev/null 2>&1
@@ -70,7 +70,7 @@ echo "chart: $($B eval "(() => { const el=document.querySelector('[data-testid=p
 echo "price: $($B eval "(() => document.querySelector('[data-testid=marked-price]')?.textContent ?? 'none')()" 2>/dev/null)"
 $B screenshot "$SHOTS/desktop-btcusdt-real-live.png" >/dev/null
 
-echo "== symbol switch to EURUSD (SIM feed — expect SIM badge) =="
+echo "== symbol switch to EURUSD (SIM feed - expect SIM badge) =="
 $B find role combobox click --name "Select symbol" >/dev/null 2>&1
 sleep 1
 $B find role option click --name "EURUSD" >/dev/null 2>&1
@@ -80,7 +80,7 @@ echo "chart: $($B eval "(() => { const el=document.querySelector('[data-testid=p
 echo "price: $($B eval "(() => document.querySelector('[data-testid=marked-price]')?.textContent ?? 'none')()" 2>/dev/null)"
 $B screenshot "$SHOTS/desktop-session-eurusd-sim.png" >/dev/null
 
-# ── 3. Reconnection (mission §18) — REAL server loss then restart ────────
+# ── 3. Reconnection (mission §18) - REAL server loss then restart ────────
 echo "== kill market service (real connection loss) =="
 pkill -f "bun --hot index.ts" 2>/dev/null
 pkill -f "bun index.ts" 2>/dev/null

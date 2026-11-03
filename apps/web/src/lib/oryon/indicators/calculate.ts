@@ -13,15 +13,15 @@ import { normalizeCandles } from "./normalize";
 import { indicatorRuleError } from "./validation";
 
 /**
- * Indicator calculation layer (Phase 3 spec §4B, §6) — DETERMINISTIC, pure,
+ * Indicator calculation layer (Phase 3 spec §4B, §6) - DETERMINISTIC, pure,
  * independent from the chart library and from React.
  *
  * Input contract: the repository's actual candle model (`Candle` from
- * @cosmoz/shared — t = bucket open, ms epoch). Candles are normalized
+ * @cosmoz/shared - t = bucket open, ms epoch). Candles are normalized
  * (ordered / deduped / non-finite dropped) BEFORE any math runs.
  *
  * Warm-up: every output is aligned with `times` and holds `null` for the
- * warm-up segment — callers render nothing there (no fabricated numbers).
+ * warm-up segment - callers render nothing there (no fabricated numbers).
  */
 
 /** Output ids per indicator type (the series-manager's rendering contract). */
@@ -40,7 +40,7 @@ export interface IndicatorCalculation {
 
 /**
  * Calculates one indicator instance over a candle window.
- * Business-rule violations (MACD fast ≥ slow, RSI lower ≥ upper) throw —
+ * Business-rule violations (MACD fast ≥ slow, RSI lower ≥ upper) throw -
  * they are programmer errors; the UI/persistence layers validate BEFORE
  * calling this (defense in depth, spec §6).
  */
@@ -48,7 +48,7 @@ export function calculateIndicator(
   instance: OryonIndicatorInstance,
   rawCandles: readonly Candle[],
 ): IndicatorCalculation {
-  // Defense in depth (spec §4C): business rules are validated AGAINST here —
+  // Defense in depth (spec §4C): business rules are validated AGAINST here -
   // a violation reaching the calc layer is a programmer error, never rendered
   // as math. Store mutations and the persistence loader validate first.
   const rule = indicatorRuleError(instance);
@@ -71,7 +71,7 @@ export function calculateIndicator(
     }
 
     case "rsi": {
-      // Wilder's RSI — documented convention:
+      // Wilder's RSI - documented convention:
       //   close-to-close deltas; first averages = arithmetic mean of the
       //   first `period` gains/losses (available at candle index `period`);
       //   later values = Wilder recursion (prev·(p−1)+x)/p.
@@ -103,7 +103,7 @@ export function calculateIndicator(
     case "macd": {
       // MACD line = EMA(fast) − EMA(slow); defined from index slow−1 where
       // BOTH EMAs exist. Signal = EMA(signal) of the DEFINED macd segment
-      // (seeded by its SMA — same init as emaKernel). Histogram = macd − signal.
+      // (seeded by its SMA - same init as emaKernel). Histogram = macd − signal.
       const closes = candles.map((c) => c.c);
       const fast = emaKernel(closes, instance.fast);
       const slow = emaKernel(closes, instance.slow);
@@ -148,7 +148,7 @@ export function calculateIndicator(
     }
 
     default: {
-      // Exhaustive guard — a new registry entry without a calculation is a
+      // Exhaustive guard - a new registry entry without a calculation is a
       // compile error through this assert, never a silent placeholder.
       const unreachable: never = instance;
       throw new Error(`indicator type not implemented: ${JSON.stringify(unreachable)}`);

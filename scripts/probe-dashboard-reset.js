@@ -1,4 +1,4 @@
-/** Probe — why doesn't the Reset button appear after the drag commit? */
+/** Probe - why doesn't the Reset button appear after the drag commit? */
 const { chromium } = require("playwright");
 const BASE = "http://localhost:3000";
 

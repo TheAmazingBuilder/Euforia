@@ -1,4 +1,4 @@
-/** Debug offline behavior — no swallowed errors, full state logging. */
+/** Debug offline behavior - no swallowed errors, full state logging. */
 const { chromium } = require("playwright");
 const { spawn, execSync } = require("child_process");
 
@@ -62,7 +62,7 @@ async function startServer() {
 
   try {
     const resp = await page.goto(BASE, { waitUntil: "load", timeout: 20000 });
-    console.log("goto OK — status:", resp?.status(), "url:", page.url());
+    console.log("goto OK - status:", resp?.status(), "url:", page.url());
   } catch (err) {
     console.log("goto THREW:", String(err).slice(0, 200));
   }

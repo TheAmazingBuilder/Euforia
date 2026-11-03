@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# verify-dashboard-customize-run.sh — REBUILD the web app (Phase 01 dashboard
+# verify-dashboard-customize-run.sh - REBUILD the web app (Phase 01 dashboard
 # customization must be verified on the production build, not a stale
 # next-server), restart :3000 with next start, then run BOTH dashboard probes
 # in the SAME shell session so the server survives the whole run.
-# Lesson from the worklog: kill -9 any next-server zombie BEFORE the build —
+# Lesson from the worklog: kill -9 any next-server zombie BEFORE the build -
 # an old server silently serves the stale bundle (ChunkLoadError 500s).
 set -u
 cd /home/z/my-project
@@ -34,7 +34,7 @@ node scripts/verify-dashboard-upgrades.js
 P2=$?
 # NOTE: scripts/verify-dashboard-kpis.js is a STALE probe (waits for a
 # "performance-strip" testid that never existed in this repo + old demo
-# credentials) — pre-existing baseline failure, kept out of this gate.
+# credentials) - pre-existing baseline failure, kept out of this gate.
 
 echo ""
 echo "probe exit codes: customize=$P1 upgrades=$P2"

@@ -1,17 +1,17 @@
 /**
- * Deriv WS v3 mapping layer (Phase 07 — second REAL adapter).
+ * Deriv WS v3 mapping layer (Phase 07 - second REAL adapter).
  *
  * Response schemas + normalizers for the official Deriv WebSocket API v3
- * (wss://ws.derivws.com/websockets/v3 — developers.deriv.com,
+ * (wss://ws.derivws.com/websockets/v3 - developers.deriv.com,
  * doc-deriv.readme.io; docs accessed 2026-10-14). Every field not explicitly
  * required by the documented contract is OPTIONAL here: an unexpected shape
- * degrades to an honest null, never to an invented value (mandate §2 — no
+ * degrades to an honest null, never to an invented value (mandate §2 - no
  * fabricated data). Anything the domain REQUIRES but the provider did not
  * send becomes INVALID_PROVIDER_RESPONSE (fail loud, never fabricate).
  *
  * Financial precision (§10.1): Deriv transports money as JSON numbers
  * (binary doubles). The exact received value is re-serialized through
- * Decimal.js with NO arithmetic — the unavoidable binary-float transport
+ * Decimal.js with NO arithmetic - the unavoidable binary-float transport
  * conversion is documented here and does not round (mandate §10.1: document
  * unavoidable precision conversions; preserve source precision).
  *
@@ -20,7 +20,7 @@
  * retrieval-time distinction is preserved by the domain (§10.2).
  *
  * Symbol semantics: Deriv instrument identifiers (e.g. "R_100", "BOOM500",
- * "frxEURUSD") are passed through VERBATIM when the provider reports them —
+ * "frxEURUSD") are passed through VERBATIM when the provider reports them -
  * no renaming, no guessing from shortcodes (an undocumented parse would
  * fabricate data).
  */
@@ -61,7 +61,7 @@ export function epochSecondsToIso(value: number | string | undefined | null): st
   return Number.isNaN(d.getTime()) ? null : d.toISOString();
 }
 
-/** Deriv money field — tolerant of number|string, strict about finiteness. */
+/** Deriv money field - tolerant of number|string, strict about finiteness. */
 const derivMoney = z.union([z.number(), z.string()]);
 
 // ── Session envelope ─────────────────────────────────────────────────────────
@@ -69,7 +69,7 @@ const derivMoney = z.union([z.number(), z.string()]);
 /**
  * Every v3 response carries `msg_type` and (on failure) an `error` object
  * with a stable `code` (official error catalog: doc-deriv.readme.io/docs/
- * error-codes — InvalidToken, AuthorizationRequired, RateLimitExceeded,
+ * error-codes - InvalidToken, AuthorizationRequired, RateLimitExceeded,
  * InvalidAppID, PermissionDenied, …).
  */
 export const derivErrorSchema = z.object({
@@ -82,7 +82,7 @@ export const derivErrorSchema = z.object({
 export type DerivErrorPayload = z.infer<typeof derivErrorSchema>;
 
 /**
- * `authorize` response (official docs: Account APIs — Authorize, scope NA;
+ * `authorize` response (official docs: Account APIs - Authorize, scope NA;
  * response fields documented in the api-explorer). Required here: the
  * identity fields the domain needs (loginid, currency, is_virtual); the
  * balance field is tolerated but NOT relied on (dedicated `balance` call).
@@ -106,7 +106,7 @@ export const derivAuthorizeSchema = z.object({
 });
 export type DerivAuthorizePayload = z.infer<typeof derivAuthorizeSchema>;
 
-/** `balance` response (official docs: Account APIs — Balance, scope Read). */
+/** `balance` response (official docs: Account APIs - Balance, scope Read). */
 export const derivBalanceSchema = z.object({
   balance: z.object({
     balance: derivMoney,
@@ -151,7 +151,7 @@ export type DerivPortfolioPayload = z.infer<typeof derivPortfolioSchema>;
  * `profit_table` response (official docs: "Retrieve a summary of account
  * profit/loss"; pagination limit+offset, default 50, MAX 500 per call).
  * Each settled row is a buy→sell contract summary; transaction_id is the
- * settled (sell) transaction identity — the deals idempotency key.
+ * settled (sell) transaction identity - the deals idempotency key.
  */
 export const derivProfitTableSchema = z.object({
   profit_table: z.object({
@@ -184,7 +184,7 @@ export type DerivProfitTablePayload = z.infer<typeof derivProfitTableSchema>;
  * multipliers, CFD buy/sell): CALL/UP-class profits when the market rises
  * (long → "BUY" side), PUT/DOWN-class when it falls (short → "SELL" side).
  * An UNKNOWN family fails the mapping loudly (INVALID_PROVIDER_RESPONSE)
- * instead of being silently mis-typed — a new contract family surfaces as a
+ * instead of being silently mis-typed - a new contract family surfaces as a
  * visible failure, never as fabricated direction data.
  */
 export const DERIV_CONTRACT_DIRECTION: Record<string, "BUY" | "SELL"> = {
@@ -215,8 +215,8 @@ export function accountInfoFromAuthorize(payload: DerivAuthorizePayload): Normal
   return {
     externalAccountId: a.loginid,
     currency: a.currency,
-    leverage: null, // not reported by the v3 authorize response — never invented
-    server: null, // the v3 session has no server/platform label — honest null
+    leverage: null, // not reported by the v3 authorize response - never invented
+    server: null, // the v3 session has no server/platform label - honest null
     brokerIdentity: {
       brokerName: landingCompany,
       accountClass: a.is_virtual ? "DEMO" : "REAL",
@@ -227,7 +227,7 @@ export function accountInfoFromAuthorize(payload: DerivAuthorizePayload): Normal
 export function snapshotFromBalance(payload: DerivBalancePayload): NormalizedSnapshot {
   return {
     balance: toDecimalString(payload.balance.balance),
-    // Deriv v3 `balance` reports ONE number — equity/margin are NOT reported.
+    // Deriv v3 `balance` reports ONE number - equity/margin are NOT reported.
     // Null, never approximated from balance (mandate §2: no fabrication).
     equity: null,
     margin: null,
@@ -249,7 +249,7 @@ export function positionsFromPortfolio(
     const symbol = c.underlying_symbol ?? null;
     if (!symbol) {
       // The domain REQUIRES a symbol; the provider did not send one and we
-      // refuse to parse it out of the shortcode (undocumented shape) — fail
+      // refuse to parse it out of the shortcode (undocumented shape) - fail
       // loud so the gap surfaces instead of persisting a fabricated label.
       throw new Error(`MISSING_UNDERLYING_SYMBOL:${String(c.contract_id)}`);
     }
@@ -262,7 +262,7 @@ export function positionsFromPortfolio(
       symbol,
       side,
       // Contract-count semantics: one portfolio row = one contract. Deriv
-      // does not report lot volume for options/multipliers — "1" is the
+      // does not report lot volume for options/multipliers - "1" is the
       // documented unit normalization, not a fabricated lot size.
       volume: "1",
       entryPrice: entry,
@@ -271,7 +271,7 @@ export function positionsFromPortfolio(
       takeProfit: null, // not part of the documented portfolio response
       profit: c.profit !== undefined ? toDecimalString(c.profit) : null,
       swap: null, // not reported
-      commission: null, // buy_price already nets purchase cost — no separate fee field
+      commission: null, // buy_price already nets purchase cost - no separate fee field
       openedAt,
     } satisfies NormalizedPosition;
   });
@@ -287,18 +287,18 @@ export function dealsFromProfitTable(
     return {
       externalDealId: t.transaction_id,
       // Symbol is NOT part of the documented profit_table row; parsing the
-      // shortcode would guess. null = the deal cannot claim an instrument —
+      // shortcode would guess. null = the deal cannot claim an instrument -
       // honest absence (matches the OANDA balance-op convention upstream).
       symbol: null,
       // Every profit_table row IS a purchased contract (buy_price/payout
-      // model) — the BUY side of a settled round-trip. The market direction
+      // model) - the BUY side of a settled round-trip. The market direction
       // lives in the contract type and is deliberately NOT re-projected
       // onto the deal row (would fabricate direction the row doesn't carry).
       side: "BUY",
       volume: "1", // one settled contract per row (contract-count semantics)
       price,
       profit: t.profit !== undefined ? toDecimalString(t.profit) : null,
-      commission: null, // Deriv nets fees into buy_price/payout — no separate field
+      commission: null, // Deriv nets fees into buy_price/payout - no separate field
       swap: null, // not reported
       // contract_id links the settled row to the portfolio position id.
       positionId: t.contract_id !== undefined ? String(t.contract_id) : null,

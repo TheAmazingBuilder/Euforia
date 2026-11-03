@@ -24,7 +24,7 @@ import { apiErrorMessage } from "@/lib/api/client";
 import { useI18n } from "@/i18n/i18n-provider";
 
 /**
- * Journal preferences — what the capture flow ASKS for and how drafts
+ * Journal preferences - what the capture flow ASKS for and how drafts
  * behave. Required fields map to the trade form's fields; behavioral
  * tracking toggles feed the psychology panel and analytics.
  * REQUIRED_FIELDS stays machine-only; labels resolve from

@@ -5,12 +5,12 @@
  * errors, provider rate limiting) may be retried a BOUNDED number of times
  * with exponential backoff + jitter and documented Retry-After respect.
  * PERMANENT failures (invalid credentials, revoked authorization,
- * unsupported account, malformed response contract) are NEVER retried —
+ * unsupported account, malformed response contract) are NEVER retried -
  * repeating them cannot succeed and hammers the provider (§15: "No repeated
  * retries for invalid credentials").
  *
- * Delay budget: capped at `maxDelayMs` (5 s) so a MANUAL synchronization —
- * whose HTTP request spans the whole run — stays within a sane request
+ * Delay budget: capped at `maxDelayMs` (5 s) so a MANUAL synchronization -
+ * whose HTTP request spans the whole run - stays within a sane request
  * budget even against a provider advertising a long Retry-After. The run
  * records the honest outcome when the budget is exhausted; the next run
  * (manual or scheduled) retries from scratch.
@@ -35,7 +35,7 @@ export interface SegmentRetryOptions {
   maxDelayMs: number;
   /** Injectable wall-clock waiter (tests: fake timers / no-op). */
   sleep: (ms: number) => Promise<void>;
-  /** Injectable jitter source — ms 0..jitterMs added to each backoff. */
+  /** Injectable jitter source - ms 0..jitterMs added to each backoff. */
   jitterMs: number;
   random: () => number;
 }
@@ -58,7 +58,7 @@ export function segmentBackoffDelay(
   const exponential = options.baseDelayMs * 2 ** attempt;
   const jitter = Math.floor(options.random() * options.jitterMs);
   let delay = exponential + jitter;
-  // §15: "Respect Retry-After or equivalent documented guidance" — the wait
+  // §15: "Respect Retry-After or equivalent documented guidance" - the wait
   // is AT LEAST the provider-advertised delay (still capped by maxDelayMs:
   // an in-request wait longer than the budget ends the run honestly instead
   // of stalling the caller).
@@ -71,7 +71,7 @@ export function segmentBackoffDelay(
 /**
  * Run `operation`, retrying ONLY transient provider failures up to
  * `maxRetries` times. Any other error (or a retry budget exhausted) throws
- * the ORIGINAL error — the orchestrator's classification/normalization
+ * the ORIGINAL error - the orchestrator's classification/normalization
  * stays the single source of truth.
  */
 export async function withSegmentRetries<T>(

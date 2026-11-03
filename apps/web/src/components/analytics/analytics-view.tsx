@@ -27,7 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
  * view is shareable; the tab is persisted as ?tab= like the other modules.
  */
 
-/** Tab machine ids — labels resolve through dict.analytics.view.tabs. */
+/** Tab machine ids - labels resolve through dict.analytics.view.tabs. */
 const TAB_IDS = [
   "overview",
   "performance",

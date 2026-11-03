@@ -1,51 +1,42 @@
 /**
- * Market Data Provider contract (mission §34) — one interface, many sources.
- * The service composes providers; each owns its transport and its health.
- * `source` travels with EVERY tick/candle so the UI can label simulated
- * data honestly (mission §33: never present a simulated feed as real).
+ * Real market-data provider contract. Providers never manufacture missing data.
  */
+export type MarketProviderId = "binance" | "deriv";
+export type MarketAssetClass = "CRYPTO_SPOT" | "FOREX" | "METAL" | "SYNTHETIC";
 
-/** A single price observation for an INTERNAL symbol (catalog ticker). */
 export interface Tick {
   symbol: string;
   price: number;
-  /** Reference close for change % (24h open, session anchor…). */
-  prevClose: number;
+  /** Real reference price from the provider, null when unavailable. */
+  prevClose: number | null;
+  /** Provider event time, epoch milliseconds. */
   ts: number;
-  source: "real" | "sim";
+  source: "real";
+  provider: MarketProviderId;
+  marketType: MarketAssetClass;
+  quoteCurrency: string | null;
 }
 
-/** OHLCV candle, chart-native numbers; t = bucket open time (ms epoch). */
 export interface Candle {
   t: number;
   o: number;
   h: number;
   l: number;
   c: number;
+  /** Zero when the upstream market does not expose candle volume. */
   v: number;
 }
 
 export interface MarketDataProvider {
-  readonly id: string;
-  readonly source: "real" | "sim";
-  /** True when this provider serves the internal symbol. */
+  readonly id: MarketProviderId;
+  readonly source: "real";
   handles(symbol: string): boolean;
-  /** Start streaming ticks through `emit`. Idempotent. */
   start(emit: (tick: Tick) => void): void | Promise<void>;
-  /** Release transports (sockets, timers). Idempotent. */
   stop(): void;
-  /** Observability for /health (mission §28) — no secrets. */
   status(): Record<string, unknown>;
-  /**
-   * Candle history for the chart datafeed. When `from`/`to` (epoch ms) are
-   * given the provider serves that window (session replay) — bounded by
-   * `limit`; providers that cannot honor historical windows return what
-   * they honestly retain, never fabricated "real" data.
-   */
   candles(symbol: string, interval: string, limit: number, from?: number, to?: number): Promise<Candle[]>;
 }
 
-/** Intervals the Session Live exposes (1H/4H/1D = internal convention). */
 export const SUPPORTED_INTERVALS = ["1m", "5m", "15m", "30m", "1H", "4H", "1D"] as const;
 export type Interval = (typeof SUPPORTED_INTERVALS)[number];
 

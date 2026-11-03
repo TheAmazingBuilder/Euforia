@@ -1,8 +1,8 @@
 /**
- * Verify Feature 12 — PWA offline + backup JSON.
+ * Verify Feature 12 - PWA offline + backup JSON.
  * Self-contained: spawns the dev server itself so it can KILL it mid-test
  * for a REAL offline check (Playwright's setOffline breaks SW fetch handling
- * — a genuine connection failure does not).
+ * - a genuine connection failure does not).
  */
 const { chromium } = require("playwright");
 const { spawn, execSync } = require("child_process");
@@ -27,7 +27,7 @@ function startServer() {
 }
 
 function killServer() {
-  // Bracket trick so the pattern never matches its own shell cmdline —
+  // Bracket trick so the pattern never matches its own shell cmdline -
   // a literal "next dev" pattern makes pkill SIGKILL its own parent shell.
   try {
     execSync('pkill -9 -f "next[ ]dev" || true', { stdio: "ignore", shell: "/bin/bash" });
@@ -55,10 +55,10 @@ async function waitForServer(timeoutMs = 60000) {
   const server = startServer();
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   if (!(await waitForServer())) {
-    console.log("FAIL — server never came up");
+    console.log("FAIL - server never came up");
     process.exit(1);
   }
 
@@ -111,7 +111,7 @@ async function waitForServer(timeoutMs = 60000) {
     `${backupJson.trades?.length} trades, file=${download.suggestedFilename()}`,
   );
 
-  // 4. Import backup (re-import same file — replace trades, merge strategies)
+  // 4. Import backup (re-import same file - replace trades, merge strategies)
   await page.locator('[data-testid="import-backup"]').click();
   await page.setInputFiles('input[type="file"]', filePath);
   await page.waitForTimeout(2000);
@@ -127,7 +127,7 @@ async function waitForServer(timeoutMs = 60000) {
   );
   await page.screenshot({ path: "scripts/shots/backup-import-toast.png" });
 
-  // 5. Invalid file → error toast (poll — sonner stacks over the export one)
+  // 5. Invalid file → error toast (poll - sonner stacks over the export one)
   const badFile = path.join("/tmp", "bad-backup.json");
   fs.writeFileSync(badFile, JSON.stringify({ hello: "world" }));
   await page.locator('[data-testid="import-backup"]').click();

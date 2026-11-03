@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import { csvCell } from "@cosmoz/shared";
 
 /**
- * Phase 12 regression — ONE shared CSV cell definition for every
+ * Phase 12 regression - ONE shared CSV cell definition for every
  * client-side export (trades ledger, analytics suite, monitoring ledger).
  *
  * Contract under test (packages/shared/src/utils/csv.ts):
- *   1. STRUCTURE — RFC 4180 escaping (comma / quote / newline wrap).
- *   2. FORMULA INJECTION — leading =, +, -, @, TAB, CR on non-numeric text
+ *   1. STRUCTURE - RFC 4180 escaping (comma / quote / newline wrap).
+ *   2. FORMULA INJECTION - leading =, +, -, @, TAB, CR on non-numeric text
  *      gets the standard single-quote prefix; plain numbers ("-50") are
  *      NEVER touched (server-computed financial strings stay legitimate).
  */
@@ -54,12 +54,12 @@ describe("csvCell (shared CSV export definition)", () => {
 
   it("prefixes tab- and CR-leading text (DDE payloads)", () => {
     expect(csvCell("\tcmd")).toBe("'\tcmd");
-    // The guard's leading CR would break an unquoted field — structural
+    // The guard's leading CR would break an unquoted field - structural
     // wrapping applies to the guarded value (RFC 4180).
     expect(csvCell("\rcmd")).toBe("\"'\rcmd\"");
   });
 
-  it("NEVER touches plain numeric strings — negative financial values stay intact", () => {
+  it("NEVER touches plain numeric strings - negative financial values stay intact", () => {
     expect(csvCell("-50")).toBe("-50");
     expect(csvCell("-1.5")).toBe("-1.5");
     expect(csvCell("50")).toBe("50");

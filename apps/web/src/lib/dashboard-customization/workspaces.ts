@@ -4,17 +4,17 @@ import { dashboardUserTemplateSchema } from "@cosmoz/shared";
 import { LAYOUT_SCHEMA_VERSION } from "./layout-model";
 
 /**
- * Workspace model (Phase 06) — pure helpers for the workspace layer on top
+ * Workspace model (Phase 06) - pure helpers for the workspace layer on top
  * of the Phase 01 layout collection.
  *
- * CONCEPT MAP (spec §3 — one source of truth each, never merged):
+ * CONCEPT MAP (spec §3 - one source of truth each, never merged):
  *  - Workspace = the stored layout document (name, description, widgets with
  *    their per-instance configs). The Phase 01 layout IS the workspace
  *    record; no second model exists.
  *  - Layout = the widget arrangement INSIDE the workspace document.
  *  - Widget configuration = the per-instance config of Phase 02, owned by
  *    the workspace's widget item (stable instanceId).
- *  - Saved analytical view = the Phase 03 filter context — a SEPARATE,
+ *  - Saved analytical view = the Phase 03 filter context - a SEPARATE,
  *    workspace-independent pool (documented §9 convention: filters are
  *    global user state; switching workspaces never touches them, applying a
  *    view never moves widgets).
@@ -53,7 +53,7 @@ export function normalizeUserTemplates(raw: unknown): DashboardUserTemplate[] {
  *  1. the stored active layout id when it still resolves;
  *  2. the default workspace when set and valid;
  *  3. the first layout (the collection is never empty).
- * An invalid stored id degrades — it never locks the dashboard.
+ * An invalid stored id degrades - it never locks the dashboard.
  */
 export function resolveActiveLayoutId(
   layouts: readonly Pick<DashboardLayoutDocument, "id">[],
@@ -70,7 +70,7 @@ export function resolveActiveLayoutId(
 }
 
 /**
- * Freeze the CURRENT state of a workspace into a user template — a deep
+ * Freeze the CURRENT state of a workspace into a user template - a deep
  * copy (structuredClone), so later workspace edits never leak into the
  * template and template applications never leak back (spec §5/§14).
  */
@@ -96,7 +96,7 @@ export interface UserTemplateNameCheck {
 }
 
 /** Template name rules: non-empty after trim, ≤ 60 chars, unique within the
- * user's template pool (case-insensitive — same rule as workspace names). */
+ * user's template pool (case-insensitive - same rule as workspace names). */
 export function validateUserTemplateName(
   name: string,
   existing: readonly DashboardUserTemplate[],
@@ -114,7 +114,7 @@ export function validateUserTemplateName(
 export const USER_TEMPLATE_ID_PREFIX = "utpl_";
 
 /** Deterministic-enough client id for a new user template (uuid-shaped is
- * NOT required by the contract — uniqueness within the user scope is). */
+ * NOT required by the contract - uniqueness within the user scope is). */
 export function newUserTemplateId(): string {
   return `${USER_TEMPLATE_ID_PREFIX}${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }

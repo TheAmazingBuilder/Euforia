@@ -44,9 +44,9 @@ import { tagSchema } from "./tag";
 import { ecoEventSchema } from "./eco-event";
 
 /**
- * API read models & endpoint payloads — the contract implemented by the
+ * API read models & endpoint payloads - the contract implemented by the
  * NestJS API (and by the MSW mocks in V1). Source: trade-entry-ux.md §12–13.
- * P&L is WITHHELD until the decision is submitted (§13) — the payloads below
+ * P&L is WITHHELD until the decision is submitted (§13) - the payloads below
  * encode that mechanism structurally.
  */
 
@@ -118,7 +118,7 @@ export const accountsResponseSchema = z.object({
 
 export type AccountsResponse = z.infer<typeof accountsResponseSchema>;
 
-/** GET /tags — the user's (and seeded system) tag catalog for the capture form. */
+/** GET /tags - the user's (and seeded system) tag catalog for the capture form. */
 export const tagsResponseSchema = z.object({
   tags: z.array(tagSchema),
 });
@@ -133,7 +133,7 @@ export const alertsResponseSchema = z.object({
 export type AlertsResponse = z.infer<typeof alertsResponseSchema>;
 
 /**
- * GET /eco-events — economic calendar window (±weeks around today).
+ * GET /eco-events - economic calendar window (±weeks around today).
  *
  * `source` states WHERE the rows came from (the honesty contract): the
  * real ForexFactory weekly bridge ("forexfactory", possibly widened with
@@ -149,7 +149,7 @@ export const ecoEventsResponseSchema = z.object({
 
 export type EcoEventsResponse = z.infer<typeof ecoEventsResponseSchema>;
 
-/** POST /import/backup — result counts after merging a backup payload. */
+/** POST /import/backup - result counts after merging a backup payload. */
 export const importBackupResponseSchema = z.object({
   imported: z.object({
     trades: z.number().int().min(0),
@@ -185,7 +185,7 @@ export const rulesStatusResponseSchema = z.object({
   accountId: uuidSchema.nullable(),
   tradesToday: z.number().int().min(0),
   lossesToday: z.number().int().min(0),
-  /** Rule breaches TODAY (all rules) — feeds the capture guardrail. */
+  /** Rule breaches TODAY (all rules) - feeds the capture guardrail. */
   violationsToday: z.number().int().min(0),
   /** % of the daily risk budget already consumed (0–100+). */
   riskBudgetSpentPct: decimalStringSchema,
@@ -196,7 +196,7 @@ export type RulesStatusResponse = z.infer<typeof rulesStatusResponseSchema>;
 
 // ── Open-trade mutations ─────────────────────────────────────────────────────
 
-/** PATCH /trades/:id/plan — modify SL/TP on an open trade. */
+/** PATCH /trades/:id/plan - modify SL/TP on an open trade. */
 export const planUpdateInputSchema = z
   .object({
     stop: positiveDecimalStringSchema.optional(),
@@ -216,7 +216,7 @@ export const planUpdateResponseSchema = z.object({
 
 export type PlanUpdateResponse = z.infer<typeof planUpdateResponseSchema>;
 
-/** PATCH /trades/:id/psychology — in-trade emotion taps. */
+/** PATCH /trades/:id/psychology - in-trade emotion taps. */
 export const psychologyUpdateInputSchema = z
   .object({
     emotionBefore: emotionSchema.optional(),
@@ -233,7 +233,7 @@ export const psychologyUpdateInputSchema = z
 
 export type PsychologyUpdateInput = z.infer<typeof psychologyUpdateInputSchema>;
 
-/** PATCH /trades/:id/notes — the session card's note icon quick-save. */
+/** PATCH /trades/:id/notes - the session card's note icon quick-save. */
 export const notesUpdateInputSchema = z.object({
   notes: z.string().max(2000),
 });
@@ -249,7 +249,7 @@ export type NotesUpdateResponse = z.infer<typeof notesUpdateResponseSchema>;
 // ── Session Live (GET /session/timeline, trade-entry-ux.md §9) ────────────
 
 /**
- * One row of today's session event timeline — computed SERVER-SIDE from
+ * One row of today's session event timeline - computed SERVER-SIDE from
  * trades, server-forged TradeEvents and alerts; the client never assembles
  * it (the trading date comes from the API, never computed client-side).
  */
@@ -279,7 +279,7 @@ export const sessionMoodSchema = z.object({
 export type SessionMood = z.infer<typeof sessionMoodSchema>;
 
 export const sessionTimelineResponseSchema = z.object({
-  /** Server-computed trading date — the client never derives "today". */
+  /** Server-computed trading date - the client never derives "today". */
   date: dateKeySchema,
   /** Chronological (oldest first). */
   events: z.array(sessionEventSchema),
@@ -291,7 +291,7 @@ export type SessionTimelineResponse = z.infer<typeof sessionTimelineResponseSche
 // ── Session logbook (timestamped in-session notes) ────────────────────────
 
 /**
- * One timestamped note logged DURING the trading session — the running
+ * One timestamped note logged DURING the trading session - the running
  * commentary the trader leaves for the post-market review (levels watched,
  * why an entry was taken, hesitation moments). One flat list per trading
  * day, server-stamped, reviewable next to the timeline.
@@ -339,16 +339,16 @@ export const reviewResponseSchema = z.object({
 export type ReviewResponse = z.infer<typeof reviewResponseSchema>;
 
 /**
- * PATCH /trades/:id/review — Act 3 persistence for the fields with no
+ * PATCH /trades/:id/review - Act 3 persistence for the fields with no
  * dedicated endpoint. MFE/MAE are USER-OBSERVED PRICES (inputs), never
- * computed R — the server recomputes mfeR/maeR from the prices (§13).
+ * computed R - the server recomputes mfeR/maeR from the prices (§13).
  * All fields optional; at least one required.
  */
 export const reviewUpdateInputSchema = z
   .object({
     mfePrice: positiveDecimalStringSchema.optional(),
     maePrice: positiveDecimalStringSchema.optional(),
-    /** The lesson — stored on Trade.lessons. */
+    /** The lesson - stored on Trade.lessons. */
     lesson: z.string().max(5000).optional(),
     /** Full replacement set of tag ids (TradeTag join rows). */
     tagIds: z.array(uuidSchema).optional(),
@@ -365,13 +365,13 @@ export const reviewUpdateInputSchema = z
 export type ReviewUpdateInput = z.infer<typeof reviewUpdateInputSchema>;
 
 export const reviewUpdateResponseSchema = z.object({
-  /** Updated trade — MFE/MAE-derived R recomputed server-side. */
+  /** Updated trade - MFE/MAE-derived R recomputed server-side. */
   trade: tradeSchema,
 });
 
 export type ReviewUpdateResponse = z.infer<typeof reviewUpdateResponseSchema>;
 
-/** PATCH /alerts/:id/read — inbox read state; returns the updated alert. */
+/** PATCH /alerts/:id/read - inbox read state; returns the updated alert. */
 export const markAlertReadResponseSchema = z.object({
   alert: alertSchema,
 });
@@ -380,7 +380,7 @@ export type MarkAlertReadResponse = z.infer<typeof markAlertReadResponseSchema>;
 
 // ── Tags (inline creation, Act 3 / capture "Add details") ────────────────────
 
-/** POST /tags — inline tag creation (reflect screen + capture details). */
+/** POST /tags - inline tag creation (reflect screen + capture details). */
 export const createTagInputSchema = z.object({
   name: z.string().min(1).max(40),
   category: tagCategorySchema.optional(),
@@ -425,7 +425,7 @@ export type SettleSkippedTradeInput = z.infer<typeof settleSkippedTradeInputSche
 
 /**
  * Per-strategy aggregates computed SERVER-SIDE from the closed trades
- * (the client never derives aggregates — same rule as /stats/overview).
+ * (the client never derives aggregates - same rule as /stats/overview).
  */
 export const strategyStatSchema = z.object({
   strategyId: uuidSchema,
@@ -438,7 +438,7 @@ export const strategyStatSchema = z.object({
   /** Cumulative-R equity sparkline, chronological, decimal strings. */
   sparkline: z.array(decimalStringSchema),
   /**
-   * Average R over the strategy's LAST 20 closed trades — the decay
+   * Average R over the strategy's LAST 20 closed trades - the decay
    * detector window. null when the strategy has no closed trades.
    */
   last20Expectancy: decimalStringSchema.nullable(),
@@ -449,7 +449,7 @@ export type StrategyStat = z.infer<typeof strategyStatSchema>;
 export const strategiesStatsResponseSchema = z.object({
   stats: z.array(strategyStatSchema),
   /**
-   * The underperforming strategy the coach banner calls out — COMPUTED
+   * The underperforming strategy the coach banner calls out - COMPUTED
    * (most negative last-20 expectancy among strategies with enough
    * sample), never a hardcoded name. null = nobody is underperforming.
    */
@@ -473,7 +473,7 @@ export const rulesResponseSchema = z.object({
 
 export type RulesResponse = z.infer<typeof rulesResponseSchema>;
 
-/** GET /violations — the log, newest first, with the rolling-window aggregate. */
+/** GET /violations - the log, newest first, with the rolling-window aggregate. */
 export const violationsResponseSchema = z.object({
   violations: z.array(ruleViolationViewSchema),
   /** Start of the aggregate window (30 days back), `YYYY-MM-DD`. */
@@ -491,7 +491,7 @@ export const acknowledgeViolationResponseSchema = z.object({
 export type AcknowledgeViolationResponse = z.infer<typeof acknowledgeViolationResponseSchema>;
 
 /**
- * GET /discipline/score — the Cosmoz Discipline Score (indexCosmoz):
+ * GET /discipline/score - the Cosmoz Discipline Score (indexCosmoz):
  * process composite, deliberately decoupled from P&L. Components cover the
  * rolling 30-day window and are computed server-side.
  */
@@ -514,7 +514,7 @@ export type DisciplineScoreResponse = z.infer<typeof disciplineScoreResponseSche
 
 // ── Emotion → outcome matrix (Discipline module heatmap) ────────────────────
 
-/** One emotion row — how the trades entered under this feeling turned out. */
+/** One emotion row - how the trades entered under this feeling turned out. */
 export const emotionResultRowSchema = z.object({
   emotion: emotionSchema,
   trades: z.number().int().min(0),
@@ -528,7 +528,7 @@ export const emotionResultRowSchema = z.object({
 export type EmotionResultRow = z.infer<typeof emotionResultRowSchema>;
 
 /**
- * GET /discipline/emotion-matrix — the emotion → outcome heatmap over the
+ * GET /discipline/emotion-matrix - the emotion → outcome heatmap over the
  * same 30-day window as the discipline score. Correlational reading only:
  * emotions never CAUSE outcomes, the grid just makes the pattern visible.
  * Trades without a logged emotion are counted as excluded, never dropped
@@ -544,7 +544,7 @@ export const disciplineEmotionMatrixResponseSchema = z.object({
 
 export type DisciplineEmotionMatrixResponse = z.infer<typeof disciplineEmotionMatrixResponseSchema>;
 
-/** GET /mistakes/ledger — per-mistake frequency + R cost over the window. */
+/** GET /mistakes/ledger - per-mistake frequency + R cost over the window. */
 export const mistakeLedgerEntrySchema = z.object({
   mistakeId: uuidSchema,
   key: z.string().min(1),
@@ -564,7 +564,7 @@ export type MistakeLedgerEntry = z.infer<typeof mistakeLedgerEntrySchema>;
 export const mistakeLedgerResponseSchema = z.object({
   /** Start of the aggregation window (30 days back), `YYYY-MM-DD`. */
   windowStart: dateKeySchema,
-  /** Sorted by |rCost| descending — the most expensive mistakes first. */
+  /** Sorted by |rCost| descending - the most expensive mistakes first. */
   entries: z.array(mistakeLedgerEntrySchema),
 });
 
@@ -588,7 +588,7 @@ export const dailyPnlPointSchema = z.object({
 export type DailyPnlPoint = z.infer<typeof dailyPnlPointSchema>;
 
 /**
- * KPI change vs the previous comparable period — computed SERVER-SIDE so the
+ * KPI change vs the previous comparable period - computed SERVER-SIDE so the
  * client never derives aggregates (same rule as the KPIs themselves).
  */
 export const kpiDeltaSchema = z.object({
@@ -618,7 +618,7 @@ export const kpiSparklinesSchema = z.object({
 export type KpiSparklines = z.infer<typeof kpiSparklinesSchema>;
 
 /**
- * Discipline Saved — Σ|R| preserved by SETTLED would-have-lost ghost trades
+ * Discipline Saved - Σ|R| preserved by SETTLED would-have-lost ghost trades
  * (data-model.md "Domaine 5") plus how many such ghosts were settled.
  */
 export const disciplineSavedSchema = z.object({
@@ -629,7 +629,7 @@ export const disciplineSavedSchema = z.object({
 export type DisciplineSaved = z.infer<typeof disciplineSavedSchema>;
 
 /**
- * Hesitation Cost — Σ R missed by SETTLED would-have-won ghost trades (the
+ * Hesitation Cost - Σ R missed by SETTLED would-have-won ghost trades (the
  * mirror of Discipline Saved in the Regret Registry) plus their count.
  */
 export const hesitationCostSchema = z.object({
@@ -641,7 +641,7 @@ export type HesitationCost = z.infer<typeof hesitationCostSchema>;
 
 /**
  * Daily fear-vs-discipline skip counts over the last 30 days,
- * zero-filled — feeds the Regret Registry trend sparkline.
+ * zero-filled - feeds the Regret Registry trend sparkline.
  */
 export const ghostTrendPointSchema = z.object({
   date: dateKeySchema,
@@ -663,7 +663,7 @@ export const weekCompareDaySchema = z.object({
 export type WeekCompareDay = z.infer<typeof weekCompareDaySchema>;
 
 /**
- * One side of the week-vs-week comparison — the SAME rolling 7-day window
+ * One side of the week-vs-week comparison - the SAME rolling 7-day window
  * as the KPI deltas, zero-filled so both strips always draw 7 bands.
  * Computed SERVER-SIDE (aggregation principle); the client only renders.
  */
@@ -710,7 +710,7 @@ export const statsOverviewResponseSchema = z.object({
   hesitationCost: hesitationCostSchema,
   /** Last 30 days of fear-vs-discipline skip counts, zero-filled. */
   ghostTrend: z.array(ghostTrendPointSchema),
-  /** This week vs last week — 7 zero-filled day bands per week (server-computed). */
+  /** This week vs last week - 7 zero-filled day bands per week (server-computed). */
   weeklyCompare: z.object({
     thisWeek: weekCompareSideSchema,
     prevWeek: weekCompareSideSchema,
@@ -726,7 +726,7 @@ export type StatsOverviewResponse = z.infer<typeof statsOverviewResponseSchema>;
 /**
  * One grouped aggregate row used across the analytics suite (hour buckets,
  * weekdays, sessions, emotions). Aggregates are computed SERVER-SIDE; every
- * rate ships with its `trades` count — statistical honesty is a product
+ * rate ships with its `trades` count - statistical honesty is a product
  * principle, never render a rate without its n.
  */
 export const analyticsBucketSchema = z.object({
@@ -768,7 +768,7 @@ export type GradeOutcomeCell = z.infer<typeof gradeOutcomeCellSchema>;
 
 /**
  * The poker-logic proof: a decision grade assigned BEFORE the reveal must
- * not predict the outcome better than chance — if it does, the grader saw
+ * not predict the outcome better than chance - if it does, the grader saw
  * the result (hindsight bias). Rows ordered A → F.
  */
 export const gradeOutcomeRowSchema = z.object({
@@ -780,7 +780,7 @@ export const gradeOutcomeRowSchema = z.object({
 export type GradeOutcomeRow = z.infer<typeof gradeOutcomeRowSchema>;
 
 /**
- * Tilt timeline point — one chronological closed trade with its committed
+ * Tilt timeline point - one chronological closed trade with its committed
  * risk and the loss streak that preceded it. `isSpike` flags the classic
  * pattern: a bigger-than-previous risk right after ≥ 2 consecutive losses.
  */
@@ -826,7 +826,7 @@ export const analyticsCardsSchema = z.object({
   profitFactor: decimalStringSchema.nullable(),
   /** Average R per closed trade. */
   expectancy: decimalStringSchema,
-  /** Realized R:R — average winning R ÷ average losing R. */
+  /** Realized R:R - average winning R ÷ average losing R. */
   payoffRatio: decimalStringSchema.nullable(),
   /** Worst peak-to-trough decline of the cumulative-R curve (≤ 0). */
   maxDrawdownR: decimalStringSchema,
@@ -841,7 +841,7 @@ export const analyticsCardsSchema = z.object({
 export type AnalyticsCards = z.infer<typeof analyticsCardsSchema>;
 
 /**
- * GET /stats/analytics — one response feeding the whole analytics suite:
+ * GET /stats/analytics - one response feeding the whole analytics suite:
  * summary cards, heatmap, time buckets, psychology correlations, all-time
  * mistake ledger and per-strategy R distributions. The client renders; it
  * never re-derives these aggregates.
@@ -873,7 +873,7 @@ export type AnalyticsResponse = z.infer<typeof analyticsResponseSchema>;
 // ── Trade module: edit, delete, screenshots ─────────────────────────────────
 
 /**
- * PATCH /trades/:id — journal correction from the trade module. All fields
+ * PATCH /trades/:id - journal correction from the trade module. All fields
  * optional (partial update); for CLOSED trades the server recomputes
  * pnlGross / pnlNet / rMultiple from the edited legs (§15: results are
  * always server-computed, never trusted from the client).
@@ -891,7 +891,7 @@ export const updateTradeInputSchema = z
     strategyId: uuidSchema.nullable().optional(),
     fees: nonNegativeDecimalStringSchema.optional(),
     swap: decimalStringSchema.optional(),
-    /** Closed trades only — correcting the recorded exit. */
+    /** Closed trades only - correcting the recorded exit. */
     exitPrice: positiveDecimalStringSchema.optional(),
     exitAt: isoDateTimeSchema.optional(),
     exitReason: exitReasonSchema.optional(),
@@ -903,14 +903,14 @@ export const updateTradeInputSchema = z
 
 export type UpdateTradeInput = z.infer<typeof updateTradeInputSchema>;
 
-/** PATCH /trades/:id response — the corrected trade projection. */
+/** PATCH /trades/:id response - the corrected trade projection. */
 export const updateTradeResponseSchema = z.object({
   trade: tradeSchema,
 });
 
 export type UpdateTradeResponse = z.infer<typeof updateTradeResponseSchema>;
 
-/** DELETE /trades/:id — soft delete (undo window is a later concern). */
+/** DELETE /trades/:id - soft delete (undo window is a later concern). */
 export const deleteTradeResponseSchema = z.object({
   id: uuidSchema,
   deleted: z.literal(true),
@@ -919,7 +919,7 @@ export const deleteTradeResponseSchema = z.object({
 export type DeleteTradeResponse = z.infer<typeof deleteTradeResponseSchema>;
 
 // ── Analytics Suite (GET /stats/analytics-suite) ────────────────────────────
-// Professional Analytics module — ONE endpoint = ONE dataset definition so
+// Professional Analytics module - ONE endpoint = ONE dataset definition so
 // every tab of the module renders the exact same filtered trade set (MASTER
 // PROMPT §5). All aggregates are computed SERVER-SIDE on CLOSED trades only;
 // open positions never leak into performance statistics (§38).
@@ -942,7 +942,7 @@ export const analyticsPeriodSchema = z.enum([
 ]);
 export type AnalyticsPeriod = z.infer<typeof analyticsPeriodSchema>;
 
-/** Global filter query — every field optional; absent = unfiltered. */
+/** Global filter query - every field optional; absent = unfiltered. */
 export const analyticsFiltersSchema = z.object({
   period: analyticsPeriodSchema.default("ALL"),
   /** Required when period = CUSTOM (trading-date keys, inclusive). */
@@ -964,7 +964,7 @@ export type AnalyticsFilters = z.infer<typeof analyticsFiltersSchema>;
 
 // ── Trade module upgrades: saved views / bulk ops / CSV import / session series ─
 
-/** Visible ledger columns — the checkbox + actions columns are structural, never saved. */
+/** Visible ledger columns - the checkbox + actions columns are structural, never saved. */
 export const tradeColumnKeySchema = z.enum([
   "date", "instrument", "side", "strategy", "duration", "r", "pnl", "grade", "tags", "status",
 ]);
@@ -972,7 +972,7 @@ export const tradeColumnKeySchema = z.enum([
 export type TradeColumnKey = z.infer<typeof tradeColumnKeySchema>;
 
 /**
- * Filter half of a saved view — mirrors the trades URL param bag ("" = unset,
+ * Filter half of a saved view - mirrors the trades URL param bag ("" = unset,
  * "all" = untouched), so applying a view is a pure URL patch.
  */
 export const savedTradeViewFiltersSchema = z.object({
@@ -997,11 +997,11 @@ export type SavedTradeViewFilters = z.infer<typeof savedTradeViewFiltersSchema>;
 export const savedViewScopeSchema = z.enum(["TRADES", "ANALYTICS"]);
 export type SavedViewScope = z.infer<typeof savedViewScopeSchema>;
 
-/** Filter half of an ANALYTICS-scope view — a partial analytics filter bag. */
+/** Filter half of an ANALYTICS-scope view - a partial analytics filter bag. */
 export const analyticsViewFiltersSchema = analyticsFiltersSchema.partial();
 export type AnalyticsViewFilters = z.infer<typeof analyticsViewFiltersSchema>;
 
-/** GET /trade-views row — a named, reusable (filters + columns + sort) snapshot. */
+/** GET /trade-views row - a named, reusable (filters + columns + sort) snapshot. */
 export const savedTradeViewSchema = z.object({
   id: uuidSchema,
   name: z.string().min(1).max(60),
@@ -1024,7 +1024,7 @@ export const savedTradeViewsResponseSchema = z.object({
 
 export type SavedTradeViewsResponse = z.infer<typeof savedTradeViewsResponseSchema>;
 
-/** POST /trade-views — snapshot the CURRENT table state under a name. */
+/** POST /trade-views - snapshot the CURRENT table state under a name. */
 export const createSavedTradeViewInputSchema = z.object({
   name: z.string().trim().min(1).max(60),
   scope: savedViewScopeSchema.optional(),
@@ -1054,7 +1054,7 @@ export type DeleteSavedTradeViewResponse = z.infer<typeof deleteSavedTradeViewRe
 
 /**
  * One endpoint, one round-trip for multi-select actions. The server skips
- * what it cannot honor (grading an OPEN trade) and reports both counts —
+ * what it cannot honor (grading an OPEN trade) and reports both counts -
  * honest feedback instead of silent success.
  */
 export const bulkTradesInputSchema = z.discriminatedUnion("op", [
@@ -1089,7 +1089,7 @@ export type BulkTradesResponse = z.infer<typeof bulkTradesResponseSchema>;
 
 // ── CSV import (POST /trades/import) ────────────────────────────────────────
 
-/** One normalized row AFTER client-side column mapping — the server never parses raw CSV. */
+/** One normalized row AFTER client-side column mapping - the server never parses raw CSV. */
 export const importedTradeRowSchema = z.object({
   symbol: z.string().trim().min(1).max(30),
   side: directionSchema,
@@ -1099,7 +1099,7 @@ export const importedTradeRowSchema = z.object({
   exitPrice: positiveDecimalStringSchema.optional(),
   quantity: positiveDecimalStringSchema.optional(),
   fees: nonNegativeDecimalStringSchema.optional(),
-  /** Reference P&L from the broker file — informational; results are recomputed. */
+  /** Reference P&L from the broker file - informational; results are recomputed. */
   pnl: decimalStringSchema.optional(),
   notes: z.string().max(2000).optional(),
 });
@@ -1118,9 +1118,9 @@ export type ImportTradesInput = z.infer<typeof importTradesInputSchema>;
 
 export const importTradesResponseSchema = z.object({
   imported: z.number().int().min(0),
-  /** Rows whose broker ref already exists — import is idempotent per ref. */
+  /** Rows whose broker ref already exists - import is idempotent per ref. */
   skippedDuplicates: z.number().int().min(0),
-  /** Symbols with no matching instrument — listed so the user can fix the mapping. */
+  /** Symbols with no matching instrument - listed so the user can fix the mapping. */
   unknownSymbols: z.array(z.string()),
   tradeIds: z.array(uuidSchema),
 });
@@ -1150,7 +1150,7 @@ export const tradeSessionSeriesResponseSchema = z.object({
   to: isoDateTimeSchema,
   points: z.array(tradeSessionPointSchema).min(2),
   entryIndex: z.number().int().min(0),
-  /** null = still open — no recorded exit yet. */
+  /** null = still open - no recorded exit yet. */
   exitIndex: z.number().int().min(0).nullable(),
   entryPrice: decimalStringSchema,
   exitPrice: decimalStringSchema.nullable(),
@@ -1162,17 +1162,17 @@ export type TradeSessionSeriesResponse = z.infer<typeof tradeSessionSeriesRespon
 
 // ── Trade screenshots (module gallery) ──────────────────────────────────────
 
-/** GET /trades/:id/screenshots — chart evidence for the detail drawer. */
+/** GET /trades/:id/screenshots - chart evidence for the detail drawer. */
 export const tradeScreenshotsResponseSchema = z.object({
   screenshots: z.array(tradeScreenshotSchema),
 });
 
 export type TradeScreenshotsResponse = z.infer<typeof tradeScreenshotsResponseSchema>;
 
-/** POST /trades/:id/screenshots — upload (data URL stored by the mock API). */
+/** POST /trades/:id/screenshots - upload (data URL stored by the mock API). */
 export const addScreenshotInputSchema = z.object({
   kind: shotKindSchema,
-  /** Data URL — real deployments swap this for object-storage keys. The
+  /** Data URL - real deployments swap this for object-storage keys. The
    * char ceiling must clear the DECODED byte cap (TRADES_SCREENSHOT_MAX_BYTES
    * 6 291 456 → 8 388 608 base64 chars + envelope) so an oversized upload
    * reaches the domain validator (422) instead of failing validation (400). */
@@ -1196,14 +1196,14 @@ export const profileSchema = z.object({
   id: uuidSchema,
   email: z.string().email(),
   name: z.string().min(1).max(80),
-  /** IANA timezone — drives the trading-day keys server-side. */
+  /** IANA timezone - drives the trading-day keys server-side. */
   timezone: z.string().min(1),
   baseCurrency: currencySchema,
-  /** Public handle — unique server-side, optional, `@`-less. */
+  /** Public handle - unique server-side, optional, `@`-less. */
   username: z.string().min(3).max(30).regex(/^[a-zA-Z0-9_-]+$/, "Letters, digits, _ and - only").nullable(),
   /** Short free-form bio (≤ 280 chars), shown on the profile. */
   bio: z.string().max(280).nullable(),
-  /** Avatar image — data URL in V1 mocks, CDN URL with the real API. */
+  /** Avatar image - data URL in V1 mocks, CDN URL with the real API. */
   avatarUrl: z.string().max(600_000).nullable(),
 });
 
@@ -1223,7 +1223,7 @@ export type ProfileUpdateInput = z.infer<typeof profileUpdateInputSchema>;
 
 /**
  * Server-detected behavioral anomaly in the filtered dataset. The engine
- * raises FACTS (measured, thresholded) — never a verdict; the client renders
+ * raises FACTS (measured, thresholded) - never a verdict; the client renders
  * them next to the dataset warnings with the drill-down they hint at.
  */
 export const analyticsAnomalyCodeSchema = z.enum([
@@ -1246,7 +1246,7 @@ export const analyticsAnomalySchema = z.object({
 });
 export type AnalyticsAnomaly = z.infer<typeof analyticsAnomalySchema>;
 
-/** Dataset descriptor — the "WHAT DATASET AM I LOOKING AT?" line (§5). */
+/** Dataset descriptor - the "WHAT DATASET AM I LOOKING AT?" line (§5). */
 export const analyticsDatasetMetaSchema = z.object({
   resolvedFrom: dateKeySchema,
   resolvedTo: dateKeySchema,
@@ -1265,7 +1265,7 @@ export type AnalyticsDatasetMeta = z.infer<typeof analyticsDatasetMetaSchema>;
 
 /**
  * Summary band (§6/§8). Every ratio can be null when the sample cannot
- * support it — the client renders "—" with the n, never a fake zero.
+ * support it - the client renders "-" with the n, never a fake zero.
  * `sharpeNote`/`sortinoNote` carry the exact methodology (§8: never present a
  * Sharpe without explaining how it was computed).
  */
@@ -1295,7 +1295,7 @@ export const analyticsSummarySchema = z.object({
   /** Annualization: √252 over daily R sums, risk-free = 0 (see notes). */
   sharpe: decimalStringSchema.nullable(),
   sortino: decimalStringSchema.nullable(),
-  /** System Quality Number — mean(R) ÷ std(R) × √n, on the filtered set. */
+  /** System Quality Number - mean(R) ÷ std(R) × √n, on the filtered set. */
   sqn: decimalStringSchema.nullable(),
   trades: z.number().int().min(0),
   winningTrades: z.number().int().min(0),
@@ -1345,7 +1345,7 @@ export const analyticsDailyPointSchema = z.object({
 });
 export type AnalyticsDailyPoint = z.infer<typeof analyticsDailyPointSchema>;
 
-/** Histogram bin (P&L, R, duration…) — ready to render. */
+/** Histogram bin (P&L, R, duration…) - ready to render. */
 export const analyticsHistogramBinSchema = z.object({
   label: z.string().min(1),
   count: z.number().int().min(0),
@@ -1357,7 +1357,7 @@ export type AnalyticsHistogramBin = z.infer<typeof analyticsHistogramBinSchema>;
 /**
  * Drawdown period (§11): Peak → Start → Bottom → Recovery with the trades
  * that dug the hole (drill-down §33). `recovered*` stay null while the
- * equity is still under the period peak — no invented recovery dates.
+ * equity is still under the period peak - no invented recovery dates.
  */
 export const analyticsDrawdownPeriodSchema = z.object({
   id: z.string().min(1),
@@ -1382,13 +1382,13 @@ export const analyticsDrawdownPeriodSchema = z.object({
 });
 export type AnalyticsDrawdownPeriod = z.infer<typeof analyticsDrawdownPeriodSchema>;
 
-/** Risk exposure block (§10) — planned-vs-actual when the data allows it. */
+/** Risk exposure block (§10) - planned-vs-actual when the data allows it. */
 export const analyticsRiskSchema = z.object({
   tradesWithRisk: z.number().int().min(0),
   avgRiskMoney: decimalStringSchema.nullable(),
   maxRiskMoney: decimalStringSchema.nullable(),
   minRiskMoney: decimalStringSchema.nullable(),
-  /** Std of per-trade risk ÷ mean, in % — how consistent the sizing is. */
+  /** Std of per-trade risk ÷ mean, in % - how consistent the sizing is. */
   riskDeviationPct: decimalStringSchema.nullable(),
   /** Daily / weekly / monthly risk budgets actually consumed (Σ risk/day). */
   maxDailyRisk: decimalStringSchema.nullable(),
@@ -1404,7 +1404,7 @@ export const analyticsRiskSchema = z.object({
 });
 export type AnalyticsRisk = z.infer<typeof analyticsRiskSchema>;
 
-/** Per-strategy factual rows (§12) — NO overall ranking verdict. */
+/** Per-strategy factual rows (§12) - NO overall ranking verdict. */
 export const analyticsStrategyRowSchema = z.object({
   strategyId: z.string().nullable(),
   name: z.string().min(1),
@@ -1446,7 +1446,7 @@ export const analyticsDirectionRowSchema = z.object({
 });
 export type AnalyticsDirectionRow = z.infer<typeof analyticsDirectionRowSchema>;
 
-/** Psychology block (§19) — correlation wording lives in the UI, not here. */
+/** Psychology block (§19) - correlation wording lives in the UI, not here. */
 export const analyticsPsychologySchema = z.object({
   emotionsBefore: z.array(analyticsBucketSchema),
   emotionsAfter: z.array(analyticsBucketSchema),
@@ -1474,7 +1474,7 @@ export const analyticsQualitySchema = z.object({
   mfe: z.object({
     avgR: decimalStringSchema.nullable(),
     medianR: decimalStringSchema.nullable(),
-    /** avg |realized R| ÷ avg MFE R — exit efficiency, 0–1+. */
+    /** avg |realized R| ÷ avg MFE R - exit efficiency, 0–1+. */
     capturePct: decimalStringSchema.nullable(),
   }),
   mae: z.object({
@@ -1496,7 +1496,7 @@ export const analyticsQualitySchema = z.object({
 });
 export type AnalyticsQuality = z.infer<typeof analyticsQualitySchema>;
 
-/** Mistakes & rules block (§20) — ledger recomputed on the FILTERED set. */
+/** Mistakes & rules block (§20) - ledger recomputed on the FILTERED set. */
 export const analyticsMistakesSchema = z.object({
   entries: z.array(mistakeLedgerEntrySchema),
   violatingTrades: z.number().int().min(0),
@@ -1504,9 +1504,9 @@ export const analyticsMistakesSchema = z.object({
 });
 export type AnalyticsMistakes = z.infer<typeof analyticsMistakesSchema>;
 
-/** Economic-event context (§21) — only where calendar coverage exists. */
+/** Economic-event context (§21) - only where calendar coverage exists. */
 export const analyticsEventsSchema = z.object({
-  /** Calendar data only covers its rolling window — honesty first (§34). */
+  /** Calendar data only covers its rolling window - honesty first (§34). */
   calendarCoverage: z.object({
     from: dateKeySchema.nullable(),
     to: dateKeySchema.nullable(),
@@ -1542,7 +1542,7 @@ export const analyticsAdvancedSchema = z.object({
 });
 export type AnalyticsAdvanced = z.infer<typeof analyticsAdvancedSchema>;
 
-/** Monte Carlo (§25) — SIMULATION, never a prediction; methodology noted. */
+/** Monte Carlo (§25) - SIMULATION, never a prediction; methodology noted. */
 export const analyticsMonteCarloSchema = z.object({
   simulations: z.number().int().min(1),
   tradesPerRun: z.number().int().min(0),
@@ -1563,7 +1563,7 @@ export const analyticsMonteCarloSchema = z.object({
 });
 export type AnalyticsMonteCarlo = z.infer<typeof analyticsMonteCarloSchema>;
 
-/** Report rollups (§26) — daily / weekly / monthly aggregates. */
+/** Report rollups (§26) - daily / weekly / monthly aggregates. */
 export const analyticsReportRowSchema = z.object({
   key: z.string().min(1),
   trades: z.number().int().min(0),
@@ -1605,7 +1605,7 @@ export const analyticsSuiteResponseSchema = z.object({
     weekly: z.array(analyticsReportRowSchema),
     monthly: z.array(analyticsReportRowSchema),
   }),
-  // Phase 05 — performance insights, pattern analysis & trading behavior
+  // Phase 05 - performance insights, pattern analysis & trading behavior
   // (deterministic engine shared with the MSW mirror; see analytics/insights).
   durations: analyticsDurationsSchema,
   streakProfile: analyticsStreakProfileSchema,
@@ -1646,7 +1646,7 @@ export const calendarBlockMutationResponseSchema = z.object({
 });
 export type CalendarBlockMutationResponse = z.infer<typeof calendarBlockMutationResponseSchema>;
 
-/** POST /calendar-blocks/import-eco — server scans HIGH-impact events ahead. */
+/** POST /calendar-blocks/import-eco - server scans HIGH-impact events ahead. */
 export const importEcoBlockersResponseSchema = z.object({
   imported: z.number().int().min(0),
   dates: z.array(dateKeySchema),
@@ -1662,16 +1662,16 @@ export const calendarDayRowSchema = z.object({
   rEarned: decimalStringSchema,
   disciplineScore: decimalStringSchema.nullable(),
   violationsCount: z.number().int().min(0),
-  /** HIGH-impact eco events that day — the news blockers. */
+  /** HIGH-impact eco events that day - the news blockers. */
   ecoHighCount: z.number().int().min(0),
   ecoCount: z.number().int().min(0),
   block: calendarBlockSchema.nullable(),
-  /** Planned day off — the server excludes the row from every aggregate. */
+  /** Planned day off - the server excludes the row from every aggregate. */
   excludedFromStats: z.boolean(),
 });
 export type CalendarDayRow = z.infer<typeof calendarDayRowSchema>;
 
-/** Aggregates over a date range — day-off days excluded SERVER-SIDE. */
+/** Aggregates over a date range - day-off days excluded SERVER-SIDE. */
 export const calendarRangeSummarySchema = z.object({
   from: dateKeySchema,
   to: dateKeySchema,
@@ -1688,7 +1688,7 @@ export type CalendarRangeSummary = z.infer<typeof calendarRangeSummarySchema>;
 export const calendarViewResponseSchema = z.object({
   days: z.array(calendarDayRowSchema),
   summary: calendarRangeSummarySchema,
-  /** The account's daily loss limit in % — the "objectif du jour" guard line. */
+  /** The account's daily loss limit in % - the "objectif du jour" guard line. */
   dailyLossLimitPct: z.number(),
   currency: currencySchema,
 });

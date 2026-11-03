@@ -7,23 +7,23 @@
  *            →  THIS service (grouping by provider positionId)
  *            →  canonical Euforia Trade (upsert, idempotent)
  *
- * It NEVER calls a broker adapter (§26) — it reads the already-normalized
+ * It NEVER calls a broker adapter (§26) - it reads the already-normalized
  * TradingDeal rows through the Accounts module's exported repository (the
  * narrow read contract, ADR-0003). Provider semantics (§17): MT5-style
- * netting — the first deal of a position defines its direction, deals on
+ * netting - the first deal of a position defines its direction, deals on
  * that side are entries, opposite-side deals are exits; entry and exit
  * volumes reconcile to a closed position.
  *
  * Idempotency (§27): one journal trade per (accountId, externalPositionId)
- * — enforced by the DB composite unique and honored by upserts. A
+ * - enforced by the DB composite unique and honored by upserts. A
  * reconstruction pass that observes unchanged state performs ZERO writes.
  * Reconciliation (§28): a position that closed since the last pass flips
  * its trade OPEN → CLOSED and refreshes the broker-derived fields (§30:
- * broker-derived data is authoritative — journal metadata is untouched).
+ * broker-derived data is authoritative - journal metadata is untouched).
  *
  * Deals without a positionId (balance operations) never become trades.
  * Provider symbols with no catalog instrument are SKIPPED with a structured
- * warning — provider identifiers are never silently rewritten (§14); the
+ * warning - provider identifiers are never silently rewritten (§14); the
  * symbol mapping is an explicit future extension.
  */
 import { Inject, Injectable } from "@nestjs/common";
@@ -45,7 +45,7 @@ export interface ReconstructionOutcome {
   created: number;
   updated: number;
   unchanged: number;
-  /** Provider symbols absent from the catalog — never silently rewritten. */
+  /** Provider symbols absent from the catalog - never silently rewritten. */
   skippedUnknownSymbols: string[];
 }
 
@@ -55,7 +55,7 @@ interface PositionCycle {
   deals: DealRow[];
 }
 
-/** Reconstructed view of one external position — broker-derived truth. */
+/** Reconstructed view of one external position - broker-derived truth. */
 interface ReconstructedTrade {
   status: TradeStatus;
   direction: "BUY" | "SELL";
@@ -89,7 +89,7 @@ export class TradeReconstructionService {
    * optimization documented in the phase report). Deterministic: observing
    * the same deals twice produces the same trades and no duplicate writes.
    * The caller passes account ids obtained through the owner-scoped
-   * AccountsRepository lookup — ownership is established upstream.
+   * AccountsRepository lookup - ownership is established upstream.
    */
   async reconstructAccounts(input: {
     userId: string;
@@ -107,7 +107,7 @@ export class TradeReconstructionService {
       const deals = await this.accountsRepository.listDeals(accountId);
       if (deals.length === 0) continue;
       // The journal backfills the denormalized currency column from the
-      // receiving account — loaded through the ownership-scoped read contract.
+      // receiving account - loaded through the ownership-scoped read contract.
       const account = await this.accountsRepository.findAccountForUser(accountId, input.userId);
       if (account === null) continue;
       await this.reconcileAccountDeals({
@@ -128,7 +128,7 @@ export class TradeReconstructionService {
     accountId: string;
     userId: string;
     userTimezone: string;
-    /** Journal currency backfill — the receiving account's currency. */
+    /** Journal currency backfill - the receiving account's currency. */
     accountCurrency: string;
     deals: DealRow[];
     outcome: ReconstructionOutcome;
@@ -209,18 +209,18 @@ export class TradeReconstructionService {
               confidence: null,
               notes: null,
               // The trading day is the PROVIDER entry moment localized to the
-              // owner's timezone — computed server-side (§22/§56).
+              // owner's timezone - computed server-side (§22/§56).
               tradingDate: tradingDateOf(reconstructed.entryAt.toISOString(), input.userTimezone),
               externalRef: null,
               importBatchId: null,
-              // §9/§27: the mapping anchor — without it the composite unique
+              // §9/§27: the mapping anchor - without it the composite unique
               // could not deduplicate across reconciliation passes.
               externalPositionId: cycle.positionId,
             },
             exits: reconstructed.exits.map((exit) => ({ ...exit, note: null })),
           });
           // Domain fact (B4): a position reconstructed already-closed is a
-          // closed journal fact — Discipline must evaluate its rules against
+          // closed journal fact - Discipline must evaluate its rules against
           // it (§46: every closed-trade write path publishes).
           if (reconstructed.status === "CLOSED") {
             this.events.publish("trade.closed", {
@@ -232,7 +232,7 @@ export class TradeReconstructionService {
           input.outcome.created += 1;
           continue;
         } catch (error) {
-          // §31 — the composite unique is the concurrency backstop: two
+          // §31 - the composite unique is the concurrency backstop: two
           // concurrent first reconciliations race the check-then-create.
           // The loser adopts the winner's row instead of failing a READ
           // path with a 409.
@@ -298,7 +298,7 @@ export class TradeReconstructionService {
           reconstructed.exits.map((exit) => ({ ...exit, note: null })),
         );
       }
-      // Domain fact (B4): the §28 reconciliation — a position that closed
+      // Domain fact (B4): the §28 reconciliation - a position that closed
       // since the last pass flips its trade OPEN → CLOSED. That flip is a
       // close fact: Discipline must evaluate its rules exactly once for it
       // (the guard keeps every later unchanged refresh silent).
@@ -362,22 +362,22 @@ export function reconstructCycle(cycle: PositionCycle): ReconstructedTrade {
   const closed = volumeOut.greaterThanOrEqualTo(volumeIn) && volumeOut.greaterThan(0);
 
   const entryPrice = weightedAveragePrice(entries);
-  // An OPEN trade has no finalized exit yet (§11) — even with partial legs,
+  // An OPEN trade has no finalized exit yet (§11) - even with partial legs,
   // the aggregated exit fields stay null until the position closes.
   const exitPrice = closed && exits.length > 0 ? weightedAveragePrice(exits) : null;
   const exitAt = closed && exits.length > 0 ? (exits[exits.length - 1]?.executedAt ?? null) : null;
 
-  // §20: provider data supplies the costs — nothing invented. Commission is
+  // §20: provider data supplies the costs - nothing invented. Commission is
   // a signed cost (negative) in provider data; fees surface it as a positive
   // cost. Net follows the ONE authoritative repo definition
   // (net = gross − fees − swap, shared computeTradeResults semantics).
   const totalProfit = sumDecimals(deals.map((deal) => deal.profit));
   const totalCommission = sumDecimals(deals.map((deal) => deal.commission));
   const totalSwap = sumDecimals(deals.map((deal) => deal.swap));
-  // Canonical cost convention (computeTradeResults §46 — ONE authoritative
+  // Canonical cost convention (computeTradeResults §46 - ONE authoritative
   // definition): the stored `swap` column is a COST MAGNITUDE (positive =
   // cost, net = gross − fees − swap). MT5 DEAL_SWAP is SIGNED (negative =
-  // cost) — the reconstruction negates the signed provider sum so the stored
+  // cost) - the reconstruction negates the signed provider sum so the stored
   // column honors that definition (a signed −0.5 swap-cost stores 0.5; a
   // rare signed credit stores a negative cost and RAISES the net).
   const swapCost = totalSwap === null ? null : totalSwap.negated();
@@ -442,7 +442,7 @@ function normalizedDecimal(value: string): string {
   return new Prisma.Decimal(value).toFixed();
 }
 
-/** Nullable-side normalization — `null` and `undefined` BOTH mean "no
+/** Nullable-side normalization - `null` and `undefined` BOTH mean "no
  * value": an `existing.X?.toFixed()` on a NULL column yields `undefined`
  * while a computed absent value yields `null`; treating them as different
  * made every stop-less/open sync trade look "changed" and rewrote it on

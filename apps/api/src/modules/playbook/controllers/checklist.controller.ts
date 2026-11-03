@@ -1,7 +1,7 @@
 /**
- * Checklist controller (Phase 7) — reusable checklist DEFINITIONS (§22).
+ * Checklist controller (Phase 7) - reusable checklist DEFINITIONS (§22).
  * The evaluation/snapshot side belongs to the consumers (TradePlan.checklist
- * frozen at planning time — Phase 5); editing a definition never rewrites a
+ * frozen at planning time - Phase 5); editing a definition never rewrites a
  * historical evaluation (§23/§26). All routes authenticated; ownership
  * enforced in the service.
  */
@@ -44,7 +44,7 @@ export class ChecklistController {
     return this.playbook.createChecklist(principal.userId, payload);
   }
 
-  /** Items are replaced WHOLESALE (product contract) — array order is the order. */
+  /** Items are replaced WHOLESALE (product contract) - array order is the order. */
   @Patch(":checklistId")
   update(
     @CurrentUser() principal: AuthPrincipal,

@@ -1,5 +1,5 @@
 /**
- * Verify Feature 8 — Command palette ⌘K.
+ * Verify Feature 8 - Command palette ⌘K.
  * Probes: trigger button, hotkey open, search filtering, keyboard nav, theme actions.
  */
 const { chromium } = require("playwright");
@@ -21,7 +21,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // 1. Trigger button visible in topbar
   const trigger = page.locator('[data-testid="command-palette-trigger"]');

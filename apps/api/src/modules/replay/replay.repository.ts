@@ -1,5 +1,5 @@
 /**
- * Replay data access — the ONLY place the replay context touches Prisma.
+ * Replay data access - the ONLY place the replay context touches Prisma.
  * Rows land in replayRow with a `kind` (SESSION | TRADE | DECISION | NOTE);
  * the row id IS the entity id (same Row pattern as SessionLiveRow).
  */

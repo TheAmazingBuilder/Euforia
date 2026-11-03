@@ -13,7 +13,7 @@ import { PRISMA_LOGGER_OPTIONS, type PrismaLoggerOptions } from "./prisma.consta
  * The single Prisma client of the monolith (infrastructure capability).
  *
  * Bounded contexts (Phase 2+) MUST NOT import this type in their public
- * interfaces — they define repository interfaces and receive an
+ * interfaces - they define repository interfaces and receive an
  * implementation injected from infrastructure. See apps/api README,
  * section "Prisma boundary".
  */
@@ -47,7 +47,7 @@ export class PrismaService
 
   /**
    * Cheap connectivity probe for health/readiness.
-   * Returns a boolean instead of throwing — the health layer decides how to
+   * Returns a boolean instead of throwing - the health layer decides how to
    * expose failure (never leaking the raw error to clients).
    */
   async ping(): Promise<boolean> {

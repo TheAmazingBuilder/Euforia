@@ -1,18 +1,18 @@
 /**
- * Nofy content domain (Phase 12) — PURE functions over the shared block
+ * Nofy content domain (Phase 12) - PURE functions over the shared block
  * contract. No Prisma, no Nest: this layer is unit-testable in isolation.
  *
  * Content model (Phase 12 §10): notes are ordered block lists. Blocks are
  * the flexible payload (shared `NofyBlock` contract) while core
  * relationships stay relational. The server keeps a plain-text projection
  * of every note (search + excerpt + word count) that MUST match the mock
- * engine's `textOfBlocks` — the mock is the parity reference.
+ * engine's `textOfBlocks` - the mock is the parity reference.
  *
  * Content security (§11): the editor speaks BLOCK JSON, never HTML. Nothing
- * here accepts raw HTML, so no server-side HTML sanitization is needed —
+ * here accepts raw HTML, so no server-side HTML sanitization is needed -
  * instead the payload is schema-validated (closed type vocabulary + size
  * caps, shared `nofyBlockInputSchema`) and image sources are protocol-
- * restricted (data:image and https/http only — javascript:/vbscript:/data:
+ * restricted (data:image and https/http only - javascript:/vbscript:/data:
  * text/html payloads are rejected before storage). Unknown block shapes
  * coming out of the database are DROPPED defensively (never rendered).
  */
@@ -33,7 +33,7 @@ const TEXT_BEARING: ReadonlySet<NofyBlockType> = new Set([
 ]);
 
 /**
- * Plain-text projection of a block list — the single input for search,
+ * Plain-text projection of a block list - the single input for search,
  * excerpts and word counts (mock parity: textOfBlocks).
  */
 export function textOfBlocks(blocks: NofyBlock[]): string {
@@ -41,7 +41,7 @@ export function textOfBlocks(blocks: NofyBlock[]): string {
   for (const block of blocks) {
     if (TEXT_BEARING.has(block.type) && block.text.trim() !== "") parts.push(block.text.trim());
     if (block.type === "table" && block.rows) {
-      for (const row of block.rows) parts.push(row.join(" — "));
+      for (const row of block.rows) parts.push(row.join(" - "));
     }
     if (block.type === "image" && block.caption) parts.push(block.caption);
   }
@@ -83,7 +83,7 @@ export function searchSnippet(blocks: NofyBlock[], query: string): string {
 
 /**
  * Storage projection of a submitted block: strips client-supplied ref
- * display fields (label/meta/href) — refs persist as relational pointers
+ * display fields (label/meta/href) - refs persist as relational pointers
  * (kind + id) and are re-resolved server-side on every read (§18/§24).
  */
 export function normalizeBlocks(input: NofyBlockInput[]): NofyBlock[] {
@@ -105,7 +105,7 @@ export function normalizeBlocks(input: NofyBlockInput[]): NofyBlock[] {
 /**
  * Defensive runtime parser for blocks read back from the JSON column.
  * The shared schema validated them on the way in; this guards against
- * hand-migrated/corrupt rows — unknown shapes are dropped, never served.
+ * hand-migrated/corrupt rows - unknown shapes are dropped, never served.
  */
 export function parseStoredBlocks(value: unknown): NofyBlock[] {
   if (!Array.isArray(value)) return [];
@@ -143,9 +143,9 @@ export function parseStoredBlocks(value: unknown): NofyBlock[] {
 const SAFE_IMAGE_SRC = /^(https?:\/\/|data:image\/(png|jpeg|jpg|gif|webp|svg\+xml);base64,)/i;
 
 /**
- * Content security (§11 — "reject unsafe protocols"): image sources are
+ * Content security (§11 - "reject unsafe protocols"): image sources are
  * limited to http(s) URLs and base64 data-image payloads. Everything else
- * (javascript:, data:text/html, …) is rejected BEFORE storage — the client
+ * (javascript:, data:text/html, …) is rejected BEFORE storage - the client
  * renders `src` in a plain <img>, so this is the server-side gate.
  */
 export function isSafeImageSrc(src: string | undefined): boolean {
@@ -163,7 +163,7 @@ export function normalizeTagName(name: string): string {
   return name.trim().replace(/^#/, "");
 }
 
-/** Fresh block id — distinct id space per note, regenerated on copies. */
+/** Fresh block id - distinct id space per note, regenerated on copies. */
 export function newBlockId(): string {
   return `nb-${crypto.randomUUID().replace(/-/g, "").slice(0, 24)}`;
 }

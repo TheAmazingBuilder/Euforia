@@ -1,10 +1,10 @@
-"""Account snapshot extraction (Account & Chart V1.1 — ACCOUNT_POSITION).
+"""Account snapshot extraction (Account & Chart V1.1 - ACCOUNT_POSITION).
 
 The ACCOUNT_POSITION profile reads:
-  1. the account HEADER — labeled values on an account summary panel
+  1. the account HEADER - labeled values on an account summary panel
      (login, server, currency, leverage, balance, equity, margin, free
      margin, margin level);
-  2. the OPEN POSITIONS table — rows reusing the trade-row grammar
+  2. the OPEN POSITIONS table - rows reusing the trade-row grammar
      (find_order_rows + the multi-trade candidate grouper), each position
      becoming one candidate draft for grouped confirmation.
 
@@ -12,7 +12,7 @@ MT5 vocabulary (desktop Toolbox "Trade" tab, mobile account page, position
 cards): Login, Server, Currency / Deposit currency, Leverage, Balance,
 Equity, Margin, Free Margin, Margin Level.
 
-Extraction stays CONSERVATIVE (§20): labeled evidence only — a value is
+Extraction stays CONSERVATIVE (§20): labeled evidence only - a value is
 accepted when a KNOWN label precedes it, never from position alone. The
 "margin" family is matched by SPECIFICITY priority (margin level > free
 margin > margin) so the least specific label can never swallow a value
@@ -34,7 +34,7 @@ __all__ = ["extract_account_fields"]
 
 # kind: DECIMAL → normalize_decimal; DIGITS → pure-digit token (login);
 # CURRENCY → 3-letter code; LEVERAGE → "1:500" shape; TEXT → short free text
-# (server names — letters/digits/dot/dash only, never prose).
+# (server names - letters/digits/dot/dash only, never prose).
 _LABEL_RULES: Tuple[Tuple[re.Pattern, str, str], ...] = tuple(
     (re.compile(pattern, re.IGNORECASE), key, kind)
     for pattern, key, kind in (
@@ -55,13 +55,13 @@ _DIGITS_TOKEN = re.compile(r"^\d{4,12}$")
 _CURRENCY_TOKEN = re.compile(r"^[A-Za-z]{3}$")
 _TEXT_TOKEN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9 ._-]{0,30}$")
 
-# Header labels must START a value — a label in the middle of a position row
+# Header labels must START a value - a label in the middle of a position row
 # ("Symbol Margin Profit") is table chrome, not a labeled header value.
 # Two-word labels ("Free Margin", "Margin Level", "Deposit Currency") are
 # joined ACROSS adjacent words: the two-word form is checked FIRST so the
 # more specific label always wins over its bare prefix.
 def _label_at(line: OcrLine, index: int) -> Optional[Tuple[str, str, int]]:
-    """The label rule matching at `index` — (key, kind, label_word_count).
+    """The label rule matching at `index` - (key, kind, label_word_count).
 
     The two-word join wins over the single-word match; the word count tells
     the value scanner where the label ends.
@@ -116,7 +116,7 @@ def extract_account_fields(lines: List[OcrLine]) -> List[EngineField]:
     """Labeled account-header extraction over the OCR lines.
 
     Returns one EngineField per recognized header value, highest confidence
-    wins per key. Positions are NOT extracted here — the caller groups them
+    wins per key. Positions are NOT extracted here - the caller groups them
     through the shared trade-row grammar (extract_trade_candidates).
     """
     fields: Dict[str, EngineField] = {}

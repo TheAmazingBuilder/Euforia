@@ -12,7 +12,7 @@ import {
 } from "./playbook-blocks";
 
 /**
- * Strategy (playbook entry) — data-model.md "Domaine 4".
+ * Strategy (playbook entry) - data-model.md "Domaine 4".
  * Setup and strategy are merged into one entity; `grade` rates setup quality.
  * Rules bodies are free markdown (entry / exit / risk).
  */
@@ -30,7 +30,7 @@ export const strategySchema = z.object({
   /** UI color hint (CSS color string owned by the client). */
   color: z.string().nullable(),
   createdAt: isoDateTimeSchema,
-  // ── Professional Playbook extensions (schemas/playbook.ts) — nullish so
+  // ── Professional Playbook extensions (schemas/playbook.ts) - nullish so
   // pre-Playbook fixtures and stored snapshots stay valid. ──
   /** Bumped on every content mutation; trades freeze it at entry (§17). */
   version: z.number().int().min(1).nullish(),
@@ -51,7 +51,7 @@ export type Strategy = z.infer<typeof strategySchema>;
 
 // ── Strategy CRUD (playbook screen) ──────────────────────────────────────────
 
-/** POST /strategies — create a playbook entry. Omitted texts stay null. */
+/** POST /strategies - create a playbook entry. Omitted texts stay null. */
 export const createStrategyInputSchema = z.object({
   name: z.string().min(1, "Name is required").max(80),
   description: z.string().max(2000).nullable().optional(),
@@ -62,7 +62,7 @@ export const createStrategyInputSchema = z.object({
   status: strategyStatusSchema.optional(),
   /** Preset palette value (see PLAYBOOK_COLOR_PALETTE) or null. */
   color: z.string().max(20).nullable().optional(),
-  // ── structured Playbook blocks — replaced wholesale ──
+  // ── structured Playbook blocks - replaced wholesale ──
   tags: z.array(z.string().max(24)).optional(),
   detailedDescription: z.string().max(8000).nullable().optional(),
   marketProfile: marketProfileSchema.nullable().optional(),
@@ -77,7 +77,7 @@ export const createStrategyInputSchema = z.object({
 
 export type CreateStrategyInput = z.infer<typeof createStrategyInputSchema>;
 
-/** PATCH /strategies/:id — all fields optional, at least one required. */
+/** PATCH /strategies/:id - all fields optional, at least one required. */
 export const updateStrategyInputSchema = createStrategyInputSchema
   .partial()
   .refine(

@@ -1,5 +1,5 @@
 /**
- * Motion pass verification — Expandable accordions (Academy), sliding tab
+ * Motion pass verification - Expandable accordions (Academy), sliding tab
  * pill + animated tab switch (Coach), reveal-stagger grids (Dashboard),
  * MotionConfig reduced-motion guard, mobile 390px + light theme.
  * Screenshots into scripts/shots/motion/. Exit 1 when any probe fails.
@@ -11,7 +11,7 @@ const OUT = "scripts/shots/motion";
 
 function ok(name, condition, detail = "") {
   const status = condition ? "PASS" : "FAIL";
-  console.log(`${status}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${status}  ${name}${detail ? ` - ${detail}` : ""}`);
   if (!condition) process.exitCode = 1;
 }
 
@@ -24,7 +24,7 @@ function ok(name, condition, detail = "") {
   page.on("console", (msg) => msg.type() === "error" && errors.push(msg.text()));
   page.on("pageerror", (err) => errors.push(String(err)));
 
-  // Academy — accordion open/close through Expandable
+  // Academy - accordion open/close through Expandable
   await page.goto(`${BASE}/academy`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1200);
 
@@ -50,13 +50,13 @@ function ok(name, condition, detail = "") {
   );
   await page.screenshot({ path: `${OUT}/academy-expanded.png`, fullPage: false });
 
-  // Close track — exit animation, content unmounts
+  // Close track - exit animation, content unmounts
   await track2.click();
   await page.waitForTimeout(450);
   ok("track 2 closes", (await track2.getAttribute("aria-expanded")) === "false");
   ok("track 2 lessons unmounted", (await track2Lessons.count()) === 0);
 
-  // Coach — sliding pill + tab content switch
+  // Coach - sliding pill + tab content switch
   await page.goto(`${BASE}/coach`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1400);
 
@@ -76,7 +76,7 @@ function ok(name, condition, detail = "") {
   ok("active pill inside weekly tab", (await pillInsideWeekly.count()) === 1);
   await page.screenshot({ path: `${OUT}/coach-weekly-pill.png`, fullPage: false });
 
-  // Back to chat — content switch again
+  // Back to chat - content switch again
   await page.getByRole("tab", { name: "Chat" }).click();
   await page.waitForTimeout(600);
   ok(
@@ -84,7 +84,7 @@ function ok(name, condition, detail = "") {
     (await page.getByText("Ask your AI coach anything").count()) >= 1,
   );
 
-  // Dashboard — reveal-stagger grids present, no overlap
+  // Dashboard - reveal-stagger grids present, no overlap
   await page.goto(`${BASE}/`, { waitUntil: "networkidle" });
   await page.waitForTimeout(1400);
   const staggerGrids = await page.locator(".reveal-stagger").count();

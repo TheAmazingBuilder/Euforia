@@ -1,4 +1,4 @@
-// Phase 10 — Trade Journal Integration: full workflow verification.
+// Phase 10 - Trade Journal Integration: full workflow verification.
 // PROD-SAFE (:3000): DOM/testids + localStorage reads only.
 //  (1)  Save Analysis (no trade)          → envelope record, tradeId null
 //  (2)  Save Analysis (linked EURUSD)     → tradeId set
@@ -15,7 +15,7 @@ const BASE = process.env.BASE_URL || "http://localhost:3000";
 const results = [];
 function check(id, label, ok, detail = "") {
   results.push({ id, ok });
-  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  — " + detail : ""}`);
+  console.log(`${ok ? "PASS" : "FAIL"}  ${id}  ${label}${detail ? "  - " + detail : ""}`);
 }
 const NOISE = [/401/, /auth\/me/, /auth\/refresh/, /WebSocket/];
 
@@ -72,12 +72,12 @@ async function openJournalSubmenu(page) {
     await openJournalSubmenu(page);
     await page.click('[data-testid="oryon-ctx-save-analysis"]');
     await page.waitForSelector('[data-testid="oryon-save-analysis-dialog"]', { timeout: 5000 });
-    await page.fill('[data-testid="oryon-analysis-title"]', "Probe — structure review");
+    await page.fill('[data-testid="oryon-analysis-title"]', "Probe - structure review");
     await page.fill('[data-testid="oryon-analysis-notes"]', "HH/LH chain intact above 1.0842.");
     await page.click('[data-testid="oryon-analysis-save"]');
     await page.waitForTimeout(600);
     let env = await analysesEnvelope(page);
-    const standalone = (env.analyses ?? []).find((a) => a.title === "Probe — structure review");
+    const standalone = (env.analyses ?? []).find((a) => a.title === "Probe - structure review");
     check("J1", "analysis saved (no trade)", standalone !== undefined && standalone?.tradeId === null,
       JSON.stringify(standalone ? { tradeId: standalone.tradeId, sv: standalone.schemaVersion, d: standalone.drawings.length } : null));
 
@@ -140,7 +140,7 @@ async function openJournalSubmenu(page) {
     check("J3c", "cross-instrument link saved only after confirmation", crossInstrument);
 
     // ── (4) Snapshot → attach to the linked EURUSD trade ───────────────────
-    // NOTE (mock deployment): the journal's MSW store is IN-MEMORY — a full
+    // NOTE (mock deployment): the journal's MSW store is IN-MEMORY - a full
     // page reload regenerates the fixtures and drops attached screenshots
     // (documented limitation). The drawer verification therefore navigates
     // CLIENT-SIDE via the app's own "Open linked trade" router.push so the
@@ -168,7 +168,7 @@ async function openJournalSubmenu(page) {
     );
     check("J4b", "linked analysis references the stored screenshot", withSnapshot);
 
-    // ── (5)+(7) CLIENT-SIDE nav to the journal via the app's own entry —
+    // ── (5)+(7) CLIENT-SIDE nav to the journal via the app's own entry -
     // the context-menu "Open linked trade" router.push keeps the JS session
     // (and the in-memory mock store) alive: gallery + analyses visible.
     await openJournalSubmenu(page);
@@ -184,7 +184,7 @@ async function openJournalSubmenu(page) {
     check("J5b", "screenshot gallery holds the attached snapshot", (await gallery.count()) >= 1,
       `imgs=${await gallery.count()}`);
 
-    // ── (6) Open in Oryon — deep link + reconstructed banner ───────────────
+    // ── (6) Open in Oryon - deep link + reconstructed banner ───────────────
     const openBtn = page.locator('[data-testid^="trade-chart-analysis-open-"]').first();
     await openBtn.click();
     await page.waitForSelector('[data-testid="oryon-analysis-banner"]', { timeout: 20000 });

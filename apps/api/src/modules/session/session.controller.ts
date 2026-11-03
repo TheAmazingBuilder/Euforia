@@ -1,5 +1,5 @@
 /**
- * Session controller (B5) — the timeline + logbook HTTP surface.
+ * Session controller (B5) - the timeline + logbook HTTP surface.
  * Global JwtAuthGuard, ZodValidationPipe on the note body, uuid-validated
  * params. Mirrors `mocks/handlers/session.ts` (3 routes + timeline).
  */
@@ -14,7 +14,7 @@ import { SessionService } from "./session.service";
 export class SessionTimelineController {
   constructor(private readonly session: SessionService) {}
 
-  /** GET /session/timeline — today's events + moods (server-resolved day). */
+  /** GET /session/timeline - today's events + moods (server-resolved day). */
   @Get("timeline")
   async timeline(@CurrentUser() principal: AuthPrincipal) {
     const response = await this.session.timeline(principal.userId);

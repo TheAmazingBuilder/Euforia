@@ -10,7 +10,7 @@ const OUT = "scripts/shots/nav-colors";
 
 function ok(name, condition, detail = "") {
   const status = condition ? "PASS" : "FAIL";
-  console.log(`${status}  ${name}${detail ? ` — ${detail}` : ""}`);
+  console.log(`${status}  ${name}${detail ? ` - ${detail}` : ""}`);
   if (!condition) process.exitCode = 1;
 }
 

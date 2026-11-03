@@ -3,11 +3,11 @@
 import Link from "next/link";
 
 import { EuforiaLogo } from "@/components/brand/euforia-logo";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeSwitch } from "@/components/layout/theme-switch";
 import { useDict } from "@/i18n/i18n-provider";
 
 /**
- * Authentication shell (spec §44, §45, §46) — belongs to the Euforia design
+ * Authentication shell (spec §44, §45, §46) - belongs to the Euforia design
  * system: premium, technical, restrained. Desktop gets a branding column +
  * the auth card; mobile collapses to a focused single column with large
  * touch targets. No generic gradients, no stock illustrations (§45).
@@ -23,12 +23,12 @@ export function AuthLayout({
   const auth = useDict().auth;
   return (
     <div className="grid min-h-screen bg-background text-foreground lg:grid-cols-[1fr_460px] xl:grid-cols-[1fr_520px]">
-      {/* Branding column — desktop only (§44: mobile stays simple/focused) */}
+      {/* Branding column - desktop only (§44: mobile stays simple/focused) */}
       <aside
         aria-hidden="true"
         className="relative hidden flex-col justify-between overflow-hidden border-r border-border bg-surface p-10 lg:flex xl:p-14"
       >
-        {/* Ribbon motif — the brand mark, oversized and faint. Single
+        {/* Ribbon motif - the brand mark, oversized and faint. Single
             decorative element, deliberately quiet (§45). */}
         <EuforiaLogo
           variant="mark"
@@ -78,7 +78,7 @@ export function AuthLayout({
         </div>
 
         <p className="relative text-xs text-muted-foreground/70">
-          Euforia — trading journal &amp; behavioral coach
+          Euforia - trading journal &amp; behavioral coach
         </p>
       </aside>
 
@@ -97,7 +97,7 @@ export function AuthLayout({
             <EuforiaLogo variant="full" tone="auto" size="sm" />
           </Link>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
+            <ThemeSwitch />
           </div>
         </div>
 

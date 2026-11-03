@@ -1,5 +1,5 @@
 /**
- * Phase 9 verification — analytics suite (6 tabs).
+ * Phase 9 verification - analytics suite (6 tabs).
  * Captures: 1 per tab (desktop 1440), What-If with filters active
  * (differentiated curves), 3 themes on Overview, mobile 390 tabs scroll.
  * Also probes: low-n indicators, tabs scrollability at 390px, chart canvases.
@@ -62,7 +62,7 @@ async function settle(page) {
     .first()
     .textContent()
     .catch(() => null);
-  console.log(`what-if filters on — kept chip: ${deltaChip ? deltaChip.trim() : "NOT FOUND"}`);
+  console.log(`what-if filters on - kept chip: ${deltaChip ? deltaChip.trim() : "NOT FOUND"}`);
   await page.screenshot({ path: `${OUT}/p9-what-if-active.png`, fullPage: true });
 
   // What-If probes: two ECharts canvas + delta chip present

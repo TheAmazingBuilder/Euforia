@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<title>Oryon — Guide d'installation &amp; configuration locale</title>
+<title>Oryon - Guide d'installation &amp; configuration locale</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 @page { size: 720px 1020px; margin: 0; }
@@ -100,7 +100,7 @@ li{ margin-bottom:5px; }
   <div class="ring r1"></div><div class="ring r2"></div><div class="ring r3"></div>
   <div class="badge">Documentation · Installation</div>
   <h1>Oryon<br><span class="accent">Guide local</span></h1>
-  <div class="subtitle">Installation, configuration et lancement du projet sur votre PC —
+  <div class="subtitle">Installation, configuration et lancement du projet sur votre PC -
   base de données vide, données 100&nbsp;% personnelles, zéro mock.</div>
   <div class="meta">
     <div><div class="k">Version</div><div class="v">1.0</div></div>
@@ -134,7 +134,7 @@ li{ margin-bottom:5px; }
   <p><strong>Flux en mode réel</strong> : le navigateur parle au web (:3000) ; les appels API
   partent vers le même origine sous <code>/api/v1</code> et sont proxifiés vers l'API (:4000).
   Aucun CORS à gérer en local, cookie de refresh first-party. Le backend MSW simulé est
-  <strong>désactivé</strong> dans la configuration livrée — vous tapez toujours sur la vraie
+  <strong>désactivé</strong> dans la configuration livrée - vous tapez toujours sur la vraie
   API et votre vraie base.</p>
   <div class="card ok"><div class="t">Base vide par design</div>
   Aucun seed, aucun jeu de données fictif, aucun compte de démo n'existe dans le dépôt.
@@ -151,11 +151,11 @@ li{ margin-bottom:5px; }
     <tr><td>Node.js</td><td>≥ 20 (testé v24.21.0)</td><td><code>node -v</code></td><td>LTS recommandé</td></tr>
     <tr><td>pnpm</td><td><strong>12.4.2</strong> exactement</td><td><code>pnpm -v</code></td><td>via corepack (ci-dessous)</td></tr>
     <tr><td>Git</td><td>récent</td><td><code>git -v</code></td><td>clonage / historique</td></tr>
-    <tr><td>PostgreSQL 17</td><td>option B seulement</td><td>—</td><td>inutile avec la DB embarquée</td></tr>
+    <tr><td>PostgreSQL 17</td><td>option B seulement</td><td>-</td><td>inutile avec la DB embarquée</td></tr>
     <tr><td>Python 3.11+</td><td>optionnel</td><td><code>python3 --version</code></td><td>service OCR</td></tr>
     <tr><td>Bun</td><td>optionnel</td><td><code>bun -v</code></td><td>market service</td></tr>
   </table>
-  <div class="codeblock"><span class="cmt"># pnpm via corepack — aucune installation globale</span>
+  <div class="codeblock"><span class="cmt"># pnpm via corepack - aucune installation globale</span>
 corepack enable
 corepack prepare pnpm@12.4.2 --activate
 pnpm -v   <span class="cmt"># → 12.4.2</span></div>
@@ -169,11 +169,11 @@ pnpm -v   <span class="cmt"># → 12.4.2</span></div>
     <div class="section-title">Récupération du projet</div>
     <div class="divider"></div>
   </div>
-  <div class="card"><div class="t">Option A — Tarball clé en main (recommandé)</div>
+  <div class="card"><div class="t">Option A - Tarball clé en main (recommandé)</div>
   <div class="codeblock">mkdir -p ~/oryon &amp;&amp; tar -xzf oryon-full-workspace-FINAL-2026-10-19.tar.gz -C ~/oryon
 cd ~/oryon
 git log --oneline -1   <span class="cmt"># doit afficher le commit de référence</span></div></div>
-  <div class="card"><div class="t">Option B — Bundle git (historique complet)</div>
+  <div class="card"><div class="t">Option B - Bundle git (historique complet)</div>
   <div class="codeblock">git clone oryon-git-history-FINAL-2026-10-19.bundle oryon
 cd oryon &amp;&amp; git checkout main
 <span class="cmt"># variante légère sans tout l'historique :</span>
@@ -196,16 +196,16 @@ git clone --depth 1 oryon-git-history-FINAL-2026-10-19.bundle oryon</div></div>
   </div>
   <p>Deux fichiers à créer à partir des templates documentés
   (<code>apps/api/.env.example</code>, <code>apps/web/.env.example</code>).
-  <strong>Aucun <code>.env</code> n'est versionné</strong> — vérifié par la garde CI
+  <strong>Aucun <code>.env</code> n'est versionné</strong> - vérifié par la garde CI
   <code>check-tracked-secrets</code> (1528 fichiers scannés).</p>
-  <div class="section-title" style="font-size:15px; margin-top:14px;">5.1 API — apps/api/.env (variables obligatoires)</div>
+  <div class="section-title" style="font-size:15px; margin-top:14px;">5.1 API - apps/api/.env (variables obligatoires)</div>
   <table>
     <tr><th>Variable</th><th>Rôle</th><th>Génération</th></tr>
     <tr><td><code>DATABASE_URL</code></td><td>Connexion PostgreSQL</td><td><code>postgresql://cosmoz@127.0.0.1:5433/cosmoz</code> (DB embarquée, trust localhost)</td></tr>
     <tr><td><code>AUTH_JWT_SECRET</code></td><td>Signature des JWT</td><td><code>randomBytes(48).toString('base64url')</code></td></tr>
     <tr><td><code>AUTH_MFA_ENCRYPTION_KEY</code></td><td>AES-256-GCM secrets TOTP</td><td><code>randomBytes(32).toString('base64')</code></td></tr>
-    <tr><td><code>INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY</code></td><td>AES-256-GCM secrets webhook</td><td>idem — clé distincte</td></tr>
-    <tr><td><code>ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY</code></td><td>AES-256-GCM credentials brokers</td><td>idem — clé distincte</td></tr>
+    <tr><td><code>INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY</code></td><td>AES-256-GCM secrets webhook</td><td>idem - clé distincte</td></tr>
+    <tr><td><code>ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY</code></td><td>AES-256-GCM credentials brokers</td><td>idem - clé distincte</td></tr>
   </table>
   <div class="codeblock"><span class="cmt"># Génération des secrets (exécutez 4 fois avec des tailles/variantes)</span>
 node -e "console.log(require('crypto').randomBytes(48).toString('base64url'))"
@@ -222,35 +222,35 @@ node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"</div
   <div class="card ok"><div class="t">Secrets déjà générés pour vous</div>
   Le tarball livre <code>apps/api/.env</code> avec 4 secrets CSPRNG frais (2026-10-19).
   Régénérez-les quand vous voulez avec les commandes ci-dessus.</div>
-  <div class="section-title" style="font-size:15px; margin-top:14px;">5.2 Web — apps/web/.env.local</div>
+  <div class="section-title" style="font-size:15px; margin-top:14px;">5.2 Web - apps/web/.env.local</div>
   <div class="codeblock">NEXT_PUBLIC_API_MOCKED=false
 API_PROXY_TARGET=http://localhost:4000</div>
   <div class="card warn"><div class="t">⚠ NE PAS omettre NEXT_PUBLIC_API_MOCKED=false</div>
   Sans cette ligne, le mode dev Next.js reste sur le backend MSW simulé (données fictives).
   Avec <code>false</code>, toutes les requêtes partent sur votre vraie API via le proxy
-  same-origin — zéro mock. En build production, le mode réel est imposé.</div>
+  same-origin - zéro mock. En build production, le mode réel est imposé.</div>
 
   <div class="chapter-header">
     <div class="section-tag">Section 6</div>
-    <div class="section-title">Base de données — vide par design</div>
+    <div class="section-title">Base de données - vide par design</div>
     <div class="divider"></div>
   </div>
-  <div class="card"><div class="t">Option A — PostgreSQL embarquée (recommandée en local)</div>
+  <div class="card"><div class="t">Option A - PostgreSQL embarquée (recommandée en local)</div>
   <div class="codeblock">pnpm api:db:up                          <span class="cmt"># démarre PostgreSQL 17 sur 127.0.0.1:5433</span>
 pnpm --filter @cosmoz/api db:status     <span class="cmt"># vérifie l'état</span>
 pnpm --filter @cosmoz/api exec prisma migrate deploy   <span class="cmt"># applique les 42 migrations</span></div></div>
-  <p>Binaire géré par la dépendance <code>embedded-postgres</code> — aucune installation
+  <p>Binaire géré par la dépendance <code>embedded-postgres</code> - aucune installation
   système. Authentification trust sur 127.0.0.1 uniquement (convenience dev). Les données
   vivent dans <code>apps/api/.localpg/</code> (créé au premier <code>db:up</code>, hors git).
   <code>db:down</code> stoppe, <code>db:status</code> diagnostique.</p>
-  <div class="card"><div class="t">Option B — Votre propre PostgreSQL (Docker)</div>
+  <div class="card"><div class="t">Option B - Votre propre PostgreSQL (Docker)</div>
   <div class="codeblock">docker run -d --name oryon-pg -e POSTGRES_USER=oryon \
   -e POSTGRES_PASSWORD=change-me -e POSTGRES_DB=cosmoz \
   -p 5433:5432 postgres:17
 <span class="cmt"># puis adaptez DATABASE_URL dans apps/api/.env :</span>
 <span class="cmt"># postgresql://oryon:change-me@127.0.0.1:5433/cosmoz</span>
 pnpm --filter @cosmoz/api exec prisma migrate deploy</div></div>
-  <p><strong>Pourquoi la base sera vide — et c'est voulu</strong> : aucun fichier de seed
+  <p><strong>Pourquoi la base sera vide - et c'est voulu</strong> : aucun fichier de seed
   n'existe (aucune clé <code>prisma.seed</code>, aucun <code>prisma/seed.ts</code>) ; les 42
   migrations créent uniquement la structure (tables, index, contraintes uniques). Les
   données de test du développement vivaient dans <code>.localpg</code> (non versionné, non
@@ -271,8 +271,8 @@ pnpm --filter @cosmoz/api exec prisma migrate deploy</div></div>
       <div class="codeblock">pnpm dev   <span class="cmt"># turbo dev : API :4000 + Web :3000</span></div></div></div>
     <div class="step"><div class="n"></div><div class="b">
       <span class="st">Ou séparément (deux terminaux)</span>
-      <div class="codeblock">pnpm api:dev                          <span class="cmt"># terminal 1 — API :4000</span>
-pnpm --filter @cosmoz/web dev        <span class="cmt"># terminal 2 — Web :3000</span></div></div></div>
+      <div class="codeblock">pnpm api:dev                          <span class="cmt"># terminal 1 - API :4000</span>
+pnpm --filter @cosmoz/web dev        <span class="cmt"># terminal 2 - Web :3000</span></div></div></div>
     <div class="step"><div class="n"></div><div class="b">
       <span class="st">Ouvrir l'application</span>
       <div>Web : <strong>http://localhost:3000</strong> · API :
@@ -286,13 +286,13 @@ pnpm --filter @cosmoz/web dev        <span class="cmt"># terminal 2 — Web :300
     <div class="divider"></div>
   </div>
   <div class="steps">
-    <div class="step"><div class="n"></div><div class="b">Ouvrez <strong>http://localhost:3000</strong> —
+    <div class="step"><div class="n"></div><div class="b">Ouvrez <strong>http://localhost:3000</strong> -
       écran d'authentification (groupe de routes <code>(auth)</code>).</div></div>
     <div class="step"><div class="n"></div><div class="b">Route <strong>/register</strong> :
       email + mot de passe fort. Hachage <strong>Argon2id</strong> (paramètres OWASP),
       anti-énumération d'emails, rate limiting multi-couches.</div></div>
     <div class="step"><div class="n"></div><div class="b">Email de vérification : en local sans
-      SMTP, le mailer journalise le lien dans la console API — copiez-le dans le navigateur.</div></div>
+      SMTP, le mailer journalise le lien dans la console API - copiez-le dans le navigateur.</div></div>
     <div class="step"><div class="n"></div><div class="b">Connectez-vous, puis activez la
       <strong>MFA (TOTP)</strong> dans les réglages sécurité (secrets chiffrés AES-GCM,
       codes de récupération hachés à usage unique).</div></div>
@@ -316,7 +316,7 @@ pnpm test</div>
   <table>
     <tr><th>Suite (référence 2026-10-19)</th><th>Résultat</th><th>Notes</th></tr>
     <tr><td>Web (vitest)</td><td><strong>223/223</strong></td><td>~7 s</td></tr>
-    <tr><td>API (vitest, Postgres réel)</td><td><strong>1350/1351</strong></td><td>1 flake pré-existant : <code>oanda recovery sweep</code> (timeout 30 s, timing scheduler) — non bloquant</td></tr>
+    <tr><td>API (vitest, Postgres réel)</td><td><strong>1350/1351</strong></td><td>1 flake pré-existant : <code>oanda recovery sweep</code> (timeout 30 s, timing scheduler) - non bloquant</td></tr>
     <tr><td>TypeScript</td><td>0 erreur</td><td><code>tsc --noEmit</code> ×3 (web, api, shared)</td></tr>
     <tr><td>Gardes</td><td>PASS</td><td>anti-mocks prod + anti-secrets trackés (1528 fichiers)</td></tr>
     <tr><td><code>pnpm audit --prod</code></td><td><strong>0 vulnérabilité</strong></td><td>3 HIGH transitives épinglées via overrides</td></tr>
@@ -327,14 +327,14 @@ pnpm test</div>
     <div class="section-title">Services optionnels</div>
     <div class="divider"></div>
   </div>
-  <div class="card"><div class="t">OCR — reconnaissance de captures (FastAPI, :3004)</div>
+  <div class="card"><div class="t">OCR - reconnaissance de captures (FastAPI, :3004)</div>
   <div class="codeblock">cd mini-services/ocr-service
 python3 -m venv .venv &amp;&amp; source .venv/bin/activate
 pip install -r requirements.txt
 uvicorn app.main:app --host 127.0.0.1 --port 3004</div>
   <p>Puis dans <code>apps/api/.env</code> : <code>OCR_SERVICE_URL=http://127.0.0.1:3004</code>
   et <code>OCR_SERVICE_TOKEN=&lt;randomBytes(32) hex&gt;</code> (redémarrez l'API). Sans ce
-  service, le module OCR dégrade proprement (<code>OCR_UNAVAILABLE</code>) — l'app reste
+  service, le module OCR dégrade proprement (<code>OCR_UNAVAILABLE</code>) - l'app reste
   fonctionnelle. Uploads validés par magic bytes.</p></div>
   <div class="card"><div class="t">Market data sidecar (Bun, :3003)</div>
   <div class="codeblock">cd mini-services/market-service &amp;&amp; bun run dev
@@ -348,7 +348,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 3004</div>
   <div class="codeblock">pnpm build   <span class="cmt"># turbo build : next build + nest build</span></div>
   <ul>
     <li><code>NODE_ENV=production</code> <strong>désactive</strong> mock trading provider et
-    mock OCR — une vraie <code>OCR_SERVICE_URL</code> devient requise.</li>
+    mock OCR - une vraie <code>OCR_SERVICE_URL</code> devient requise.</li>
     <li><code>CORS_ORIGINS</code> doit lister vos origines exactes (<code>*</code> rejeté).</li>
     <li>Erreurs 5xx masquées côté client, aucun stack trace ne fuit ; headers de sécurité
     posés par le web (XFO, nosniff, referrer, CSP frame-ancestors).</li>
@@ -394,7 +394,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 3004</div>
     <tr><td>Erreur CORS</td><td>Origine non allowlistée</td><td>Ajoutez l'origine exacte à <code>CORS_ORIGINS</code></td></tr>
     <tr><td>Port 3000/4000 occupé</td><td>Autre service local</td><td>Libérez le port ou changez la config</td></tr>
     <tr><td><code>pnpm: command not found</code></td><td>pnpm absent</td><td><code>corepack enable &amp;&amp; corepack prepare pnpm@12.4.2 --activate</code></td></tr>
-    <tr><td>1 échec test <code>oanda recovery sweep</code></td><td>Flake de timing connu</td><td>Relancez — documenté non bloquant</td></tr>
+    <tr><td>1 échec test <code>oanda recovery sweep</code></td><td>Flake de timing connu</td><td>Relancez - documenté non bloquant</td></tr>
     <tr><td>Reset complet de la base</td><td>Repartir de zéro</td><td><code>db:down</code> → suppr. <code>.localpg</code> → <code>db:up</code> → <code>migrate deploy</code></td></tr>
   </table>
 
@@ -406,7 +406,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 3004</div>
   <ol>
     <li><strong>Secrets</strong> : régénérez les 4 clés si vous exposez l'app au-delà de
     localhost. Ils ne quittent jamais votre machine.</li>
-    <li><strong>Fichiers .env</strong> : exclus du dépôt et surveillés par la garde CI —
+    <li><strong>Fichiers .env</strong> : exclus du dépôt et surveillés par la garde CI -
     ne forcez jamais <code>git add -f apps/api/.env</code>.</li>
     <li><strong>Mots de passe</strong> : Argon2id côté serveur ; n'abaissez jamais les
     paramètres.</li>
@@ -417,7 +417,7 @@ uvicorn app.main:app --host 127.0.0.1 --port 3004</div>
     <li><strong>Mises à jour</strong> : <code>pnpm audit --prod</code> doit rester à 0 ;
     respectez les <code>overrides</code> de <code>pnpm-workspace.yaml</code>.</li>
     <li><strong>Backups</strong> : <code>pg_dump</code> + copie de <code>apps/api/.env</code>
-    hors machine — c'est votre seul état irremplaçable une fois vos données saisies.</li>
+    hors machine - c'est votre seul état irremplaçable une fois vos données saisies.</li>
   </ol>
 
 </div>
@@ -425,11 +425,11 @@ uvicorn app.main:app --host 127.0.0.1 --port 3004</div>
 <div class="ending">
   <div class="big">Prêt à trader<br><span class="accent">avec vos données.</span></div>
   <ul>
-    <li>pnpm 12.4.2 installé — <code>corepack prepare pnpm@12.4.2 --activate</code></li>
+    <li>pnpm 12.4.2 installé - <code>corepack prepare pnpm@12.4.2 --activate</code></li>
     <li><code>pnpm install --frozen-lockfile</code> à la racine</li>
     <li><code>apps/api/.env</code> : 4 clés CSPRNG + <code>DATABASE_URL</code></li>
     <li><code>apps/web/.env.local</code> : <code>NEXT_PUBLIC_API_MOCKED=false</code></li>
-    <li><code>pnpm api:db:up</code> puis <code>prisma migrate deploy</code> — base vide</li>
+    <li><code>pnpm api:db:up</code> puis <code>prisma migrate deploy</code> - base vide</li>
     <li><code>pnpm dev</code> → http://localhost:3000</li>
     <li>Premier compte via /register, puis MFA recommandée</li>
   </ul>

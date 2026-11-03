@@ -1,4 +1,4 @@
-"""Quick console sweep after reports+security changes — 8 key routes."""
+"""Quick console sweep after reports+security changes - 8 key routes."""
 
 from __future__ import annotations
 

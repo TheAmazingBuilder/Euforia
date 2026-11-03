@@ -18,15 +18,15 @@ import {
 } from "@cosmoz/shared";
 
 /**
- * Risk/Reward model — the pure layer between the UI and the shared expectancy
+ * Risk/Reward model - the pure layer between the UI and the shared expectancy
  * engine (same architecture as the lot-size/compounding models):
  *
  * Zod schemas validate the RAW FORM STRINGS with stable error codes (the dict
- * supplies the human copy — codes map 1:1 to dict.tools.riskReward.validation
+ * supplies the human copy - codes map 1:1 to dict.tools.riskReward.validation
  * keys). Derivations compose the shared risk-reward engine; nothing clamps
- * silently — an invalid field yields a stable code the UI renders inline.
+ * silently - an invalid field yields a stable code the UI renders inline.
  *
- * No React, no API calls — pure, deterministic, unit-testable.
+ * No React, no API calls - pure, deterministic, unit-testable.
  */
 
 // ── Field-level schemas (stable codes, dict renders them) ───────────────────
@@ -111,7 +111,7 @@ export interface RiskRewardDerived {
   riskAmount: string;
   /** Monetary reward per winning trade, G = L × R (decimal string). */
   rewardAmount: string;
-  /** Reward multiple, R (float — the calculation-side value). */
+  /** Reward multiple, R (float - the calculation-side value). */
   rewardMultiple: number;
   /** Break-even win rate as a RATIO in [0,1] (feed formatPercent). */
   breakEvenWinRate: number;
@@ -132,7 +132,7 @@ export interface RiskRewardDerived {
  * Validate the risk/reward form and derive everything the UI renders.
  * `extraRatios` adds optional reward-multiple rows on top of the default
  * matrix rows (the 1:6 / 1:8 / 1:10 toggles, spec §7.1).
- * Returns the parsed model or one stable code per offending field — never
+ * Returns the parsed model or one stable code per offending field - never
  * both, never throws.
  */
 export function validateRiskRewardForm(
@@ -170,7 +170,7 @@ export function validateRiskRewardForm(
     flag("trades", "tradesRange");
   }
 
-  // Reward multiple — either direct, or derived from monetary SL/TP amounts.
+  // Reward multiple - either direct, or derived from monetary SL/TP amounts.
   let rewardMultiple: number | null = null;
   if (d.ratioMode === "multiple") {
     if (rewardMultipleInput === null) {
@@ -197,7 +197,7 @@ export function validateRiskRewardForm(
     }
   }
 
-  // Monetary risk per trade — percent or fixed mode.
+  // Monetary risk per trade - percent or fixed mode.
   let riskPerTrade: number | null = null;
   if (d.riskMode === "percent") {
     if (riskPercent === null) {

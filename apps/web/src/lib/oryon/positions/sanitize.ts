@@ -2,19 +2,19 @@ import type { BrokerPosition } from "@cosmoz/shared";
 import { brokerPositionSchema } from "@cosmoz/shared";
 
 /**
- * Position record validation boundary (Phase 4 spec §6 — "validate numeric
+ * Position record validation boundary (Phase 4 spec §6 - "validate numeric
  * inputs and handle malformed or incomplete records safely").
  *
- * The realtime store (lib/realtime/market.ts) applies wire snapshots as-is —
+ * The realtime store (lib/realtime/market.ts) applies wire snapshots as-is -
  * it is shared infrastructure with a single job (transport + auth). THIS
  * layer is where Oryon validates every record against the shared
  * `brokerPositionSchema` before anything reaches the panel or the chart:
  *   - a record that fails validation is DROPPED (never repaired, never
- *     defaulted — a missing stop-loss stays missing, a malformed number is
+ *     defaulted - a missing stop-loss stays missing, a malformed number is
  *     not a number);
  *   - duplicates (same id) are collapsed LAST-WRITE-WINS, which also makes
  *     a replayed snapshot idempotent at this boundary;
- *   - the function never throws — one poisoned record cannot corrupt the
+ *   - the function never throws - one poisoned record cannot corrupt the
  *     view (spec §6 error-handling conventions).
  */
 

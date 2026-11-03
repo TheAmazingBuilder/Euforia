@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { AuthGate } from "@/components/auth/auth-gate";
-import { FirstRunOnboarding } from "@/components/onboarding/onboarding-overlay";
 import { DensitySync } from "@/components/settings/density-sync";
 
 export const metadata: Metadata = {
@@ -27,10 +26,6 @@ export default function AppLayout({
         <DensitySync />
         {children}
       </AppShell>
-      {/* First-run experience - eligibility is decided INSIDE (identity +
-          persisted preferences state), so it can never render for existing
-          users while state loads, and never blocks the shell when absent. */}
-      <FirstRunOnboarding />
     </AuthGate>
   );
 }

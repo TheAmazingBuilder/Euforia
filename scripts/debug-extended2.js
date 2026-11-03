@@ -1,4 +1,4 @@
-// Debug2: exact full-probe sequence — rr editor, Escape, then extended.
+// Debug2: exact full-probe sequence - rr editor, Escape, then extended.
 const { chromium } = require("playwright");
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 

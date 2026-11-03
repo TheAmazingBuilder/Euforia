@@ -7,7 +7,7 @@ import { AccountsView } from "@/components/accounts/accounts-view";
 export const metadata: Metadata = {
   title: "Accounts",
   description:
-    "Connected trading accounts: balances, positions and history read from the provider — read-only, synced on demand, never traded through.",
+    "Connected trading accounts: balances, positions and history read from the provider - read-only, synced on demand, never traded through.",
 };
 
 export default function AccountsPage() {

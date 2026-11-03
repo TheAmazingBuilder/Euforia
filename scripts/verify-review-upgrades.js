@@ -1,5 +1,5 @@
 /**
- * Verify — Trade Review module upgrades (3 user-selected features).
+ * Verify - Trade Review module upgrades (3 user-selected features).
  *  1. Review streak with an honest freeze: 1 grace day per calendar week,
  *     reported separately (never counted as reviewed)
  *  2. Recurring lesson template: "Reuse from your last review" chip fills
@@ -23,7 +23,7 @@ const BASE = "http://localhost:3000";
 
   const results = [];
   const check = (name, ok, extra = "") =>
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
   // Capture the overview payload while the page loads.
   const overviewPromise = page.waitForResponse(
@@ -67,7 +67,7 @@ const BASE = "http://localhost:3000";
       (await page.locator('[data-testid="header-streak-frozen"]').count()) === 1,
     );
   } else {
-    check("No freeze in seed — note hidden, header clean", (await page.locator('[data-testid="header-streak-frozen"]').count()) === 0);
+    check("No freeze in seed - note hidden, header clean", (await page.locator('[data-testid="header-streak-frozen"]').count()) === 0);
   }
   check(
     "lastImprovementNote present for the template",

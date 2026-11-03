@@ -8,7 +8,7 @@ import { TradingCalendarView } from "@/components/calendar/trading-calendar";
 import { cn } from "@/lib/utils";
 
 /**
- * Calendar module shell — two tabs fed by the same top-level design: the
+ * Calendar module shell - two tabs fed by the same top-level design: the
  * TRADING calendar (P&L + discipline overlay, days off, semester targets)
  * and the ECONOMIC calendar (macro releases with impact tiers).
  */
@@ -17,6 +17,12 @@ export function CalendarModuleView() {
 
   return (
     <div className="space-y-5">
+      <header className="space-y-1">
+        <h1 className="page-title">Calendar</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">
+          Review your trading activity and the economic releases that can move your markets.
+        </p>
+      </header>
       <div className="flex rounded-lg border border-border bg-surface p-1" role="tablist" aria-label="Calendar module" data-testid="calendar-tabs">
         {(
           [

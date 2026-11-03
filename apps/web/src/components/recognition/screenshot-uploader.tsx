@@ -14,7 +14,7 @@ import {
 import type { RecognitionDict } from "@/i18n/dictionaries/en/recognition";
 
 /**
- * ScreenshotUploader — the reusable upload surface (PROMPT 3 §11/§12/§13).
+ * ScreenshotUploader - the reusable upload surface (PROMPT 3 §11/§12/§13).
  *
  * Drag & drop AND a native file picker (uploading is always possible
  * without drag & drop, §36). Owns the idle/dragging/accepted/rejected
@@ -55,10 +55,10 @@ export function ScreenshotUploader({
   const [rejection, setRejection] = React.useState<UploadRejection | null>(null);
   const [dimensions, setDimensions] = React.useState<{ width: number; height: number } | null>(null);
 
-  // Object-URL lifetime — derived DURING RENDER from the file prop (React's
+  // Object-URL lifetime - derived DURING RENDER from the file prop (React's
   // "adjust state when a prop changes" pattern; no effect, no cascading
   // render, no ref writes). The URL itself is revoked by the effect that
-  // consumes it — on URL change AND on unmount (cleanup owns the lifetime).
+  // consumes it - on URL change AND on unmount (cleanup owns the lifetime).
   const [preview, setPreview] = React.useState<{ file: File | null; url: string | null }>({
     file: null,
     url: null,
@@ -134,7 +134,7 @@ export function ScreenshotUploader({
       <div className="flex flex-col gap-3" data-testid="recognition-upload-preview">
         <div className="overflow-hidden rounded-xl border border-border bg-surface">
           {pdf ? (
-            // PDF statements carry no inline raster preview — an honest file card.
+            // PDF statements carry no inline raster preview - an honest file card.
             <div className="flex max-h-[340px] flex-col items-center justify-center gap-2 bg-background/60 p-8 sm:max-h-[420px]">
               <FileText className="size-10 text-muted-foreground" strokeWidth={1.25} aria-hidden="true" />
               <p className="font-mono text-xs uppercase tracking-[0.08em] text-muted-foreground">
@@ -257,7 +257,7 @@ export function ScreenshotUploader({
         <Button type="button" variant="outline" size="sm" tabIndex={-1} aria-hidden="true">
           {dict.uploader.browse}
         </Button>
-        {/* Accepted formats — mono chips, the console's title block. */}
+        {/* Accepted formats - mono chips, the console's title block. */}
         <div
           className="mt-1 flex flex-wrap items-center justify-center gap-1.5"
           data-testid="recognition-format-chips"

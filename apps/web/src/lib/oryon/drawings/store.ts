@@ -5,7 +5,7 @@ import type { OryonDrawing } from "@cosmoz/shared";
 import { DrawingHistory } from "./history";
 
 /**
- * Oryon drawing store — the single source of truth for the drawing
+ * Oryon drawing store - the single source of truth for the drawing
  * collection, selection and history (spec §4E).
  *
  * Design discipline:
@@ -16,9 +16,9 @@ import { DrawingHistory } from "./history";
  *  - Immutable updates: every mutation produces a new array reference, so
  *    snapshots are cheap and React never sees a silent in-place change.
  *  - Invariants enforced HERE (not in the UI): hidden objects cannot be
- *    selected; locked objects cannot be moved, re-anchored or restyled —
+ *    selected; locked objects cannot be moved, re-anchored or restyled -
  *    only visibility/lock/delete remain available.
- *  - Draft (in-progress) geometry NEVER passes through this store — the
+ *  - Draft (in-progress) geometry NEVER passes through this store - the
  *    interaction controller pushes live drag state straight into the
  *    primitive, so a drag re-paints the canvas without one React render.
  */
@@ -26,7 +26,7 @@ import { DrawingHistory } from "./history";
 export interface DrawingStoreSnapshot {
   drawings: readonly OryonDrawing[];
   selectedId: string | null;
-  /** Bumped on every commit — cheap reactivity signal for subscribers. */
+  /** Bumped on every commit - cheap reactivity signal for subscribers. */
   version: number;
 }
 
@@ -41,7 +41,7 @@ export function newDrawingId(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return crypto.randomUUID();
   }
-  // Test/SSR fallback — never a silent collision source.
+  // Test/SSR fallback - never a silent collision source.
   return `d-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
@@ -107,7 +107,7 @@ export class OryonDrawingStore {
   /**
    * Generic update for STYLE-CLASS changes. Locked objects reject everything
    * except visible/locked toggles (spec §8: locked = not movable, not
-   * editable — restyling is an edit).
+   * editable - restyling is an edit).
    */
   update(id: string, patch: DrawingPatch): void {
     const target = this.state.drawings.find((d) => d.id === id);
@@ -168,7 +168,7 @@ export class OryonDrawingStore {
 
   /**
    * Replaces the whole collection (persistence load / instrument switch).
-   * History is CLEARED: undo belongs to one instrument session — a stale
+   * History is CLEARED: undo belongs to one instrument session - a stale
    * snapshot across symbols would silently corrupt the other instrument.
    */
   loadAll(drawings: readonly OryonDrawing[]): void {
@@ -183,11 +183,11 @@ export class OryonDrawingStore {
 
   // ── Undo / redo ────────────────────────────────────────────────────────────
 
-  /** Single-step mutation commit (one history entry — unless a batch is
+  /** Single-step mutation commit (one history entry - unless a batch is
    *  open, in which case the BATCH owns the entry: endBatch records the
    *  pre-batch snapshot exactly once. The unconditional push that used to
    *  live here double-recorded every batched drag (two identical entries),
-   *  so one drag consumed TWO undo presses — the batch discipline in
+   *  so one drag consumed TWO undo presses - the batch discipline in
    *  history.ts §12 exists precisely to prevent that). */
   private commit(next: (current: readonly OryonDrawing[]) => readonly OryonDrawing[]): void {
     const before = this.state.drawings;
@@ -198,17 +198,17 @@ export class OryonDrawingStore {
     this.emit();
   }
 
-  /** Opens a drag batch — snapshots the collection for a single undo entry. */
+  /** Opens a drag batch - snapshots the collection for a single undo entry. */
   beginBatch(): void {
     this.history.beginBatch(this.state.drawings);
   }
 
-  /** Closes a drag batch — one history entry when something changed. */
+  /** Closes a drag batch - one history entry when something changed. */
   endBatch(): void {
     this.history.endBatch(this.state.drawings);
   }
 
-  /** Aborts a drag batch (pointer cancel) — no history entry. */
+  /** Aborts a drag batch (pointer cancel) - no history entry. */
   abortBatch(): void {
     this.history.abortBatch();
   }
@@ -219,7 +219,7 @@ export class OryonDrawingStore {
     this.state = {
       ...this.state,
       drawings: restored,
-      // A deleted object may come back; a selected one may vanish — revalidate.
+      // A deleted object may come back; a selected one may vanish - revalidate.
       selectedId:
         restored.find((d) => d.id === this.state.selectedId)?.id ?? null,
       version: this.state.version + 1,

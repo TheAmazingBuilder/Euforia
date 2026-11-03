@@ -1,5 +1,5 @@
 /**
- * Verify — i18n migration of the PLAYBOOK module (view shell, all 7 tab
+ * Verify - i18n migration of the PLAYBOOK module (view shell, all 7 tab
  * panels, dialogs, enum label maps, underperforming banner).
  *
  * Covers:
@@ -48,7 +48,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
   const htmlLang = () => page.evaluate(() => document.documentElement.lang);
@@ -64,7 +64,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
     await page.locator('nav[aria-label="Main navigation"]').waitFor({ state: "visible", timeout: 60_000 });
   } catch (e) {
     await page.screenshot({ path: `${SHOTS}/debug-login-stuck.png`, fullPage: true });
-    console.error("LOGIN STUCK — body snippet:", (await page.locator("body").innerText()).slice(0, 400));
+    console.error("LOGIN STUCK - body snippet:", (await page.locator("body").innerText()).slice(0, 400));
     console.error("CAPTURED ERRORS:", errors.join(" ; ") || "none");
     throw e;
   }
@@ -115,7 +115,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
   await page.screenshot({ path: `${SHOTS}/playbook-fr-overview.png`, fullPage: false });
 
   // ══ D. Tab walk in FR (SPA tab clicks) ════════════════════════════════════
-  // D1 — My Strategies
+  // D1 - My Strategies
   await page.locator('button[data-testid="tab-strategies"]').click();
   await page.waitForTimeout(700);
   const stratFr = await bodyText();
@@ -127,7 +127,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
     /Active|En pause|Brouillon/.test(stratFr));
   await page.screenshot({ path: `${SHOTS}/playbook-fr-strategies.png`, fullPage: false });
 
-  // D2 — Setups
+  // D2 - Setups
   await page.locator('button[data-testid="tab-setups"]').click();
   await page.waitForTimeout(700);
   const setupsFr = await bodyText();
@@ -137,7 +137,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
     /Tendance|En range|Forte volatilité|Structure haussière/.test(setupsFr));
   await page.screenshot({ path: `${SHOTS}/playbook-fr-setups.png`, fullPage: false });
 
-  // D3 — Rules
+  // D3 - Rules
   await page.locator('button[data-testid="tab-rules"]').click();
   await page.waitForTimeout(700);
   const rulesFr = await bodyText();
@@ -146,7 +146,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
   check("D3b FR rule-category chips", /Comportement|Risque|Actualités/.test(rulesFr));
   await page.screenshot({ path: `${SHOTS}/playbook-fr-rules.png`, fullPage: false });
 
-  // D4 — Checklists
+  // D4 - Checklists
   await page.locator('button[data-testid="tab-checklists"]').click();
   await page.waitForTimeout(700);
   const checkFr = await bodyText();
@@ -154,7 +154,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
     /Nouvelle checklist/.test(checkFr) && /éléments/.test(checkFr));
   await page.screenshot({ path: `${SHOTS}/playbook-fr-checklists.png`, fullPage: false });
 
-  // D5 — Performance
+  // D5 - Performance
   await page.locator('button[data-testid="tab-performance"]').click();
   await page.waitForTimeout(900);
   const perfFr = await bodyText();
@@ -163,14 +163,14 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
   check("D5b Performance th 'Stratégie'", /Stratégie/i.test(perfFr));
   await page.screenshot({ path: `${SHOTS}/playbook-fr-performance.png`, fullPage: false });
 
-  // D6 — Templates
+  // D6 - Templates
   await page.locator('button[data-testid="tab-templates"]').click();
   await page.waitForTimeout(900);
   const tplFr = await bodyText();
   check("D6 Templates intro FR", /Dix structures classiques/.test(tplFr));
   await page.screenshot({ path: `${SHOTS}/playbook-fr-templates.png`, fullPage: false });
 
-  // D7 — Strategy create dialog (largest migrated file) FR
+  // D7 - Strategy create dialog (largest migrated file) FR
   await page.locator('button[data-testid="tab-strategies"]').click();
   await page.waitForTimeout(600);
   await page.getByRole("button", { name: "Nouvelle stratégie" }).first().click();
@@ -205,7 +205,7 @@ const SHOTS = "/home/z/my-project/scripts/shots/i18n-playbook";
   check("G1 No unexpected 4xx / page errors", errors.length === 0, errors.slice(0, 3).join(" ; "));
 
   const fails = results.filter((r) => r.startsWith("FAIL")).length;
-  console.log(`\n${results.length - fails}/${results.length} PASS — ${SHOTS}`);
+  console.log(`\n${results.length - fails}/${results.length} PASS - ${SHOTS}`);
   await browser.close();
   process.exit(fails === 0 ? 0 : 1);
 })().catch((err) => {

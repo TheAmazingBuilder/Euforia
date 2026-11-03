@@ -1,5 +1,5 @@
 /**
- * Unit tests — deal→trade reconstruction (Phase 4 §17–§19, §27, §28).
+ * Unit tests - deal→trade reconstruction (Phase 4 §17–§19, §27, §28).
  * Pure aggregation semantics over normalized Phase 3 deals.
  */
 import { describe, expect, it } from "vitest";
@@ -46,7 +46,7 @@ describe("groupByPosition", () => {
   });
 });
 
-describe("reconstructCycle — §17 execution aggregation", () => {
+describe("reconstructCycle - §17 execution aggregation", () => {
   it("rebuilds a closed BUY trade with weighted prices and provider costs", () => {
     const trade = reconstructCycle({
       positionId: "pos-1",
@@ -71,7 +71,7 @@ describe("reconstructCycle — §17 execution aggregation", () => {
     expect(trade.exitAt?.toISOString()).toBe(d(60).toISOString());
   });
 
-  it("rebuilds partial exits as preserved legs (§18 — no flattening)", () => {
+  it("rebuilds partial exits as preserved legs (§18 - no flattening)", () => {
     const trade = reconstructCycle({
       positionId: "pos-1",
       symbol: "EURUSD",
@@ -101,7 +101,7 @@ describe("reconstructCycle — §17 execution aggregation", () => {
     expect(trade.status).toBe("OPEN");
     expect(trade.direction).toBe("SELL");
     expect(trade.quantity).toBe("0.3");
-    // No finalized exit yet — the aggregated exit fields stay null (§11),
+    // No finalized exit yet - the aggregated exit fields stay null (§11),
     // while the partial leg itself is preserved as an exit row.
     expect(trade.exitPrice).toBeNull();
     expect(trade.exitAt).toBeNull();
@@ -118,7 +118,7 @@ describe("reconstructCycle — §17 execution aggregation", () => {
       ],
     });
     expect(trade.fees).toBe("4");
-    // Signed provider swap sum (−1) is stored as a COST MAGNITUDE (+1) —
+    // Signed provider swap sum (−1) is stored as a COST MAGNITUDE (+1) -
     // net = gross − fees − swap = 1000 − 4 − 1 (§46 canonical convention).
     expect(trade.swap).toBe("1");
     expect(trade.pnlGross).toBe("1000");
@@ -126,7 +126,7 @@ describe("reconstructCycle — §17 execution aggregation", () => {
   });
 });
 
-describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () => {
+describe("reconstructAccounts - P2002 race tolerance (finalization §31)", () => {
   it("a concurrent winner is ADOPTED, not 409-ed: the unique constraint is the backstop", async () => {
     const { TradeReconstructionService } = await import("../../src/modules/trades/trade-reconstruction.service");
 
@@ -191,7 +191,7 @@ describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () 
     expect(outcome.created).toBe(0);
     expect(outcome.unchanged).toBe(1);
     expect(outcome.updated).toBe(0);
-    // The adopted row was never written by THIS pass — no close fact published.
+    // The adopted row was never written by THIS pass - no close fact published.
     expect(events.published).toHaveLength(0);
   });
 
@@ -261,7 +261,7 @@ describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () 
     const tradesRepository = {
       findInstrumentBySymbol: async () => instrument,
       findTradeByExternalPosition: async () => openRow,
-      createTradeWithLegs: async () => { throw new Error("must not create — row exists"); },
+      createTradeWithLegs: async () => { throw new Error("must not create - row exists"); },
       updateTradeFields: async () => undefined,
       replaceExits: async () => undefined,
     };
@@ -285,7 +285,7 @@ describe("reconstructAccounts — P2002 race tolerance (finalization §31)", () 
       accountIds: ["00000000-0000-4000-8000-000000000001"],
     });
 
-    // Exactly ONE close fact for the flip — later unchanged refreshes stay silent.
+    // Exactly ONE close fact for the flip - later unchanged refreshes stay silent.
     expect(events.published).toHaveLength(1);
   });
 });

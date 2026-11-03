@@ -1,10 +1,10 @@
 /**
- * DerivWsProviderAdapter (Phase 07 — second REAL adapter, master prompt §7).
+ * DerivWsProviderAdapter (Phase 07 - second REAL adapter, master prompt §7).
  *
  * Official Deriv WebSocket API v3, READ-ONLY subset, API-token authorization
- * (fits the existing API_KEY credential method — no schema change). The
+ * (fits the existing API_KEY credential method - no schema change). The
  * endpoint is the documented `wss://ws.derivws.com/websockets/v3?app_id=…`;
- * the app id identifies the REGISTERING application (official prerequisite —
+ * the app id identifies the REGISTERING application (official prerequisite -
  * deployments set ACCOUNTS_DERIV_APP_ID; the dev default is Deriv's public
  * example id, documented in env.schema.ts). DEMO/LIVE share one endpoint:
  * the token authorizes exactly the account that created it (per-credential
@@ -14,7 +14,7 @@
  * Read-only red line (§47/§3.1): this adapter implements EXACTLY the 6 read
  * methods of TradingProviderAdapter. Outbound REQUESTS are whitelisted to
  * { authorize, balance, portfolio, profit_table, statement, ping,
- * website_status, logout } — Deriv's execution verbs (buy, sell, cancel,
+ * website_status, logout } - Deriv's execution verbs (buy, sell, cancel,
  * proposal, contract_update, …) are NOT part of the whitelist and no code
  * path can emit them. A structural test (deriv-ws-provider.spec.ts) pins
  * the whitelist contents.
@@ -22,7 +22,7 @@
  * Connection model: one SHORT-LIVED WebSocket per adapter call (authorize →
  * work → close), mirroring the stateless per-request posture of the OANDA
  * adapter. Deriv keeps sessions alive for its own streaming products; Euforia
- * polls (Phase 05 scheduler) and deliberately does NOT hold sockets open —
+ * polls (Phase 05 scheduler) and deliberately does NOT hold sockets open -
  * no keep-alive machinery, no half-open state, bounded server usage.
  *
  * Error translation (doc B §4.3 normative table + official error catalog):
@@ -33,7 +33,7 @@
  *   WS handshake failure / early close   → PROVIDER_UNAVAILABLE
  *   hard transport timer                 → CONNECTION_TIMEOUT (socket destroyed)
  *   malformed JSON / schema / echo mismatch → INVALID_PROVIDER_RESPONSE
- * Provider error text is NEVER surfaced — messages are canned and sanitized
+ * Provider error text is NEVER surfaced - messages are canned and sanitized
  * (mandate §9.5); only the stable code crosses upward.
  */
 import WebSocket from "ws";
@@ -67,7 +67,7 @@ import {
   type DerivProfitTablePayload,
 } from "./deriv-mapping";
 
-/** Official documented endpoint (developers.deriv.com — WebSockets). */
+/** Official documented endpoint (developers.deriv.com - WebSockets). */
 const DERIV_DEFAULT_WS_URL = "wss://ws.derivws.com/websockets/v3";
 
 /**
@@ -77,7 +77,7 @@ const DERIV_DEFAULT_WS_URL = "wss://ws.derivws.com/websockets/v3";
  * api_token (admin), and every other write/admin verb.
  */
 export const DERIV_READ_REQUEST_NAMES: ReadonlySet<string> = new Set([
-  "authorize", // session authorization (scope NA) — the token probe
+  "authorize", // session authorization (scope NA) - the token probe
   "balance", // account balance (scope: Read)
   "portfolio", // open contracts (scope: trading_information)
   "profit_table", // settled contracts summary (scope: trading_information)
@@ -87,7 +87,7 @@ export const DERIV_READ_REQUEST_NAMES: ReadonlySet<string> = new Set([
   "logout", // end the session cleanly
 ]);
 
-/** Safety caps — bounded page/row budgets (spec §20: no unbounded pulls). */
+/** Safety caps - bounded page/row budgets (spec §20: no unbounded pulls). */
 const PROFIT_TABLE_PAGE_SIZE = 500; // documented maximum per call (default 50)
 const MAX_DEALS_PAGES = 10; // initial pull / incremental run: ≤ 5000 rows
 const MAX_POSITION_ROWS = 1000; // portfolio is a single documented full set
@@ -105,14 +105,14 @@ export interface DerivAdapterOptions {
   /** Registered application id (developers.deriv.com); dev default documented. */
   appId?: string;
   /**
-   * Transport-level hard timer (ms) — Phase 04 posture carried over: fires
+   * Transport-level hard timer (ms) - Phase 04 posture carried over: fires
    * ABOVE the orchestrator watchdog (withProviderTimeout → CONNECTION_TIMEOUT)
    * and DESTROYS the socket so a hung provider cannot leak a connection.
    */
   requestTimeoutMs?: number;
 }
 
-/** One authorized v3 session — authorize once, issue read calls, close. */
+/** One authorized v3 session - authorize once, issue read calls, close. */
 interface DerivCall {
   <T>(requestName: string, payload: Record<string, unknown>): Promise<T>;
 }
@@ -125,7 +125,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
     supportedEnvironments: ["DEMO", "LIVE"],
     supportedConnectionMethods: ["API_KEY"],
     // Least-privilege: users create a Read-scope API token (official scope
-    // "Read — view market data and account information"). NO READ_ORDERS —
+    // "Read - view market data and account information"). NO READ_ORDERS -
     // the orders capability is honestly UNSUPPORTED (see capabilities).
     supportedPermissions: [
       "READ_ACCOUNT",
@@ -138,62 +138,62 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
       accountDiscovery: {
         support: "UNKNOWN",
         evidence: "A Deriv API token authorizes exactly the account that created it (authorize response); account_list lists the user's other accounts but V1 links ONE account per connection.",
-        limitation: "Multi-account discovery is a deferred product decision (U3) — the token-scoped account id must be supplied by the user, like OANDA.",
+        limitation: "Multi-account discovery is a deferred product decision (U3) - the token-scoped account id must be supplied by the user, like OANDA.",
       },
       accountMetadata: {
         support: "SUPPORTED",
         retrieval: "POLL",
         requiresPermissions: ["READ_ACCOUNT"],
-        evidence: "developers.deriv.com — Account Management / authorize (loginid, currency, is_virtual, landing company). Docs accessed 2026-10-14.",
+        evidence: "developers.deriv.com - Account Management / authorize (loginid, currency, is_virtual, landing company). Docs accessed 2026-10-14.",
       },
       balanceEquity: {
         support: "SUPPORTED",
         retrieval: "POLL",
         requiresPermissions: ["READ_BALANCE"],
-        evidence: "developers.deriv.com — Account Management / Balance (scope Read). Docs accessed 2026-10-14.",
-        limitation: "Deriv reports ONE balance number — equity/margin arrive as null and are never approximated from balance.",
+        evidence: "developers.deriv.com - Account Management / Balance (scope Read). Docs accessed 2026-10-14.",
+        limitation: "Deriv reports ONE balance number - equity/margin arrive as null and are never approximated from balance.",
       },
       marginInfo: {
         support: "UNSUPPORTED",
         evidence: "The v3 balance/authorize responses carry no margin fields.",
-        limitation: "Honest absence — margin metrics are not reported for Deriv options/multiplier accounts.",
+        limitation: "Honest absence - margin metrics are not reported for Deriv options/multiplier accounts.",
       },
       openPositions: {
         support: "SUPPORTED",
         retrieval: "POLL",
         requiresPermissions: ["READ_POSITIONS"],
-        evidence: "developers.deriv.com — Account Management / Portfolio: 'Get a list of all open positions for the authorized account… returns only open (active) contracts'. Docs accessed 2026-10-14.",
+        evidence: "developers.deriv.com - Account Management / Portfolio: 'Get a list of all open positions for the authorized account… returns only open (active) contracts'. Docs accessed 2026-10-14.",
       },
       orders: {
         support: "UNSUPPORTED",
-        evidence: "The v3 API exposes no read for resting/pending orders — Deriv orders are immediate contract purchases.",
+        evidence: "The v3 API exposes no read for resting/pending orders - Deriv orders are immediate contract purchases.",
         limitation: "The connector declares no orders capability and never presents an empty list as a successful complete query.",
       },
       deals: {
         support: "SUPPORTED",
         retrieval: "POLL",
         requiresPermissions: ["READ_DEALS", "READ_HISTORY"],
-        evidence: "developers.deriv.com — Account Management / Profit table: 'Retrieve a summary of account profit/loss', pagination limit+offset, default 50, max 500/call. Docs accessed 2026-10-14.",
+        evidence: "developers.deriv.com - Account Management / Profit table: 'Retrieve a summary of account profit/loss', pagination limit+offset, default 50, max 500/call. Docs accessed 2026-10-14.",
         limitation: "Settled-contract rows only; incremental sync resumes from the newest observed sell_time (epoch checkpoint).",
       },
       historyDepth: {
         support: "UNKNOWN",
         evidence: "The profit_table retention window is not documented by the provider.",
-        limitation: "History is bounded by the connector's pagination caps — honestly incomplete beyond them; never presented as a complete lifetime record.",
+        limitation: "History is bounded by the connector's pagination caps - honestly incomplete beyond them; never presented as a complete lifetime record.",
       },
       streamingAccountUpdates: {
         support: "UNSUPPORTED",
         evidence: "The provider offers WS subscriptions (balance/transaction streams); this connector implements polling only in Phase 07.",
-        limitation: "Nothing claims real-time freshness — the UI copy and freshness model stay polling-based (Phase 05).",
+        limitation: "Nothing claims real-time freshness - the UI copy and freshness model stay polling-based (Phase 05).",
       },
       streamingPositions: {
         support: "UNSUPPORTED",
-        evidence: "proposal_open_contract streaming exists but is not implemented — polling via portfolio.",
+        evidence: "proposal_open_contract streaming exists but is not implemented - polling via portfolio.",
         limitation: "Positions refresh on synchronization runs only.",
       },
       streamingOrderDealUpdates: {
         support: "UNSUPPORTED",
-        evidence: "transaction streaming exists but is not implemented — polling via profit_table.",
+        evidence: "transaction streaming exists but is not implemented - polling via profit_table.",
         limitation: "Deals refresh on synchronization runs only.",
       },
       connectionValidation: {
@@ -217,7 +217,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
 
   // ── Endpoint resolution ─────────────────────────────────────────────────────
 
-  /** Resolved WS endpoint — override wins (tests/edge), else the official URL. */
+  /** Resolved WS endpoint - override wins (tests/edge), else the official URL. */
   private resolveUrl(): string {
     const override = this.options.wsUrlOverride;
     if (override && override.length > 0) return override;
@@ -267,7 +267,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
         try {
           socket?.close();
         } catch {
-          // already closed — nothing to release
+          // already closed - nothing to release
         }
         if (error) outerReject(error);
         else outerResolve(value as T);
@@ -311,7 +311,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
       };
 
       const call: DerivCall = async <T>(requestName: string, payload: Record<string, unknown>) => {
-        // RED LINE — no message may leave outside the read whitelist.
+        // RED LINE - no message may leave outside the read whitelist.
         if (!DERIV_READ_REQUEST_NAMES.has(requestName)) {
           throw new ProviderError(
             "UNSUPPORTED_CAPABILITY",
@@ -409,7 +409,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
           return;
         }
         // Unsolicited frames are ignored (subscription noise never exists in
-        // this client — nothing was subscribed — so this is pure tolerance).
+        // this client - nothing was subscribed - so this is pure tolerance).
       });
 
       socket.on("error", () => {
@@ -474,7 +474,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
   /**
    * Authorize + account binding: the v3 session is bound to the token's own
    * account, so the echoed loginid MUST equal the requested external id and
-   * the account class MUST match the declared environment — any divergence
+   * the account class MUST match the declared environment - any divergence
    * is an honest UNSUPPORTED_ACCOUNT, never a silent cross-account read.
    */
   private assertAuthorizedAccount(
@@ -589,7 +589,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
         );
       }
       // Bounded-row posture: the documented response IS the full open set,
-      // but a pathological account must not blow the run — truncate honestly.
+      // but a pathological account must not blow the run - truncate honestly.
       if (positions.length > MAX_POSITION_ROWS) {
         return { positions: positions.slice(0, MAX_POSITION_ROWS), complete: false };
       }
@@ -619,7 +619,7 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
     }
     const cursor = context.dealsCursor ?? null;
     if (!isValidDealsCursor(cursor)) {
-      // A corrupted checkpoint is a DATA error, not a provider error — fail
+      // A corrupted checkpoint is a DATA error, not a provider error - fail
       // loud so it surfaces (mirrors the OANDA cursor-shape validation).
       throw new ProviderError(
         "INVALID_PROVIDER_RESPONSE",
@@ -637,12 +637,12 @@ export class DerivWsProviderAdapter implements TradingProviderAdapter {
    * Incremental (cursor present): walk pages newest→older, keep rows with
    * sell_time >= cursor (boundary ties re-upserted idempotently), stop when
    * a row is strictly older than the cursor. Checkpoint semantics: the
-   * returned observedThrough NEVER covers rows that were not observed —
+   * returned observedThrough NEVER covers rows that were not observed -
    * a page-cap hit reports the OLDEST observed sell_time and complete:false.
    *
    * Correct checkpoint semantics: the cursor is a FLOOR ("everything up to
    * it was observed in previous runs"), so once rows ≥ cursor are observed
-   * in THIS run, observedThrough advances to the NEWEST observed epoch —
+   * in THIS run, observedThrough advances to the NEWEST observed epoch -
    * the gap between the old cursor and that point is fully covered by the
    * DESC scan. The cursor value is returned only when nothing was observed
    * (checkpoint kept). A page-cap hit is the ONE case where the scan did
@@ -751,7 +751,7 @@ function mapDerivError(code: string): ProviderError {
       );
     case "InvalidAppID":
     case "AppIdDisabled":
-      // Deployment configuration problem — honest, stable, non-secret.
+      // Deployment configuration problem - honest, stable, non-secret.
       return new ProviderError(
         "INVALID_PROVIDER_RESPONSE",
         "The trading provider returned a malformed response.",

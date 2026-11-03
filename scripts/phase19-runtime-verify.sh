@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# COSMOZ — Phase 19 runtime verification (§60/§61).
+# COSMOZ - Phase 19 runtime verification (§60/§61).
 #
 # Boots the REAL FastAPI sidecar (:3004) + the REAL NestJS API (:4000) on the
 # dev database, then drives the complete OCR lifecycle with curl:
@@ -8,7 +8,7 @@
 # correction → CONFIRMED → image fetch → delete. Anonymous access is checked
 # at every step boundary.
 #
-# Artifacts: /tmp/cosmoz-ocr-verify/ (logs, tokens, payloads) — wiped on exit.
+# Artifacts: /tmp/cosmoz-ocr-verify/ (logs, tokens, payloads) - wiped on exit.
 set -euo pipefail
 
 ROOT=/home/z/my-project

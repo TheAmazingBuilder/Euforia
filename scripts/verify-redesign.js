@@ -29,7 +29,7 @@ async function settle(page) {
 (async () => {
   const browser = await chromium.launch();
 
-  // Desktop 1440×900 — 3 themes on the dashboard.
+  // Desktop 1440×900 - 3 themes on the dashboard.
   const desktop = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await desktop.goto(BASE);
   await settle(desktop);
@@ -39,7 +39,7 @@ async function settle(page) {
     console.log(`rd-dashboard-${theme}.png`);
   }
 
-  // Route sweep (dark-blue) — shell + reveal + cards on key screens.
+  // Route sweep (dark-blue) - shell + reveal + cards on key screens.
   const routes = [
     ["/trades", "trades"],
     ["/session", "session"],
@@ -55,7 +55,7 @@ async function settle(page) {
   }
   await desktop.close();
 
-  // Mobile 390×844 — bottom nav + FAB + KPI stacking.
+  // Mobile 390×844 - bottom nav + FAB + KPI stacking.
   const mobile = await browser.newPage({ viewport: { width: 390, height: 844 } });
   await mobile.goto(BASE);
   await settle(mobile);

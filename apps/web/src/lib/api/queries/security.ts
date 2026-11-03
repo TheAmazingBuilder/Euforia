@@ -1,6 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type {
   ApiKeyCreated,
+  LoginRecordPage,
+  LoginRecordPageQuery,
+  SecurityEventPage,
+  SecurityEventPageQuery,
   RecoveryRegenerateResponse,
   ReauthResponse,
   SecurityOverviewResponse,
@@ -16,10 +20,63 @@ import { queryKeys } from "@/lib/api/keys";
 import type { ApiKeyCreateInput, PasswordChangeInput } from "@cosmoz/shared";
 
 /**
- * Security center hooks. The overview is the single aggregate — every
+ * Security center hooks. The overview is the single aggregate - every
  * mutation (including FAILED ones) invalidates it onSettled, because the
  * append-only event log records failures too (rate limits, wrong password).
  */
+
+const SECURITY_HISTORY_PAGE_SIZE = 30;
+
+export type SecurityEventHistoryFilters = Pick<
+  SecurityEventPageQuery,
+  "type" | "outcome" | "from" | "to"
+>;
+export type SecurityLoginHistoryFilters = Pick<
+  LoginRecordPageQuery,
+  "success" | "from" | "to"
+>;
+
+export function useSecurityEventPages(
+  filters: SecurityEventHistoryFilters,
+  enabled = true,
+) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.securityEvents(filters),
+    queryFn: ({ pageParam, signal }) =>
+      apiRequest<SecurityEventPage>(apiPaths.securityEvents, {
+        query: {
+          limit: SECURITY_HISTORY_PAGE_SIZE,
+          cursor: pageParam,
+          ...filters,
+        },
+        signal,
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled,
+  });
+}
+
+export function useSecurityLoginPages(
+  filters: SecurityLoginHistoryFilters,
+  enabled = true,
+) {
+  return useInfiniteQuery({
+    queryKey: queryKeys.securityLogins(filters),
+    queryFn: ({ pageParam, signal }) =>
+      apiRequest<LoginRecordPage>(apiPaths.securityLogins, {
+        query: {
+          limit: SECURITY_HISTORY_PAGE_SIZE,
+          cursor: pageParam,
+          ...filters,
+        },
+        signal,
+      }),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    enabled,
+  });
+}
 
 export function useSecurityOverview() {
   return useQuery({
@@ -65,6 +122,34 @@ export function useEnableTwoFactor() {
         apiPaths.securityTwoFactorEnable,
         { method: "POST", body: { reauthToken } },
       ),
+    onSettled: async () => {
+      await invalidateSecurity(queryClient);
+    },
+  });
+}
+
+export function useEnableEmailTwoFactor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (reauthToken: string) =>
+      apiRequest<{ pending: true; expiresAt: string }>(apiPaths.securityTwoFactorEmailEnable, {
+        method: "POST",
+        body: { reauthToken },
+      }),
+    onSettled: async () => {
+      await invalidateSecurity(queryClient);
+    },
+  });
+}
+
+export function useConfirmEmailTwoFactor() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (code: string) =>
+      apiRequest<{ state: TwoFactorState; recoveryCodes: string[] }>(apiPaths.securityTwoFactorEmailConfirm, {
+        method: "POST",
+        body: { code },
+      }),
     onSettled: async () => {
       await invalidateSecurity(queryClient);
     },

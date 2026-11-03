@@ -1,5 +1,5 @@
 /**
- * Helpers de génération — Cahier des charges Oryon (skill docx, recette R4 + palette GO-1).
+ * Helpers de génération - Cahier des charges Oryon (skill docx, recette R4 + palette GO-1).
  * Un seul point de vérité du contenu : les blocs structurés sont rendus en docx ET en markdown.
  */
 const {
@@ -8,11 +8,11 @@ const {
   TableLayoutType, VerticalAlign,
 } = require("docx");
 
-// ── Palette GO-1 (Graphite Orange — proposals, bidding, PRD) ────────────────
+// ── Palette GO-1 (Graphite Orange - proposals, bidding, PRD) ────────────────
 const P = {
   bg: "1A2330",
   accent: "D4875A",
-  primary: "1A2330",           // titres du corps (graphite foncé — variante assombrie du bg)
+  primary: "1A2330",           // titres du corps (graphite foncé - variante assombrie du bg)
   body: "000000",              // corps de texte : noir pur (profil A formel)
   secondary: "595959",
   cover: { titleColor: "FFFFFF", subtitleColor: "B0B8C0", metaColor: "90989F", footerColor: "687078" },
@@ -24,7 +24,7 @@ const NB = { style: BorderStyle.NONE, size: 0, color: "FFFFFF" };
 const noBorders = { top: NB, bottom: NB, left: NB, right: NB };
 const allNoBorders = { top: NB, bottom: NB, left: NB, right: NB, insideHorizontal: NB, insideVertical: NB };
 
-// ── Typographie (document français — profil formel A, Times New Roman partout) ──
+// ── Typographie (document français - profil formel A, Times New Roman partout) ──
 const FONT = { ascii: "Times New Roman", hAnsi: "Times New Roman", eastAsia: "SimSun" };
 
 /** Convertit un texte « avec du **gras** inline » en TextRun docx (backticks markdown retirés). */
@@ -71,7 +71,7 @@ function para(text, opts = {}) {
   });
 }
 
-/** Élément de liste — aligné à GAUCHE (jamais justifié), un item par ligne. */
+/** Élément de liste - aligné à GAUCHE (jamais justifié), un item par ligne. */
 function listItem(text, opts = {}) {
   const base = {
     alignment: AlignmentType.LEFT,
@@ -83,7 +83,7 @@ function listItem(text, opts = {}) {
   return new Paragraph(base);
 }
 
-/** Légende de tableau — keepNext pour rester soudée à sa table. */
+/** Légende de tableau - keepNext pour rester soudée à sa table. */
 function caption(text) {
   return new Paragraph({
     keepNext: true,
@@ -109,7 +109,7 @@ function cell(text, opts = {}) {
   });
 }
 
-/** Tableau de données — en-tête répété, lignes insécables, largeurs en pourcentage. */
+/** Tableau de données - en-tête répété, lignes insécables, largeurs en pourcentage. */
 function dataTable(headers, rows, widths) {
   const w = widths ?? headers.map(() => Math.floor(100 / headers.length));
   return new Table({

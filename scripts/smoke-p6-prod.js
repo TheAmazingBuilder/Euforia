@@ -1,5 +1,5 @@
 /**
- * smoke-p6-prod.js — Phase 6 production-build smoke (preview :3000).
+ * smoke-p6-prod.js - Phase 6 production-build smoke (preview :3000).
  * Light checks on the FINAL build (no dev-only debug handles here):
  *  - /oryon renders the workspace;
  *  - the layouts trigger shows the active layout name (default state);
@@ -15,7 +15,7 @@ const { chromium } = require("playwright");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase6-prod-smoke.log");
-fs.writeFileSync(LOG, `=== oryon phase6 prod smoke — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase6 prod smoke - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3000";
 

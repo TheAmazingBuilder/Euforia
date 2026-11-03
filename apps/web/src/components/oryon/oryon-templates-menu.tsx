@@ -40,7 +40,7 @@ import {
  * Oryon chart-template management (Phase 6 spec §6, §7, §11 + Phase 7 §12
  * panel scoping).
  *
- * A separate workflow from layouts — templates capture ANALYSIS settings
+ * A separate workflow from layouts - templates capture ANALYSIS settings
  * (chart type, optional timeframe, the indicator stack), never workspace
  * arrangement. Applying one replaces the ACTIVE PANEL's indicator stack
  * through its registry store (no duplicates, one diff) and is confirmed
@@ -77,7 +77,7 @@ export function OryonTemplatesMenu() {
     capacity: S.errorCapacity,
     not_found: S.errorNotFound,
     default_immutable: S.errorNameInvalid, // templates have no default record
-    // Template operations never hit the panel cap — the fallback copy keeps
+    // Template operations never hit the panel cap - the fallback copy keeps
     // the record exhaustive.
     panel_capacity: S.errorCapacity,
   };
@@ -101,7 +101,7 @@ export function OryonTemplatesMenu() {
     [applyTemplate, S],
   );
 
-  /** Apply entry point — confirmed when the ACTIVE panel's live stack
+  /** Apply entry point - confirmed when the ACTIVE panel's live stack
    *  would be replaced (that panel only; other panels are untouched). */
   const requestApply = (template: OryonChartTemplate) => {
     const activeStore = indicatorRegistry.find(session.activePanelId);
@@ -198,7 +198,7 @@ export function OryonTemplatesMenu() {
         }}
       />
 
-      {/* Apply confirmation — replaces the current indicator stack (§6). */}
+      {/* Apply confirmation - replaces the current indicator stack (§6). */}
       {applyTarget !== null ? (
         <OryonConfigConfirmDialog
           open

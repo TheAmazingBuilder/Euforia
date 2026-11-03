@@ -4,7 +4,7 @@ import { useSyncExternalStore } from "react";
 import type { Grade } from "@cosmoz/shared";
 
 /**
- * Global judgment-flow state (Acts 2 & 3 — trade-entry-ux.md §5/§6): the
+ * Global judgment-flow state (Acts 2 & 3 - trade-entry-ux.md §5/§6): the
  * Gate → Reveal → Reflect sequence. A tiny external store, same pattern as
  * use-trade-modal, so the capture form, the to-grade queue and any future
  * caller can open the flow from anywhere without prop drilling.
@@ -12,7 +12,7 @@ import type { Grade } from "@cosmoz/shared";
 
 export type JudgmentStage = "gate" | "reveal" | "reflect";
 
-/** The decision captured at the gate — the reveal badge reuses it. */
+/** The decision captured at the gate - the reveal badge reuses it. */
 export interface GateDecision {
   grade: Grade;
   followedPlan: boolean;
@@ -27,7 +27,7 @@ export interface JudgmentFlowState {
   decision: GateDecision | null;
 }
 
-/** Frozen closed snapshot — stable reference for the server snapshot. */
+/** Frozen closed snapshot - stable reference for the server snapshot. */
 const CLOSED_SNAPSHOT: JudgmentFlowState = Object.freeze({
   open: false,
   stage: "gate",
@@ -47,17 +47,17 @@ function setState(next: JudgmentFlowState): void {
   emit();
 }
 
-/** Act 2 entry — open the Gate for a saved closed trade. */
+/** Act 2 entry - open the Gate for a saved closed trade. */
 export function openGate(tradeId: string): void {
   setState({ open: true, stage: "gate", tradeId, decision: null });
 }
 
-/** Gate submitted — advance to the Reveal with the decision in hand. */
+/** Gate submitted - advance to the Reveal with the decision in hand. */
 export function gateSubmitted(tradeId: string, decision: GateDecision): void {
   setState({ open: true, stage: "reveal", tradeId, decision });
 }
 
-/** Reveal finished (Finish ⏎) — advance to the optional Reflect screen. */
+/** Reveal finished (Finish ⏎) - advance to the optional Reflect screen. */
 export function revealFinished(): void {
   setState({ ...state, stage: "reflect" });
 }
@@ -77,7 +77,7 @@ export function useJudgmentFlow(): JudgmentFlowState {
   return useSyncExternalStore(
     subscribe,
     () => state,
-    // Server + hydration snapshot: closed (stable reference — cached).
+    // Server + hydration snapshot: closed (stable reference - cached).
     () => CLOSED_SNAPSHOT,
   );
 }

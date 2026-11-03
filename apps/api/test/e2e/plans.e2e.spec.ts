@@ -1,5 +1,5 @@
 /**
- * e2e — Trade Plans, Analysis Scenarios & Post-Trade Review (Phase 11).
+ * e2e - Trade Plans, Analysis Scenarios & Post-Trade Review (Phase 11).
  *
  * Over the REAL AppModule + real database: plan creation (draft, activate in
  * one call), the explicit lifecycle (activate → invalidate/complete →
@@ -144,7 +144,7 @@ describe("plan lifecycle", () => {
       method: "POST",
       url: `/api/v1/plans/${plan.id}/invalidate`,
       headers: { ...user.authHeader, "content-type": "application/json" },
-      payload: { reason: "H1 close broke 1.0842 — the chain is gone." },
+      payload: { reason: "H1 close broke 1.0842 - the chain is gone." },
     });
     expect(invalidated.statusCode).toBe(200);
     expect(invalidated.json().plan.status).toBe("INVALIDATED");
@@ -159,7 +159,7 @@ describe("plan lifecycle", () => {
     expect(archived.statusCode).toBe(200);
     expect(archived.json().plan.status).toBe("ARCHIVED");
 
-    // ARCHIVED is terminal — no further transitions.
+    // ARCHIVED is terminal - no further transitions.
     const resurrect = await app.inject({
       method: "POST",
       url: `/api/v1/plans/${plan.id}/activate`,
@@ -209,7 +209,7 @@ describe("plan lifecycle", () => {
       url: `/api/v1/plans/${plan.id}`,
       headers: { ...user.authHeader, "content-type": "application/json" },
       payload: {
-        title: "Updated — structure confirmed",
+        title: "Updated - structure confirmed",
         plannedStop: "1.08100",
         scenarios: [
           { id: "scen-primary-01", role: "PRIMARY", title: "Retest continuation", description: "Holds." },
@@ -218,7 +218,7 @@ describe("plan lifecycle", () => {
       },
     });
     expect(patched.statusCode).toBe(200);
-    expect(patched.json().plan.title).toBe("Updated — structure confirmed");
+    expect(patched.json().plan.title).toBe("Updated - structure confirmed");
     expect(patched.json().plan.plannedStop).toBe("1.081");
     expect(patched.json().plan.scenarios).toHaveLength(2);
   });
@@ -271,7 +271,7 @@ describe("plan ↔ trade linkage", () => {
     expect(after.exitPrice!.toFixed()).toBe(before.exitPrice!.toFixed());
     expect(after.pnlNet!.toFixed()).toBe(before.pnlNet!.toFixed());
 
-    // Comparison: planned vs actual — both sides available for entry/stop.
+    // Comparison: planned vs actual - both sides available for entry/stop.
     const detail = analysisPlanDetailResponseSchema.parse(
       (await app.inject({ method: "GET", url: `/api/v1/plans/${plan.id}`, headers: user.authHeader })).json(),
     );
@@ -281,7 +281,7 @@ describe("plan ↔ trade linkage", () => {
     expect(detail.comparison.entry.actual).toBe("1.085"); // same value, canonical form
     expect(detail.comparison.stop.available).toBe(true);
     // The trade row was never overwritten by the plan's hypothetical levels.
-    expect(detail.comparison.trade?.initialStop).toBe("1.08"); // canonical form — never overwritten by the plan
+    expect(detail.comparison.trade?.initialStop).toBe("1.08"); // canonical form - never overwritten by the plan
 
     // Detach clears the link without touching either record.
     const detached = await app.inject({

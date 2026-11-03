@@ -1,11 +1,11 @@
 /**
- * Academy learning-state derivations — streaks, weekly habit loop, derived
+ * Academy learning-state derivations - streaks, weekly habit loop, derived
  * quiz averages and milestones. Pure functions over plain inputs so every
  * counter is computed from the persisted ledger on read (Phase 11 §27/§29/§30:
  * no duplicated counters that can go stale).
  *
  * Parity source: mocks/academy-engine.ts (streak/weeklyPlan/progress/
- * milestones). All day arithmetic is UTC — the mock's contract.
+ * milestones). All day arithmetic is UTC - the mock's contract.
  */
 import type {
   AcademyMilestonesResponse,
@@ -24,7 +24,7 @@ export const dayKeyToDate = (day: string): Date => new Date(`${day}T00:00:00Z`);
 
 const DAY_MS = 86_400_000;
 
-// ── Streak (UTC day walk — parity verbatim) ─────────────────────────────────
+// ── Streak (UTC day walk - parity verbatim) ─────────────────────────────────
 
 export function streak(activityDays: readonly string[], today: Date): AcademyStreak {
   const dates = [...new Set(activityDays)].sort();
@@ -64,7 +64,7 @@ export function streak(activityDays: readonly string[], today: Date): AcademyStr
   };
 }
 
-// ── Weekly habit loop (Monday-anchored UTC week — parity verbatim) ──────────
+// ── Weekly habit loop (Monday-anchored UTC week - parity verbatim) ──────────
 
 export const WEEK_TARGETS = { lessons: 3, drills: 3, quizzes: 1 } as const;
 
@@ -116,7 +116,7 @@ export function progress(input: {
     COURSES.some((course) => course.lessons.some((lesson) => lesson.id === lessonId)),
   ).length;
 
-  // Mock-parity: ONE entry per attempted QUIZ (its best score) — defensive
+  // Mock-parity: ONE entry per attempted QUIZ (its best score) - defensive
   // deduplication so callers can pass raw attempt rows.
   const bestPerQuiz = new Map<string, number>();
   for (const attempt of input.quizAttempts) {
@@ -155,7 +155,7 @@ export function progress(input: {
   };
 }
 
-// ── Milestones (sober, computed from real state — parity verbatim) ──────────
+// ── Milestones (sober, computed from real state - parity verbatim) ──────────
 
 export interface MilestoneSeed {
   completedLessonIds: ReadonlySet<string>;

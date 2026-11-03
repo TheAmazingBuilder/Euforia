@@ -29,14 +29,14 @@ import {
 import { OryonHistoryRange } from "@/components/oryon/oryon-history-range";
 
 /**
- * Oryon bottom bar — the TradingView-style chart footer (desktop md+):
+ * Oryon bottom bar - the TradingView-style chart footer (desktop md+):
  * LEFT: the HISTORICAL RANGE strip (1D · 5D · 1M · 3M · 6M · YTD · 1Y ·
- * 5Y · All · calendar) of the ACTIVE panel — how much history is visible,
+ * 5Y · All · calendar) of the ACTIVE panel - how much history is visible,
  * never the bar timeframe (that selector lives on the TOP toolbar);
  * RIGHT: the live clock in the display timezone + the timezone selector.
  *
  * Timezone semantics (repo convention, kept): Profile.timezone is the
- * SINGLE source of truth — the selector PATCHes /me through the same
+ * SINGLE source of truth - the selector PATCHes /me through the same
  * mutation the settings screen uses, so no second Oryon preference ever
  * forks the trading-day conventions. Display-only by construction: it
  * formats the clock, it never moves a candle, a session or an event.

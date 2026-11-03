@@ -17,7 +17,7 @@ import {
 import { useGoals } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
 
-/** Urgency order — slipping goals surface first, achieved last. */
+/** Urgency order - slipping goals surface first, achieved last. */
 const URGENCY: GoalStatus[] = ["AT_RISK", "BEHIND", "ON_TRACK", "PENDING", "ACHIEVED"];
 const MAX_ROWS = 4;
 
@@ -34,7 +34,7 @@ function sortGoals(goals: GoalWithProgress[]): GoalWithProgress[] {
   });
 }
 
-/** One counter tile — the whole tile navigates to the Goals tab. */
+/** One counter tile - the whole tile navigates to the Goals tab. */
 function PaceCounter({
   label,
   value,
@@ -86,7 +86,7 @@ function GoalsPaceSkeleton() {
 }
 
 /**
- * Dashboard « Goals on pace » — powered by the goal→notification bridge:
+ * Dashboard « Goals on pace » - powered by the goal→notification bridge:
  * the counters and statuses come from the same server-computed progress
  * the bridge watches, so what the bell says and what this card says can
  * never disagree. The at-risk counter is clickable → Goals tab.
@@ -112,7 +112,7 @@ export function GoalsPaceCard() {
           Goals on pace
         </CardTitle>
         <CardDescription>
-          Targets measured against real behavior — the same statuses your notification bell watches.
+          Targets measured against real behavior - the same statuses your notification bell watches.
         </CardDescription>
         <CardAction>
           <Button asChild variant="ghost" size="sm">
@@ -139,7 +139,7 @@ export function GoalsPaceCard() {
             <div className="space-y-1">
               <p className="text-sm font-medium">No goals yet</p>
               <p className="text-xs text-muted-foreground">
-                Set a target — the coach watches pacing and raises an alert the moment it slips.
+                Set a target - the coach watches pacing and raises an alert the moment it slips.
               </p>
             </div>
             <Button asChild variant="outline" size="sm">
@@ -150,20 +150,20 @@ export function GoalsPaceCard() {
       ) : (
         <CardContent>
           <div className="grid gap-4 lg:grid-cols-12">
-            {/* Counters — every tile navigates to the Goals tab */}
+            {/* Counters - every tile navigates to the Goals tab */}
             <div className="grid grid-cols-3 gap-2 lg:col-span-4 lg:grid-cols-1" data-testid="dashboard-goals-counters">
-              <Link href="/journal?tab=goals" aria-label={`${onTrack} goals on track — open the Goals tab`} className="transition-opacity hover:opacity-85">
+              <Link href="/journal?tab=goals" aria-label={`${onTrack} goals on track - open the Goals tab`} className="transition-opacity hover:opacity-85">
                 <PaceCounter label="On track" value={onTrack} tone="text-sky-400" icon={TrendingUp} hint="pacing at or ahead of plan" />
               </Link>
               <Link
                 href="/journal?tab=goals"
-                aria-label={`${atRisk} goals at risk — open the Goals tab`}
+                aria-label={`${atRisk} goals at risk - open the Goals tab`}
                 data-testid="dashboard-goals-atrisk"
                 className="transition-opacity hover:opacity-85"
               >
-                <PaceCounter label="At risk" value={atRisk} tone={atRisk > 0 ? "text-amber-500" : "text-muted-foreground"} icon={BellRing} hint={atRisk > 0 ? "slipping — alerts raised" : "nothing slipping"} emphasize={atRisk > 0} />
+                <PaceCounter label="At risk" value={atRisk} tone={atRisk > 0 ? "text-amber-500" : "text-muted-foreground"} icon={BellRing} hint={atRisk > 0 ? "slipping - alerts raised" : "nothing slipping"} emphasize={atRisk > 0} />
               </Link>
-              <Link href="/journal?tab=goals" aria-label={`${achieved} goals achieved — open the Goals tab`} className="transition-opacity hover:opacity-85">
+              <Link href="/journal?tab=goals" aria-label={`${achieved} goals achieved - open the Goals tab`} className="transition-opacity hover:opacity-85">
                 <PaceCounter label="Achieved" value={achieved} tone="text-emerald-500" icon={Trophy} hint="hit this period" />
               </Link>
             </div>
@@ -197,7 +197,7 @@ export function GoalsPaceCard() {
                     </div>
                     <div className="shrink-0 text-right">
                       <span className="font-mono text-sm font-semibold tabular-nums">
-                        {progress.progressPct === null ? "—" : `${Math.round(progress.progressPct)}%`}
+                        {progress.progressPct === null ? "-" : `${Math.round(progress.progressPct)}%`}
                       </span>
                     </div>
                   </Link>

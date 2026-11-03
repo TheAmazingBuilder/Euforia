@@ -1,5 +1,5 @@
 /**
- * verify-oryon-phase7.js — Oryon Phase 7 (multi-chart workspace, market
+ * verify-oryon-phase7.js - Oryon Phase 7 (multi-chart workspace, market
  * comparison, chart synchronization).
  * Contract under test:
  *  - GRIDS: single / side-by-side / stacked / quad, stable panel identities
@@ -21,8 +21,8 @@
  *  - Honest a11y: sync state exposed via aria-checked; 0 console errors;
  *    desktop 1440 + mobile 390.
  *
- * Run: node scripts/verify-oryon-phase7.js   (DEV server on :3001 — the
- * structural debug handles are dev-only by design, phases 1-6 convention —
+ * Run: node scripts/verify-oryon-phase7.js   (DEV server on :3001 - the
+ * structural debug handles are dev-only by design, phases 1-6 convention -
  * market service on :3003, mocked auth, BASE_URL overridable)
  */
 const path = require("path");
@@ -31,7 +31,7 @@ const { armTool } = require("./oryon-probe-helpers.js");
 const fs = require("fs");
 
 const LOG = path.resolve(__dirname, "oryon-phase7-probe.log");
-fs.writeFileSync(LOG, `=== oryon phase7 probe — ${new Date().toISOString()} ===\n`);
+fs.writeFileSync(LOG, `=== oryon phase7 probe - ${new Date().toISOString()} ===\n`);
 
 const BASE = process.env.BASE_URL || "http://localhost:3001";
 
@@ -100,7 +100,7 @@ async function signIn(app) {
   await app.waitForSelector('a[href="/oryon"]', { timeout: 40_000 }).catch(() => {});
 }
 
-// ── Observers (debug handles — dev builds only) ──────────────────────────────
+// ── Observers (debug handles - dev builds only) ──────────────────────────────
 
 async function panels(app) {
   return app.evaluate(() => {
@@ -111,7 +111,7 @@ async function panels(app) {
 }
 
 /** Waits until the grid shows `count` panels, each engine live (series ≥ 1)
- *  and — when given — each raw session symbol matches `symbols[i]`. */
+ *  and - when given - each raw session symbol matches `symbols[i]`. */
 async function waitForPanels(app, count, symbols = null, timeoutMs = 20_000) {
   const deadline = Date.now() + timeoutMs;
   let last = null;
@@ -144,7 +144,7 @@ async function templatesFile(app) {
   });
 }
 
-/** Drawings records per symbol key (per-symbol stores — §11). */
+/** Drawings records per symbol key (per-symbol stores - §11). */
 async function drawingsBySymbol(app) {
   return app.evaluate(() => {
     const out = {};
@@ -181,7 +181,7 @@ async function activatePanel(app, i) {
 
 async function setPanelSymbol(app, i, symbol) {
   // Header controls respond after the panel is active (first-click
-  // activation semantic — the probe activates explicitly, like a user).
+  // activation semantic - the probe activates explicitly, like a user).
   await activatePanel(app, i);
   await app.click(`[data-testid="oryon-panel-${i}-instrument-trigger"]`);
   await app.waitForSelector(`[data-testid="oryon-panel-${i}-instrument-search"]`, { timeout: 5_000 });
@@ -201,7 +201,7 @@ async function setPanelInterval(app, i, interval) {
 }
 
 /** Opens a panel's header menu and runs one of its items (the panel is
- *  activated first — first-click activation semantic). */
+ *  activated first - first-click activation semantic). */
 async function panelMenuAction(app, i, itemTestid) {
   await activatePanel(app, i);
   await app.click(`[data-testid="oryon-panel-${i}-menu"]`);
@@ -258,7 +258,7 @@ async function dragCanvas(app, i, dx) {
   await app.waitForTimeout(400);
 }
 
-/** USER hover: park the crosshair over the BARS (`xFrac` across the plot —
+/** USER hover: park the crosshair over the BARS (`xFrac` across the plot -
  *  the right part of the plot is empty right-offset margin where LWC
  *  reports no bar time). */
 async function hoverCanvas(app, i, xFrac = 0.35, offsetY = 0) {
@@ -327,7 +327,7 @@ async function leavePlot(app) {
   await page.waitForTimeout(2_000);
 
   // ── A. État initial ──────────────────────────────────────────────────────
-  console.log("— A. État initial : single, un panneau, sync off");
+  console.log("- A. État initial : single, un panneau, sync off");
 
   ok("A1 grille single (data-grid)", (await page.locator('[data-testid="oryon-chart-grid"]').getAttribute("data-grid")) === "single");
   ok("A2 un seul panneau, actif", await (async () => {
@@ -351,7 +351,7 @@ async function leavePlot(app) {
   })());
 
   // ── B. Grilles : transitions sans recréation ─────────────────────────────
-  console.log("— B. Grilles : transitions, identités stables");
+  console.log("- B. Grilles : transitions, identités stables");
 
   await setGrid(page, "twoHorizontal");
   await waitForPanels(page, 2);
@@ -392,7 +392,7 @@ async function leavePlot(app) {
   ok("B6 instruments distincts posés (EURUSD / XAUUSD)", true);
 
   // ── C. Modèle du panneau actif (§7) ──────────────────────────────────────
-  console.log("— C. Panneau actif : activation, premier clic sans dessin");
+  console.log("- C. Panneau actif : activation, premier clic sans dessin");
 
   await activatePanel(page, 1);
   ok("C1 activation explicite du panneau 2", await (async () => {
@@ -429,7 +429,7 @@ async function leavePlot(app) {
   await page.waitForTimeout(200);
 
   // ── D. Sync time-scale (§8.1) ────────────────────────────────────────────
-  console.log("— D. Sync time-scale : diffusion et inertie");
+  console.log("- D. Sync time-scale : diffusion et inertie");
 
   // Sync OFF: a pan on panel 1 stays local.
   let before = await panels(page);
@@ -452,13 +452,13 @@ async function leavePlot(app) {
   after = await panels(page);
   ok("D4 timeScale désactivé → inertie totale", rangesAligned(after[0].visibleRange, after[1].visibleRange) === false);
 
-  // ── E. Sync crosshair (§8.2 — timestamp-based) ───────────────────────────
-  console.log("— E. Sync crosshair : même timestamp, jamais des pixels");
+  // ── E. Sync crosshair (§8.2 - timestamp-based) ───────────────────────────
+  console.log("- E. Sync crosshair : même timestamp, jamais des pixels");
 
   await toggleSync(page, "crosshair");
   // Settle: the menu closing under the pointer fires synthetic crosshair
   // moves whose echo guards (150 ms) can absorb the NEXT real dispatch.
-  // One sacrificial hover, then leave the plot — every guard expires and
+  // One sacrificial hover, then leave the plot - every guard expires and
   // both crosshairs are honestly empty before the assertions start.
   await hoverCanvas(page, 0, 0.5);
   await leavePlot(page);
@@ -467,7 +467,7 @@ async function leavePlot(app) {
   const t0 = list[0].crosshairTime;
   // Honest propagation: B shows the SAME bar when its own data can
   // represent it; when the bar is out of B's loaded span the coordinator
-  // CLEARS B (empty crosshair — never a stale or fabricated position).
+  // CLEARS B (empty crosshair - never a stale or fabricated position).
   ok("E1 hover A → B suit le timestamp (ou reste honnêtement vide)", t0 !== null && (list[1].crosshairTime === t0 || list[1].crosshairTime === null));
   if (!(t0 !== null && (list[1].crosshairTime === t0 || list[1].crosshairTime === null))) {
     console.log(`  DEBUG E1: A=${JSON.stringify(list[0].crosshairTime)} B=${JSON.stringify(list[1].crosshairTime)}`);
@@ -489,8 +489,8 @@ async function leavePlot(app) {
   const t2 = list[0].crosshairTime;
   ok("E3 crosshair désactivé → B ne suit plus A", t2 !== null && t2 !== t1 && list[1].crosshairTime !== t2);
 
-  // ── F. Sync instrument + timeframe (§8.3/§8.4 — état) ────────────────────
-  console.log("— F. Liens instrument et timeframe (niveau configuration)");
+  // ── F. Sync instrument + timeframe (§8.3/§8.4 - état) ────────────────────
+  console.log("- F. Liens instrument et timeframe (niveau configuration)");
 
   await setPanelSymbol(page, 1, "GBPUSD");
   await waitForPanels(page, 2, ["EURUSD", "GBPUSD"]);
@@ -524,7 +524,7 @@ async function leavePlot(app) {
   ok("F6 l'activation d'un canal n'active jamais l'autre (timeScale off, crosshair off)", (await syncChecked(page, "timeScale")) === false && (await syncChecked(page, "crosshair")) === false);
 
   // ── G. Duplication / retrait de panneaux (§5) ────────────────────────────
-  console.log("— G. Duplication et retrait");
+  console.log("- G. Duplication et retrait");
 
   await panelMenuAction(page, 0, "menu-duplicate");
   const dup = await panels(page);
@@ -551,7 +551,7 @@ async function leavePlot(app) {
   })());
 
   // ── H. Layouts multi-panneaux (§12) ──────────────────────────────────────
-  console.log("— H. Layouts : arrangement quad sauvegardé et restauré");
+  console.log("- H. Layouts : arrangement quad sauvegardé et restauré");
 
   // Build a distinctive quad: EURUSD 5m · XAUUSD 15m · GBPUSD 5m · BOOM500 5m.
   await setGrid(page, "twoHorizontal");
@@ -577,7 +577,7 @@ async function leavePlot(app) {
   ok("H1 layout sauvegardé (pointeur actif)", file.layouts.length === 1 && file.activeLayoutId === quadLayout.id);
   ok("H2 v2 : grille quad + 4 panneaux avec symboles capturés", quadLayout.grid === "quad" && JSON.stringify(quadLayout.panels.map((p) => p.symbol)) === JSON.stringify(["EURUSD", "XAUUSD", "GBPUSD", "BOOM500"]));
 
-  // Switch away and back — the SAVED arrangement is restored.
+  // Switch away and back - the SAVED arrangement is restored.
   await page.click('[data-testid="oryon-layouts"]');
   await page.waitForSelector('[data-testid="oryon-layout-menu"]', { timeout: 5_000 });
   await page.locator('[data-testid="oryon-layout-menu"] [role="menuitemradio"]', { hasText: "Default layout" }).first().click();
@@ -591,7 +591,7 @@ async function leavePlot(app) {
   const restored = await waitForPanels(page, 4, ["EURUSD", "XAUUSD", "GBPUSD", "BOOM500"]);
   ok("H4 re-switch → 4 panneaux, symboles + intervalles restaurés", Array.isArray(restored) && restored[1].interval === "15m");
 
-  // Reload — the active layout re-applies on boot.
+  // Reload - the active layout re-applies on boot.
   await page.reload({ waitUntil: "load" });
   await clearDevOverlay(page);
   await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 30_000 });
@@ -600,7 +600,7 @@ async function leavePlot(app) {
   file = await layoutsFile(page);
   ok("H6 le pointeur actif survit au reload", file !== null && file.activeLayoutId === file.layouts.find((l) => l.name === "P7 Quad").id);
 
-  // Activation is a VIEW preference — never dirty.
+  // Activation is a VIEW preference - never dirty.
   await activatePanel(page, 2);
   ok("H7 activation seule → PAS de pastille dirty", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 0);
 
@@ -614,7 +614,7 @@ async function leavePlot(app) {
   ok("H9 save → pastille disparue", (await page.locator('[data-testid="oryon-layout-dirty"]').count()) === 0);
 
   // ── I. Templates → panneau ACTIF uniquement (§11/§12) ────────────────────
-  console.log("— I. Templates : application au panneau actif");
+  console.log("- I. Templates : application au panneau actif");
 
   await activatePanel(page, 1);
   await page.click('[data-testid="oryon-indicators"]');
@@ -638,7 +638,7 @@ async function leavePlot(app) {
   const tpl = tplFile.templates.find((t) => t.name === "P7 T1");
   ok("I2 template capturé (pile d'indicateurs du panneau actif)", tplFile.templates.length === 1 && Array.isArray(tpl.indicators) && tpl.indicators.length >= 1);
 
-  // Apply to the OTHER panel (now active) — via Manage.
+  // Apply to the OTHER panel (now active) - via Manage.
   await activatePanel(page, 0);
   await page.click('[data-testid="oryon-templates"]');
   await page.waitForSelector('[data-testid="oryon-template-menu"]', { timeout: 5_000 });
@@ -677,7 +677,7 @@ async function leavePlot(app) {
   ok("I4 ré-application idempotente (zéro doublon)", chipsP0c === chipsP0b);
 
   // ── J. Overlays : positions et alertes par symbole (§11) ─────────────────
-  console.log("— J. Positions et alertes : scoping par symbole");
+  console.log("- J. Positions et alertes : scoping par symbole");
 
   // Seed one ACTIVE alert for GBPUSD (a symbol with NO open positions).
   await page.evaluate(() => {
@@ -699,7 +699,7 @@ async function leavePlot(app) {
   await clearDevOverlay(page);
   await page.waitForSelector('[data-testid="oryon-workspace"]', { timeout: 30_000 });
   const scoped = await waitForPanels(page, 4, ["EURUSD", "XAUUSD", "GBPUSD", "BOOM500"]);
-  // The private positions stream arrives over WS after the reload — poll
+  // The private positions stream arrives over WS after the reload - poll
   // until the overlays have data (or time out and report honestly).
   await page
     .waitForFunction(
@@ -719,10 +719,10 @@ async function leavePlot(app) {
   ok("J4 les 4 panneaux rendent toujours leurs séries", scopedNow.every((p) => p.series >= 1));
 
   // ── K. Mobile 390 (§15) ──────────────────────────────────────────────────
-  console.log("— K. Mobile 390 : pile 1 colonne, rien ne déborde");
+  console.log("- K. Mobile 390 : pile 1 colonne, rien ne déborde");
 
   await page.setViewportSize({ width: 390, height: 844 });
-  // Sonner toasts are FIXED elements that can sit past the right edge —
+  // Sonner toasts are FIXED elements that can sit past the right edge -
   // wait for the template toasts to clear before measuring overflow.
   await page
     .waitForFunction(() => document.querySelectorAll("[data-sonner-toast]").length === 0, { timeout: 8_000 })
@@ -752,7 +752,7 @@ async function leavePlot(app) {
   await page.waitForTimeout(800);
 
   // ── L. Console ───────────────────────────────────────────────────────────
-  console.log("— L. Console");
+  console.log("- L. Console");
   ok("L1 zéro erreur console (hors bruit filtré)", errors.length === 0);
   if (errors.length > 0) {
     fs.appendFileSync(LOG, `console errors:\n${errors.slice(0, 10).join("\n")}\n`);

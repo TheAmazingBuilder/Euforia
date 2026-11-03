@@ -1,5 +1,5 @@
 /**
- * Verify — Nofy module (personal trading knowledge workspace):
+ * Verify - Nofy module (personal trading knowledge workspace):
  *   sidebar entry under ACADEMY, Overview aggregates, seeded content,
  *   block editor (slash commands, markdown shortcuts, autosave, refs,
  *   tags, focus mode), notes browser (search/filter/sort), folders,
@@ -25,7 +25,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   const results = [];
   const check = (name, ok, extra = "") => {
-    results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+    results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
     console.log(results[results.length - 1]);
   };
 
@@ -58,7 +58,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   check("My Notes lists seeded notes", noteRows >= 8, `rows=${noteRows}`);
   check("Tag filter chips render", (await page.locator('[data-testid="nofy-tag-filter"]').count()) >= 1);
 
-  // Server-side search — "CPI" matches the study (title) AND the London ledger (table row)
+  // Server-side search - "CPI" matches the study (title) AND the London ledger (table row)
   await page.fill('[data-testid="nofy-notes-search"]', "CPI");
   await page.waitForTimeout(1600);
   const searchHits = await page.locator('[data-testid="nofy-note-row"]').count();
@@ -81,7 +81,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
 
   // Autosave: retype the title, expect Saved status
   const titleInput = page.locator('[data-testid="nofy-title-input"]');
-  await titleInput.fill("Why I entered too early — postmortem");
+  await titleInput.fill("Why I entered too early - postmortem");
   await page.waitForTimeout(2000);
   const saveStatus = await page.locator('[data-testid="nofy-save-status"]').getAttribute("data-status");
   check("Autosave reaches Saved", saveStatus === "saved", `status=${saveStatus}`);
@@ -163,7 +163,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   const newStatus = await page.locator('[data-testid="nofy-save-status"]').getAttribute("data-status");
   check("New note autosaves", newStatus === "saved", `status=${newStatus}`);
 
-  // Favorite the note → shows in Favorites (close the editor first — tabs
+  // Favorite the note → shows in Favorites (close the editor first - tabs
   // are replaced by the editor while a note is open)
   await page.click('[data-testid="nofy-favorite-toggle"]');
   await page.waitForTimeout(1400);

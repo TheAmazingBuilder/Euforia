@@ -6,13 +6,13 @@ import {
 } from "@cosmoz/shared";
 
 /**
- * Phase 08 — the pure snapshot-comparison engine (shared by API tests and
+ * Phase 08 - the pure snapshot-comparison engine (shared by API tests and
  * the web compare view). Rules under test (spec §8):
  *   - absolute diff = B − A in the metric's own unit;
  *   - relative % ONLY when mathematically meaningful (base ≠ 0; never for
  *     winRate (percentage-point space) or trade counts);
  *   - direction semantics carried per metric (bigger drawdown is NOT an
- *     improvement — higherIsBetter=false);
+ *     improvement - higherIsBetter=false);
  *   - currency honesty: mismatched or multi-currency contexts mark money
  *     rows not comparable + warn, ratio/R/count rows stay comparable;
  *   - schema-version mismatch degrades the whole comparison + warns.
@@ -53,7 +53,7 @@ function withMetrics(
   return { ...base, metrics: { ...base.metrics, ...metrics } };
 }
 
-describe("comparePerformanceSnapshots — money + ratio rows", () => {
+describe("comparePerformanceSnapshots - money + ratio rows", () => {
   const a = snapshot();
   const b = withMetrics(snapshot({ id: "22222222-2222-4222-8222-222222222222", name: "B" }), {
     netPnl: "350",
@@ -104,7 +104,7 @@ describe("comparePerformanceSnapshots — money + ratio rows", () => {
   });
 });
 
-describe("comparePerformanceSnapshots — currency honesty (§8)", () => {
+describe("comparePerformanceSnapshots - currency honesty (§8)", () => {
   it("refuses money rows across different currencies + warns; keeps ratio/R rows", () => {
     const eur = snapshot({ currency: "EUR" });
     const result = comparePerformanceSnapshots(eur, snapshot());
@@ -127,13 +127,13 @@ describe("comparePerformanceSnapshots — currency honesty (§8)", () => {
   });
 });
 
-describe("comparePerformanceSnapshots — schema-version guard (§9)", () => {
+describe("comparePerformanceSnapshots - schema-version guard (§9)", () => {
   it("marks the comparison incompatible + warns when versions differ", () => {
     const older = snapshot({ schemaVersion: SNAPSHOT_SCHEMA_VERSION - 1 });
     const result = comparePerformanceSnapshots(older, snapshot());
     expect(result.compatible).toBe(false);
     expect(result.warnings.some((warning) => warning.includes("Schema versions differ"))).toBe(true);
-    // Rows still show the ORIGINAL captured values — never reinterpreted.
+    // Rows still show the ORIGINAL captured values - never reinterpreted.
     const netPnl = result.rows.find((row) => row.metric === "netPnl")!;
     expect(netPnl.comparable).toBe(false);
     expect(netPnl.a).toBe(older.metrics.netPnl);
@@ -141,7 +141,7 @@ describe("comparePerformanceSnapshots — schema-version guard (§9)", () => {
   });
 });
 
-describe("comparePerformanceSnapshots — missing metrics (null honesty)", () => {
+describe("comparePerformanceSnapshots - missing metrics (null honesty)", () => {
   it("marks rows not comparable when a value was unavailable at capture", () => {
     const noProfitFactor = withMetrics(snapshot(), { profitFactor: null });
     const result = comparePerformanceSnapshots(noProfitFactor, snapshot());

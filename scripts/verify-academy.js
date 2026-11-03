@@ -1,5 +1,5 @@
 /**
- * Verify — Academy module + navigation reorganization:
+ * Verify - Academy module + navigation reorganization:
  *  Nav  : TRADING (session/trades/journal/playbook), INSIGHTS (analytics/
  *         calendar/discipline), ACADEMY section before SYSTEM, ⌘K palette
  *  Academy: Overview (continue learning, stats, recommendations), Courses
@@ -8,7 +8,7 @@
  *         structure drill), Progress, Glossary (search + expand)
  * Plus mobile 390 overflow check and console health.
  *
- * IMPORTANT: the MSW store lives in the browser tab — the script navigates
+ * IMPORTANT: the MSW store lives in the browser tab - the script navigates
  * with SPA link clicks ONLY (one initial goto), so state persists across pages.
  */
 /* eslint-disable @typescript-eslint/no-require-imports -- Node verification script (CommonJS, never bundled) */
@@ -30,9 +30,9 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   page.on("pageerror", (err) => errors.push(String(err)));
 
   const results = [];
-  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} — ${name}${extra ? ` (${extra})` : ""}`);
+  const check = (name, ok, extra = "") => results.push(`${ok ? "PASS" : "FAIL"} - ${name}${extra ? ` (${extra})` : ""}`);
 
-  // ── 0. Load the app (single goto — SPA navigation afterwards) ─────────────
+  // ── 0. Load the app (single goto - SPA navigation afterwards) ─────────────
   await page.goto(`${BASE}/`, { waitUntil: "networkidle", timeout: 60_000 });
   await page.waitForTimeout(1500);
 
@@ -232,7 +232,7 @@ const NOISE = [/socket\.io/i, /candles/i, /market-service/i, /favicon/i, /net::E
   await mobile.goto(`${BASE}/academy`, { waitUntil: "networkidle", timeout: 60_000 });
   await mobile.waitForTimeout(1800);
   const overflow = await mobile.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  check("Mobile 390 — no horizontal overflow on /academy", overflow <= 1, `overflowPx=${overflow}`);
+  check("Mobile 390 - no horizontal overflow on /academy", overflow <= 1, `overflowPx=${overflow}`);
   await mobile.screenshot({ path: "scripts/shots/academy-mobile.png", fullPage: false });
   await mobile.close();
 

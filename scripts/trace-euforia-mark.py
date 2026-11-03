@@ -9,7 +9,7 @@
        euforia-mark-black.svg  bare mark, flat #020617
        euforia-icon.svg        navy squircle tile + gradient mark (favicon)
        favicon.svg             = euforia-icon.svg
-  All geometry comes from the user's reference image — identical to it.
+  All geometry comes from the user's reference image - identical to it.
 """
 
 import re
@@ -53,24 +53,24 @@ biggest_el = max(path_els, key=len)
 d_attr = re.search(r'd="([^"]+)"', biggest_el).group(1)
 path_tf_m = re.search(r'transform="([^"]+)"', biggest_el)
 path_tf = path_tf_m.group(1) if path_tf_m else ""
-# parse translate(dx,dy) if present — gradient coords live in the path's
+# parse translate(dx,dy) if present - gradient coords live in the path's
 # LOCAL space (same space as d), so global gradient targets get un-shifted
 pdx, pdy = 0.0, 0.0
 mt = re.match(r"translate\(\s*(-?[\d.]+)[\s,]+(-?[\d.]+)\s*\)", path_tf)
 if mt:
     pdx, pdy = float(mt.group(1)), float(mt.group(2))
 print(f"path transform: '{path_tf}' (dx={pdx}, dy={pdy})")
-# vtracer traced at 3x scale with its own viewBox — renormalize: parse width/height
+# vtracer traced at 3x scale with its own viewBox - renormalize: parse width/height
 m = re.search(r'width="(\d+)" height="(\d+)"', svg_text)
 tw, th = int(m.group(1)), int(m.group(2))
 sx, sy = mask_img.width / tw, mask_img.height / th
 print(f"trace canvas {tw}x{th} → scale ({sx:.4f},{sy:.4f})")
 
 if abs(sx - 1 / 3) > 0.01 or abs(sy - 1 / 3) > 0.01:
-    print("WARNING: unexpected trace scale — inspect manually")
+    print("WARNING: unexpected trace scale - inspect manually")
     sx = sy = 1 / 3  # assume 3x as built
 
-# Everything stays in the TRACED space (tw x th = 750x918) — the path is
+# Everything stays in the TRACED space (tw x th = 750x918) - the path is
 # used verbatim, no numeric rescaling (relative commands stay valid).
 MARK_W, MARK_H = tw, th
 
@@ -116,4 +116,4 @@ icon = svg_with("url(#euGrad)", gradient, tile=True)
 # save the raw path + metrics for the PNG/icon pipeline
 (TRACE_DIR / "mark-path.txt").write_text(d_attr)
 (TRACE_DIR / "mark-metrics.txt").write_text(f"{MARK_W} {MARK_H}\n")
-print(f"mark {MARK_W}x{MARK_H} — SVGs written to {BRAND}")
+print(f"mark {MARK_W}x{MARK_H} - SVGs written to {BRAND}")
