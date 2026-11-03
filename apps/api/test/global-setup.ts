@@ -27,6 +27,9 @@ const TEST_DB_URL =
 
 /** Test database name (last path segment of TEST_DB_URL). */
 export const TEST_DB_NAME = new URL(TEST_DB_URL).pathname.split("/").pop() ?? "cosmoz_test";
+if (!/^[A-Za-z0-9_]+$/.test(TEST_DB_NAME)) {
+  throw new Error("[test-db] DATABASE_URL_TEST must use a simple PostgreSQL database name.");
+}
 
 /** Locate the prisma CLI entry (resilient to exports-map restrictions). */
 function prismaCliPath(): string {
@@ -82,9 +85,13 @@ export default async function globalSetup(): Promise<void> {
     try {
       execFileSync(
         process.execPath,
-        [prismaCliPath(), "db", "execute", "--url", adminUrl.toString(), "--command",
-          `CREATE DATABASE "${TEST_DB_NAME}"`],
-        { env: { ...process.env, DATABASE_URL: adminUrl.toString() }, stdio: "pipe", encoding: "utf8" },
+        [prismaCliPath(), "db", "execute", "--url", adminUrl.toString(), "--stdin"],
+        {
+          env: { ...process.env, DATABASE_URL: adminUrl.toString() },
+          input: `CREATE DATABASE "${TEST_DB_NAME}"`,
+          stdio: "pipe",
+          encoding: "utf8",
+        },
       );
       console.log(`[test-db] created database "${TEST_DB_NAME}"`);
     } catch (error) {
