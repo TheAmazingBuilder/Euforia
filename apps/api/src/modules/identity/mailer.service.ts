@@ -124,8 +124,12 @@ export class ConsoleMailTransport implements MailTransport {
 }
 
 @Injectable()
+type MailerTestGlobal = typeof globalThis & {
+  __EUFORIA_TEST_MAIL_TRANSPORT__?: MailTransport | null;
+};
+const mailerTestGlobal = globalThis as MailerTestGlobal;
+
 export class MailerService {
-  private static testTransportOverride: MailTransport | null = null;
   private transport: MailTransport;
 
   /**
@@ -134,12 +138,12 @@ export class MailerService {
    * deterministic transport across that whole application graph.
    */
   static useTestTransport(transport: MailTransport): void {
-    MailerService.testTransportOverride = transport;
+    mailerTestGlobal.__EUFORIA_TEST_MAIL_TRANSPORT__ = transport;
   }
 
   /** Called before each E2E app is compiled to prevent cross-suite leakage. */
   static clearTestTransportOverride(): void {
-    MailerService.testTransportOverride = null;
+    mailerTestGlobal.__EUFORIA_TEST_MAIL_TRANSPORT__ = null;
   }
   /** Phase 17 - bounded operational telemetry (never user content). */
   private readonly deliveries: MailDeliveryRecord[] = [];
@@ -184,7 +188,7 @@ export class MailerService {
   /** Single delivery funnel: outcome recorded, failures rethrown unchanged. */
   private async deliver(message: MailMessage): Promise<void> {
     try {
-      await (MailerService.testTransportOverride ?? this.transport).send(message);
+      await (mailerTestGlobal.__EUFORIA_TEST_MAIL_TRANSPORT__ ?? this.transport).send(message);
       this.sentCount += 1;
       this.pushDelivery(message.kind, "SENT");
     } catch (error) {

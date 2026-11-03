@@ -998,6 +998,7 @@ describe("password reset (§22)", () => {
     expect(concurrent.filter((response) => response.statusCode === 400)).toHaveLength(1);
     expect(concurrent.find((response) => response.statusCode === 200)?.json().resetAt).toBeTruthy();
     expect(concurrent.find((response) => response.statusCode === 400)?.json().code).toBe("TOKEN_ALREADY_USED");
+    const winningPassword = concurrent[0]?.statusCode === 200 ? newPassword : "another-password-43";
 
     // Reset links remain single-use after the concurrent requests complete.
     const replay = await app.inject({
@@ -1034,7 +1035,7 @@ describe("password reset (§22)", () => {
     const newLogin = await app.inject({
       method: "POST",
       url: "/api/v1/auth/login",
-      payload: { email: ctx.email, password: newPassword, remember: false },
+      payload: { email: ctx.email, password: winningPassword, remember: false },
     });
     expect(newLogin.statusCode).toBe(200);
   });

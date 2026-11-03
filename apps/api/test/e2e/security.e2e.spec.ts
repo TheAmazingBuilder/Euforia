@@ -291,8 +291,7 @@ describe("MFA / email OTP lifecycle", () => {
     });
     expect(confirmed.statusCode).toBe(200);
 
-    const mailer = app.get(MailerService);
-    mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
+    MailerService.useTestTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     let failedStatus = 0;
     try {
       const failed = await app.inject({
@@ -303,7 +302,7 @@ describe("MFA / email OTP lifecycle", () => {
       failedStatus = failed.statusCode;
       expect(failed.json().challengeToken).toBeUndefined();
     } finally {
-      mailer.useTransport({ send: async (message) => { mail.messages.push(message); } });
+      MailerService.useTestTransport({ send: async (message) => { mail.messages.push(message); } });
     }
     expect(failedStatus).toBeGreaterThanOrEqual(500);
 
