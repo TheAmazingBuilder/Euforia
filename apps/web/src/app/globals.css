@@ -801,6 +801,10 @@
 
 /* Consistent card feedback, without transform changes that would interfere
    with draggable dashboard widgets or chart pointer interactions. */
+[data-slot="card"]:has([data-chart-visual]) {
+  background-color: var(--chart-card-surface);
+}
+
 @media (hover: hover) and (pointer: fine) {
   [data-slot="card"] {
     transition:
@@ -811,9 +815,6 @@
     box-shadow:
       0 8px 20px rgb(0 0 0 / 0.14),
       0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
-  }
-  [data-slot="card"]:has([data-chart-visual]) {
-    background-color: var(--chart-card-surface);
   }
   [data-slot="card"]:has([data-chart-visual]):hover {
     box-shadow:
