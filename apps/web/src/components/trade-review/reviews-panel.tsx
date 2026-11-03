@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiErrorMessage } from "@/lib/api/client";
 import { useDeleteReview, useReviews } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { GradeBadge, PLAYBOOK_MATCH_META } from "@/components/trade-review/trade-review-shared";
 import { ReviewDialog } from "@/components/trade-review/review-dialog";
 
@@ -49,7 +50,7 @@ function ReviewRowItem({ row, onReview, onUndo }: { row: ReviewRow; onReview: (r
         ) : (
           <CheckCircle2 className="size-4 text-muted-foreground" aria-hidden="true" />
         )}
-        <span className="font-mono text-sm font-semibold">{row.symbol}</span>
+        <span className="font-mono text-sm font-semibold">{formatInstrumentSymbol(row.symbol)}</span>
       </span>
 
       <span className="hidden w-16 shrink-0 items-center gap-1 font-mono text-xs text-muted-foreground sm:flex">
@@ -129,7 +130,7 @@ export function ReviewsPanel() {
 
   const undoReview = (row: ReviewRow) => {
     deleteReview.mutate(row.tradeId, {
-      onSuccess: () => toast.success("Review undone", { description: `${row.symbol} is back in the queue.` }),
+      onSuccess: () => toast.success("Review undone", { description: `${formatInstrumentSymbol(row.symbol)} is back in the queue.` }),
       onError: (error) => toast.error("Could not undo the review", { description: apiErrorMessage(error, "Unexpected error - try again.") }),
     });
   };

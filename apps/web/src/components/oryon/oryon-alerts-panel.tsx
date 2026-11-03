@@ -9,6 +9,7 @@ import type { OryonAlert } from "@cosmoz/shared";
 import { useDict } from "@/i18n/i18n-provider";
 import { useFeedStatus } from "@/lib/realtime/market";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 import { useOryonAlerts } from "@/components/oryon/oryon-alerts-context";
 
@@ -123,7 +124,7 @@ function AlertRow({ alert }: { alert: OryonAlert }) {
     >
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className="font-mono text-xs font-semibold text-foreground">{alert.symbol}</span>
+          <span className="font-mono text-xs font-semibold text-foreground">{formatInstrumentSymbol(alert.symbol)}</span>
           <span aria-hidden className="font-mono text-[10px] text-muted-foreground">
             {arrow}
           </span>

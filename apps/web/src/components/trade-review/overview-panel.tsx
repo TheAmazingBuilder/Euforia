@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { GradeBadge, GRADE_BAR, GRADE_STYLES } from "@/components/trade-review/trade-review-shared";
 import { Snowflake } from "lucide-react";
 
@@ -226,7 +227,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
                 {pendingQueuePreview.map((row) => (
                   <div key={row.tradeId} className="flex items-center gap-3 rounded-lg border border-dashed px-3 py-2" data-testid="pending-preview-row">
                     <GradeBadge grade={row.executionGrade} className="h-5 px-1.5 text-[10px]" />
-                    <span className="font-mono text-sm font-semibold">{row.symbol}</span>
+                    <span className="font-mono text-sm font-semibold">{formatInstrumentSymbol(row.symbol)}</span>
                     <span className="hidden font-mono text-xs text-muted-foreground sm:inline">{row.tradingDate.slice(5)}</span>
                     <span
                       className={cn(
@@ -268,7 +269,7 @@ export function OverviewPanel({ overview, onGoTo }: OverviewPanelProps) {
               recentLessons.slice(0, 4).map((lesson) => (
                 <div key={lesson.id} className="rounded-lg border px-3 py-2" data-testid="overview-lesson-row">
                   <div className="flex items-center gap-2 text-xs">
-                    {lesson.symbol && <span className="font-mono font-semibold">{lesson.symbol}</span>}
+                    {lesson.symbol && <span className="font-mono font-semibold">{formatInstrumentSymbol(lesson.symbol)}</span>}
                     <GradeBadge grade={lesson.executionGrade} className="h-5 px-1.5 text-[10px]" />
                     {lesson.rMultiple !== null && (
                       <span className={cn("font-mono", lesson.rMultiple > 0 ? "text-profit" : "text-loss")}>

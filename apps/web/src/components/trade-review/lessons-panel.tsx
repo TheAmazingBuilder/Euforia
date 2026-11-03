@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useReviewLessons } from "@/lib/api/queries";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { GradeBadge, SOURCE_META } from "@/components/trade-review/trade-review-shared";
 
 /**
@@ -43,7 +44,7 @@ function LessonCard({ entry }: { entry: LessonEntry }) {
           <Badge variant="outline" className={cn("text-[10px]", source.className)}>
             {source.label}
           </Badge>
-          {entry.symbol && <span className="font-mono font-semibold">{entry.symbol}</span>}
+          {entry.symbol && <span className="font-mono font-semibold">{formatInstrumentSymbol(entry.symbol)}</span>}
           <GradeBadge grade={entry.executionGrade} className="h-5 px-1.5 text-[10px]" />
           {entry.rMultiple !== null && (
             <span

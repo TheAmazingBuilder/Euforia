@@ -5,6 +5,7 @@ import * as React from "react";
 import type { OryonAlert, OryonAlertCondition } from "@cosmoz/shared";
 
 import { useDict } from "@/i18n/i18n-provider";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -57,7 +58,7 @@ export function OryonAlertDialog() {
         // Plain Radix portal - chart pointer events never reach it.
       >
         {createOpen && prefill !== null ? (
-          <OryonAlertForm key={`${prefill.symbol}:${createOpen}`} prefill={prefill} />
+          <OryonAlertForm key={`${formatInstrumentSymbol(prefill.symbol)}:${createOpen}`} prefill={prefill} />
         ) : null}
       </DialogContent>
     </Dialog>
