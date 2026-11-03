@@ -6,7 +6,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
-import { MailerService } from "../../src/modules/identity/mailer.service";
 import { IdentityRepository } from "../../src/modules/identity/identity.repository";
 import {
   authenticatedUser,
