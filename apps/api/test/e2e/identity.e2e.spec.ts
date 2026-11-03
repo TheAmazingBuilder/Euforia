@@ -7,6 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
 import { IdentityRepository } from "../../src/modules/identity/identity.repository";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import {
   authenticatedUser,
   captureMail,
@@ -52,7 +53,7 @@ describe("registration & email verification", () => {
   });
 
   it("cleans up an undelivered verification token and allows resend after SMTP recovers", async () => {
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     const email = uniqueEmail("smtp-retry");
     mailer.useTransport({
       send: async () => {
@@ -92,7 +93,7 @@ describe("registration & email verification", () => {
     expect(registered.statusCode).toBe(201);
     const previouslyDeliveredToken = mail.lastVerificationToken();
 
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     const failedDelivery = await app.inject({
       method: "POST",
@@ -183,7 +184,7 @@ describe("registration & email verification", () => {
     });
 
     const newEmail = uniqueEmail("email-change-smtp");
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     const change = await app.inject({
       method: "PATCH",
@@ -441,7 +442,7 @@ describe("email-based two-factor authentication", () => {
   it("allows email MFA enrollment to retry after SMTP failure", async () => {
     mail.clear();
     const ctx = await authenticatedUser(app, mail);
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     const firstReauth = await app.inject({
       method: "POST",
       url: "/api/v1/security/reauth",
@@ -613,7 +614,7 @@ describe("email-based two-factor authentication", () => {
     const firstCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
     expect(firstCode).toMatch(/^\d{6}$/);
 
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     mailer.useTransport({ send: async () => { throw new Error("simulated SMTP outage"); } });
     const failedReplacement = await app.inject({
       method: "POST",
@@ -876,7 +877,7 @@ describe("password reset (§22)", () => {
 
   it("SMTP failure does not invalidate the last delivered reset link or reveal account existence", async () => {
     const ctx = await authenticatedUser(app, mail);
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     mail.clear();
 
     const first = await app.inject({
@@ -917,7 +918,7 @@ describe("password reset (§22)", () => {
     const ctx = await authenticatedUser(app, mail);
     const originalEmail = ctx.email;
     const newEmail = uniqueEmail("email-change-smtp-failure");
-    const mailer = identityMailer(app);
+    const mailer = { useTransport: MailerService.useTestTransport };
     mailer.useTransport({
       send: async () => {
         throw new Error("simulated SMTP outage during email change");
