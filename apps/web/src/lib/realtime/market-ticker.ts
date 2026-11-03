@@ -1,4 +1,5 @@
 import type { LiveQuote } from "./market";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 /** Only real, finite provider observations enter the ticker. */
 export function selectRealTickerQuotes(quotes: Iterable<LiveQuote>): LiveQuote[] {
@@ -26,11 +27,8 @@ export function isQuoteFresh(quote: Pick<LiveQuote, "ts">, nowMs: number, staleM
 }
 
 export function formatMarketSymbol(quote: Pick<LiveQuote, "symbol" | "marketType">): string {
-  if (quote.marketType === "CRYPTO_SPOT" && quote.symbol.endsWith("USDT")) return `${quote.symbol.slice(0, -4)}/USDT`;
-  if (quote.marketType === "FOREX" && quote.symbol.length === 6) return `${quote.symbol.slice(0, 3)}/${quote.symbol.slice(3)}`;
-  if (quote.marketType === "METAL" && quote.symbol.endsWith("USD")) return `${quote.symbol.slice(0, -3)}/USD`;
-  if (quote.symbol === "VOL75(1s)") return "Volatility 75 (1s)";
-  return quote.symbol;
+  const assetClass = { CRYPTO_SPOT: "CRYPTO", FOREX: "FOREX", METAL: "METAL", SYNTHETIC: "SYNTHETIC" } as const;
+  return formatInstrumentSymbol(quote.symbol, assetClass[quote.marketType]);
 }
 
 export function marketTypeLabel(marketType: LiveQuote["marketType"]): string {

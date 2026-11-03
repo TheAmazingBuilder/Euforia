@@ -12,7 +12,7 @@
 
 /* Makes shadcn/ui `dark:` variants work on every dark theme.
    Without this, all shadcn components break on theme switch. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="euforia"], [data-theme="euforia"] *));
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, [data-theme="euforia"], [data-theme="euforia"] *, [data-theme="midnight"], [data-theme="midnight"] *));
 
 /* ============================================================
    COSMOZ - "Le Registre" design world (2026 refonte)
@@ -94,6 +94,33 @@
   /* authorized addition: destructive-foreground (shadcn needs it) */
   --destructive-foreground: #0B0B0D;
   /* Academy category hues - same bright set as dark-blue (declared on :root). */
+}
+
+/* ---- Theme: midnight / GitHub-inspired trading ink ---- */
+[data-theme="midnight"] {
+  color-scheme: dark;
+  --background: #0d1117;
+  --surface: #161b22;
+  --surface-raised: #21262d;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-muted: #8b949e;
+  --accent: #2975ed;
+  --accent-hover: #1f6feb;
+  --accent-foreground: #ffffff;
+  --action-success: #238636;
+  --action-success-hover: #2ea043;
+  --action-success-foreground: #ffffff;
+  --action-edit: #2975ed;
+  --action-edit-hover: #1f6feb;
+  --profit: #3fb950;
+  --loss: #f85149;
+  --direction-buy: #3fb950;
+  --direction-sell: #f85149;
+  --warning: #d29922;
+  --ring: #2975ed;
+  --radius: 8px;
+  --destructive-foreground: #ffffff;
 }
 
 /* ---- Theme: light / "Papier" ---- */

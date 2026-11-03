@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+import { Moon, MoonStar, Sun } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 
 const SEGMENTS = [
   { value: "dark", label: "Graphite", Icon: Moon },
+  { value: "midnight", label: "Midnight Blue", Icon: MoonStar },
   { value: "light", label: "Chalk", Icon: Sun },
 ] as const;
 
@@ -43,7 +44,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
       aria-label="Color theme"
       data-testid="theme-toggle"
       className={cn(
-        "relative inline-flex h-9 w-[84px] shrink-0 items-center rounded-full border bg-muted/60 p-0.5 backdrop-blur-sm",
+        "relative inline-flex h-9 w-[108px] shrink-0 items-center rounded-full border bg-muted/60 p-0.5 backdrop-blur-sm",
         className,
       )}
     >
@@ -51,7 +52,7 @@ export function ThemeSwitch({ className }: { className?: string }) {
       <span
         aria-hidden="true"
         className={cn(
-          "pointer-events-none absolute top-0.5 bottom-0.5 left-0.5 w-[calc((100%-4px)/2)] rounded-full",
+          "pointer-events-none absolute top-0.5 bottom-0.5 left-0.5 w-[calc((100%-4px)/3)] rounded-full",
           "bg-background shadow-sm ring-1 ring-border/60",
           "transition-transform duration-300 ease-out",
         )}

@@ -7,7 +7,7 @@ import type { Instrument } from "@cosmoz/shared";
 import { useInstruments } from "@/lib/api/queries";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { assetClassBadge } from "@/lib/utils/instrument";
+import { assetClassBadge, formatInstrumentSymbol } from "@/lib/utils/instrument";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/i18n/i18n-provider";
 
@@ -25,29 +25,6 @@ const CATEGORIES = [
 ] as const;
 
 type InstrumentCategory = (typeof CATEGORIES)[number]["value"];
-
-const CURRENCY_FLAGS: Record<string, string> = {
-  EUR: "🇪🇺", USD: "🇺🇸", GBP: "🇬🇧", AUD: "🇦🇺", CAD: "🇨🇦",
-  CHF: "🇨🇭", NZD: "🇳🇿", JPY: "🇯🇵", CNY: "🇨🇳", HKD: "🇭🇰",
-};
-
-function instrumentMark(instrument: Instrument): string {
-  const symbol = instrument.symbol.toUpperCase();
-  if (instrument.assetClass === "FOREX") {
-    const first = CURRENCY_FLAGS[symbol.slice(0, 3)] ?? "FX";
-    const second = CURRENCY_FLAGS[symbol.slice(3, 6)] ?? "";
-    return first + second;
-  }
-  if (instrument.assetClass === "CRYPTO") {
-    if (symbol.startsWith("BTC")) return "₿";
-    if (symbol.startsWith("ETH")) return "Ξ";
-    return symbol.slice(0, 3);
-  }
-  if (instrument.assetClass === "METAL") return symbol.startsWith("XAU") ? "Au" : "Ag";
-  if (instrument.assetClass === "ENERGY") return symbol.includes("GAS") ? "Gas" : "Oil";
-  if (instrument.assetClass === "INDEX") return "IDX";
-  return symbol.replace(/[^A-Z0-9]/g, "").slice(0, 3) || "SYN";
-}
 
 function loadRecents(): string[] {
   if (typeof window === "undefined") return [];
@@ -115,8 +92,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
 
   const triggerContent = selected ? (
     <span className="flex min-w-0 items-center gap-2">
-      <span className="grid size-7 shrink-0 place-items-center rounded-full border border-border bg-muted text-[10px]">{instrumentMark(selected)}</span>
-      <span className="shrink-0 font-mono text-sm font-semibold tracking-wide">{selected.symbol}</span>
+      <span className="shrink-0 rounded-md border border-border bg-muted px-2 py-1 font-mono text-[11px] font-semibold tracking-wide">{formatInstrumentSymbol(selected.symbol, selected.assetClass)}</span>
       <span className="rounded-sm bg-muted px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
         {assetClassBadge(selected.assetClass)}
       </span>
@@ -133,11 +109,8 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
       onClick={() => select(instrument)}
       className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-muted focus-visible:bg-muted focus-visible:ring-1 focus-visible:ring-ring"
     >
-      <span className="grid size-9 shrink-0 place-items-center rounded-full border border-border bg-surface-raised text-xs font-semibold">
-        {instrumentMark(instrument)}
-      </span>
       <span className="min-w-0 flex-1">
-        <span className="block font-mono text-sm font-semibold tracking-wide text-foreground">{instrument.symbol}</span>
+        <span className="block font-mono text-sm font-semibold tracking-wide text-foreground">{formatInstrumentSymbol(instrument.symbol, instrument.assetClass)}</span>
         <span className="block truncate text-xs text-muted-foreground">{instrument.name}</span>
       </span>
       <span className="rounded-md border border-border bg-background px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
@@ -216,7 +189,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
                     onClick={() => select(instrument)}
                     className="rounded-full border border-border bg-surface px-2.5 py-1 font-mono text-xs tabular-nums transition-colors hover:border-accent hover:text-accent"
                   >
-                    {instrument.symbol}
+                    {formatInstrumentSymbol(instrument.symbol, instrument.assetClass)}
                   </button>
                 ))}
               </div>

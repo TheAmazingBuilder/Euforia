@@ -21,7 +21,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     <NextThemesProvider
       attribute="data-theme"
       defaultTheme="dark"
-      themes={["dark", "light", "system", "euforia"]}
+      themes={["dark", "midnight", "light", "system", "euforia"]}
       enableSystem
       disableTransitionOnChange
     >

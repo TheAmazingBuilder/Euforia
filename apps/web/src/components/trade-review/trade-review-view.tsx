@@ -82,10 +82,7 @@ export function TradeReviewView() {
       <header className="border-b border-border pb-5" data-testid="review-header">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="flex items-center gap-2 page-title">
-              <NotebookPen className="size-6 text-muted-foreground sm:size-7" aria-hidden="true" />
-              Trade Review
-            </h1>
+            <h1 className="page-title">Trade Review</h1>
             <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
               Grade execution against the playbook, capture the lesson, and hold your goals against what you actually
               do. Targets are set by you; progress is computed from real trades - you cannot cheat the bar.
