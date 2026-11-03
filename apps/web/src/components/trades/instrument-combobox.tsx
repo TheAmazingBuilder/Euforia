@@ -205,7 +205,7 @@ export function InstrumentCombobox({ value, onChange }: InstrumentComboboxProps)
             )}
           </div>
           <div className="shrink-0 border-t border-border bg-muted/40 px-4 py-2.5 text-[11px] text-muted-foreground">
-            Search matches both ticker and instrument name. Only instruments in Euforia's active catalogue can be selected.
+            Search matches both ticker and instrument name. Only instruments in Euforia&apos;s active catalogue can be selected.
           </div>
         </DialogContent>
       </Dialog>

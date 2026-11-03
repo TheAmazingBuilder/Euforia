@@ -54,13 +54,6 @@ export function DatePicker({
     return new Date(initial.getFullYear(), initial.getMonth(), 1);
   });
 
-  React.useEffect(() => {
-    const nextSelectedDate = parseDateKey(value);
-    if (nextSelectedDate) {
-      setVisibleMonth(new Date(nextSelectedDate.getFullYear(), nextSelectedDate.getMonth(), 1));
-    }
-  }, [value]);
-
   const year = visibleMonth.getFullYear();
   const month = visibleMonth.getMonth();
   const firstDay = new Date(year, month, 1);
@@ -74,7 +67,15 @@ export function DatePicker({
   );
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen);
+        if (nextOpen && selectedDate !== null) {
+          setVisibleMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           type="button"

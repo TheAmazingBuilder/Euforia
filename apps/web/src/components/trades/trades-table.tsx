@@ -187,6 +187,47 @@ type TradesDisplayMode = "list" | "cards";
 
 const TRADES_DISPLAY_MODE_KEY = "euforia.trades.display-mode.v1";
 
+type TradesDisplayModeListener = () => void;
+const tradesDisplayModeListeners = new Set<TradesDisplayModeListener>();
+let tradesDisplayModeMemory: TradesDisplayMode | null = null;
+
+function getTradesDisplayModeSnapshot(): TradesDisplayMode {
+  if (tradesDisplayModeMemory !== null) return tradesDisplayModeMemory;
+  try {
+    const stored = window.localStorage.getItem(TRADES_DISPLAY_MODE_KEY);
+    return stored === "list" || stored === "cards" ? stored : "cards";
+  } catch {
+    return "cards";
+  }
+}
+
+function subscribeTradesDisplayMode(listener: TradesDisplayModeListener): () => void {
+  tradesDisplayModeListeners.add(listener);
+  const onStorage = () => {
+    tradesDisplayModeMemory = null;
+    listener();
+  };
+  window.addEventListener("storage", onStorage);
+  return () => {
+    tradesDisplayModeListeners.delete(listener);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+function getTradesDisplayModeServerSnapshot(): TradesDisplayMode {
+  return "cards";
+}
+
+function setTradesDisplayMode(mode: TradesDisplayMode): void {
+  tradesDisplayModeMemory = mode;
+  try {
+    window.localStorage.setItem(TRADES_DISPLAY_MODE_KEY, mode);
+  } catch {
+    // Keep the in-memory preference active when storage is unavailable.
+  }
+  for (const listener of tradesDisplayModeListeners) listener();
+}
+
 /** One journal entry rendered as a screenshot-first card (MRT-inspired). */
 function TradeCard({
   trade,
@@ -406,25 +447,11 @@ function TradesModule() {
   const { data: accountsData } = useAccounts();
   const accounts = React.useMemo(() => accountsData?.accounts ?? [], [accountsData]);
 
-  const [displayMode, setDisplayMode] = React.useState<TradesDisplayMode>("cards");
-  const [displayPreferenceReady, setDisplayPreferenceReady] = React.useState(false);
-  React.useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(TRADES_DISPLAY_MODE_KEY);
-      if (stored === "list" || stored === "cards") setDisplayMode(stored);
-    } catch {
-      // Private browsing or storage restrictions must not disable the journal.
-    }
-    setDisplayPreferenceReady(true);
-  }, []);
-  React.useEffect(() => {
-    if (!displayPreferenceReady) return;
-    try {
-      window.localStorage.setItem(TRADES_DISPLAY_MODE_KEY, displayMode);
-    } catch {
-      // The current view remains usable even when persistence is unavailable.
-    }
-  }, [displayMode, displayPreferenceReady]);
+  const displayMode = React.useSyncExternalStore(
+    subscribeTradesDisplayMode,
+    getTradesDisplayModeSnapshot,
+    getTradesDisplayModeServerSnapshot,
+  );
 
   const ledgerColumns = React.useMemo<LedgerColumn[]>(
     () => LEDGER_COLUMN_DEFS.map((column) => ({ ...column, label: T.table.columns[column.key] })),
@@ -861,7 +888,7 @@ function TradesModule() {
               aria-label="List view"
               aria-pressed={displayMode === "list"}
               data-testid="trades-view-list"
-              onClick={() => setDisplayMode("list")}
+              onClick={() => setTradesDisplayMode("list")}
             >
               <List className="size-4" aria-hidden="true" />
             </Button>
@@ -873,7 +900,7 @@ function TradesModule() {
               aria-label="Card view"
               aria-pressed={displayMode === "cards"}
               data-testid="trades-view-cards"
-              onClick={() => setDisplayMode("cards")}
+              onClick={() => setTradesDisplayMode("cards")}
             >
               <LayoutGrid className="size-4" aria-hidden="true" />
             </Button>

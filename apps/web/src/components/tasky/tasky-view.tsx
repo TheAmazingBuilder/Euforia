@@ -305,7 +305,9 @@ export function TaskyView() {
   const skipNextAutoSaveRef = React.useRef(false);
   const saveQueueRef = React.useRef<Promise<void>>(Promise.resolve());
   const columnsRef = React.useRef(columns);
-  columnsRef.current = columns;
+  React.useEffect(() => {
+    columnsRef.current = columns;
+  }, [columns]);
 
   // Serialize full-board PUTs so a slower older request cannot finish after a newer state.
   const enqueueSave = React.useCallback((snapshot: TaskyKanbanBoardState) => {
@@ -335,17 +337,20 @@ export function TaskyView() {
     skipNextAutoSaveRef.current = true;
 
     if (boardQuery.data.board) {
-      setColumns(boardQuery.data.board.columns);
-      setHydrated(true);
+      React.startTransition(() => {
+        setColumns(boardQuery.data.board!.columns);
+        setHydrated(true);
+      });
       // Avoid importing one account's legacy local board into another account later.
       clearLegacyBoard();
       return;
     }
 
     const initialColumns = loadLegacyBoard() ?? seedBoard();
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time hydration from authenticated API, with a one-time legacy localStorage import only when no server board exists
-    setColumns(initialColumns);
-    setHydrated(true);
+    React.startTransition(() => {
+      setColumns(initialColumns);
+      setHydrated(true);
+    });
     enqueueSave({ columns: initialColumns });
   }, [boardQuery.data, boardQuery.isSuccess, enqueueSave]);
 
@@ -880,28 +885,42 @@ export function TaskyView() {
     [columns, searchQuery, priorityFilter, dueFilter, categoryFilter, assigneeFilter, statusFilter, sortOrder, todayKey],
   );
   const archivedRows = React.useMemo(() => {
-    let offset = 0;
-    return columns.flatMap((column) => {
+    const ordered = columns.reduce<{
+      rows: Array<{ card: TaskyCard; column: TaskyColumn; boardOrder: number }>;
+      offset: number;
+    }>((previous, column) => {
       const rows = (statusFilter !== "all" && statusFilter !== column.id ? [] : filterTaskyCards(
         column.cards.filter((card) => Boolean(card.archivedAt)),
         { query: searchQuery, priority: priorityFilter, due: dueFilter, category: categoryFilter, assignee: assigneeFilter, sort: sortOrder },
         todayKey,
-      )).map(({ card, originalIndex }) => ({ card, column, boardOrder: offset + originalIndex }));
-      offset += column.cards.length;
-      return rows;
-    });
+      )).map(({ card, originalIndex }) => ({
+        card,
+        column,
+        boardOrder: previous.offset + originalIndex,
+      }));
+      return {
+        rows: [...previous.rows, ...rows],
+        offset: previous.offset + column.cards.length,
+      };
+    }, { rows: [], offset: 0 });
+    return ordered.rows;
   }, [columns, searchQuery, priorityFilter, dueFilter, categoryFilter, assigneeFilter, statusFilter, sortOrder, todayKey]);
   const visibleRows = React.useMemo(() => {
-    let offset = 0;
-    return columns.flatMap((column) => {
+    const ordered = columns.reduce<{
+      rows: Array<{ card: TaskyCard; column: TaskyColumn; boardOrder: number }>;
+      offset: number;
+    }>((previous, column) => {
       const rows = (visibleCardsByColumn.get(column.id) ?? []).map(({ card, originalIndex }) => ({
         card,
         column,
-        boardOrder: offset + originalIndex,
+        boardOrder: previous.offset + originalIndex,
       }));
-      offset += column.cards.length;
-      return rows;
-    });
+      return {
+        rows: [...previous.rows, ...rows],
+        offset: previous.offset + column.cards.length,
+      };
+    }, { rows: [], offset: 0 });
+    return ordered.rows;
   }, [columns, visibleCardsByColumn]);
   const tableRows = React.useMemo(() => {
     const rows = [...visibleRows];

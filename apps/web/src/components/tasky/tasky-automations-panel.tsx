@@ -61,12 +61,9 @@ export function TaskyAutomationsPanel({ columns }: Props) {
   const [daysBeforeDue, setDaysBeforeDue] = React.useState("1");
   const [notificationMessage, setNotificationMessage] = React.useState("");
 
-  React.useEffect(() => {
-    if (!destinationColumnId && columns[0]) setDestinationColumnId(columns[0].id);
-    if (destinationColumnId && !columns.some((column) => column.id === destinationColumnId)) {
-      setDestinationColumnId(columns[0]?.id ?? "");
-    }
-  }, [columns, destinationColumnId]);
+  const effectiveDestinationColumnId = columns.some((column) => column.id === destinationColumnId)
+    ? destinationColumnId
+    : columns[0]?.id ?? "";
 
   const rules = rulesQuery.data?.rules ?? [];
   const runs = runsQuery.data?.runs ?? [];
@@ -75,7 +72,7 @@ export function TaskyAutomationsPanel({ columns }: Props) {
     event.preventDefault();
     const config = {
       ...(trigger === "CARD_MOVED"
-        ? { destinationColumnId, action, ...(action === "SET_PRIORITY" ? { targetPriority } : {}) }
+        ? { destinationColumnId: effectiveDestinationColumnId, action, ...(action === "SET_PRIORITY" ? { targetPriority } : {}) }
         : {}),
       ...(trigger === "DUE_SOON" ? { daysBeforeDue: Number(daysBeforeDue) } : {}),
       ...(notificationMessage.trim() ? { notificationMessage: notificationMessage.trim() } : {}),
@@ -158,7 +155,7 @@ export function TaskyAutomationsPanel({ columns }: Props) {
                 <label htmlFor="tasky-automation-column" className="text-xs font-medium text-muted-foreground">Destination list</label>
                 <select
                   id="tasky-automation-column"
-                  value={destinationColumnId}
+                  value={effectiveDestinationColumnId}
                   onChange={(event) => setDestinationColumnId(event.target.value)}
                   required
                   className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
@@ -235,7 +232,7 @@ export function TaskyAutomationsPanel({ columns }: Props) {
                 ? "When a card enters the selected list, its priority is changed and a notification is published. The run is saved to the history."
                 : "When the rule matches, Euforia publishes an in-app notification and records the execution result."}
             </p>
-            <Button type="submit" disabled={createRule.isPending || !name.trim() || (trigger === "CARD_MOVED" && (!destinationColumnId || (action === "SET_PRIORITY" && !targetPriority)))} data-testid="tasky-automation-create">
+            <Button type="submit" disabled={createRule.isPending || !name.trim() || (trigger === "CARD_MOVED" && (!effectiveDestinationColumnId || (action === "SET_PRIORITY" && !targetPriority)))} data-testid="tasky-automation-create">
               {createRule.isPending ? "Saving rule…" : "Create automation"}
             </Button>
           </form>
