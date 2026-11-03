@@ -7,6 +7,13 @@ import type { TaskyAutomationTrigger, TaskyKanbanColumn, TaskyKanbanPriority } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   useCheckTaskyDueDates,
   useCreateTaskyAutomation,
   useDeleteTaskyAutomation,
@@ -137,80 +144,80 @@ export function TaskyAutomationsPanel({ columns }: Props) {
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="tasky-automation-trigger" className="text-xs font-medium text-muted-foreground">When should it run?</label>
-              <select
-                id="tasky-automation-trigger"
-                value={trigger}
-                onChange={(event) => setTrigger(event.target.value as TaskyAutomationTrigger)}
-                className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                data-testid="tasky-automation-trigger"
-              >
-                <option value="CARD_MOVED">{TRIGGER_LABEL.CARD_MOVED}</option>
-                <option value="DUE_SOON">{TRIGGER_LABEL.DUE_SOON}</option>
-                <option value="OVERDUE">{TRIGGER_LABEL.OVERDUE}</option>
-              </select>
+              <Select value={trigger} onValueChange={(value) => setTrigger(value as TaskyAutomationTrigger)}>
+                <SelectTrigger id="tasky-automation-trigger" className="h-9 w-full" data-testid="tasky-automation-trigger">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CARD_MOVED">{TRIGGER_LABEL.CARD_MOVED}</SelectItem>
+                  <SelectItem value="DUE_SOON">{TRIGGER_LABEL.DUE_SOON}</SelectItem>
+                  <SelectItem value="OVERDUE">{TRIGGER_LABEL.OVERDUE}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {trigger === "CARD_MOVED" ? (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="tasky-automation-column" className="text-xs font-medium text-muted-foreground">Destination list</label>
-                <select
-                  id="tasky-automation-column"
-                  value={effectiveDestinationColumnId}
-                  onChange={(event) => setDestinationColumnId(event.target.value)}
+                <Select
+                  value={effectiveDestinationColumnId || undefined}
+                  onValueChange={setDestinationColumnId}
                   required
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  data-testid="tasky-automation-column"
                 >
-                  {columns.map((column) => <option key={column.id} value={column.id}>{column.title}</option>)}
-                </select>
+                  <SelectTrigger id="tasky-automation-column" className="h-9 w-full" data-testid="tasky-automation-column">
+                    <SelectValue placeholder="Choose destination list" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {columns.map((column) => <SelectItem key={column.id} value={column.id}>{column.title}</SelectItem>)}
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
 
             {trigger === "CARD_MOVED" ? (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="tasky-automation-action" className="text-xs font-medium text-muted-foreground">Automatic action</label>
-                <select
-                  id="tasky-automation-action"
-                  value={action}
-                  onChange={(event) => setAction(event.target.value as "NOTIFY" | "SET_PRIORITY")}
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  data-testid="tasky-automation-action"
-                >
-                  <option value="NOTIFY">Send an in-app notification</option>
-                  <option value="SET_PRIORITY">Change card priority and notify</option>
-                </select>
+                <Select value={action} onValueChange={(value) => setAction(value as "NOTIFY" | "SET_PRIORITY")}>
+                  <SelectTrigger id="tasky-automation-action" className="h-9 w-full" data-testid="tasky-automation-action">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NOTIFY">Send an in-app notification</SelectItem>
+                    <SelectItem value="SET_PRIORITY">Change card priority and notify</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
 
             {trigger === "CARD_MOVED" && action === "SET_PRIORITY" ? (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="tasky-automation-priority" className="text-xs font-medium text-muted-foreground">Set priority to</label>
-                <select
-                  id="tasky-automation-priority"
-                  value={targetPriority}
-                  onChange={(event) => setTargetPriority(event.target.value as TaskyKanbanPriority)}
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  data-testid="tasky-automation-priority"
-                >
-                  {(["Urgent", "High", "Medium", "Low"] as const).map((priority) => (
-                    <option key={priority} value={priority}>{priority}</option>
-                  ))}
-                </select>
+                <Select value={targetPriority} onValueChange={(value) => setTargetPriority(value as TaskyKanbanPriority)}>
+                  <SelectTrigger id="tasky-automation-priority" className="h-9 w-full" data-testid="tasky-automation-priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(["Urgent", "High", "Medium", "Low"] as const).map((priority) => (
+                      <SelectItem key={priority} value={priority}>{priority}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
 
             {trigger === "DUE_SOON" ? (
               <div className="flex flex-col gap-1.5">
                 <label htmlFor="tasky-automation-days" className="text-xs font-medium text-muted-foreground">Remind me how many days before?</label>
-                <select
-                  id="tasky-automation-days"
-                  value={daysBeforeDue}
-                  onChange={(event) => setDaysBeforeDue(event.target.value)}
-                  className="h-9 rounded-lg border border-input bg-background px-3 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-                  data-testid="tasky-automation-days"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7].map((day) => <option key={day} value={day}>{day} {day === 1 ? "day" : "days"} before</option>)}
-                </select>
+                <Select value={daysBeforeDue} onValueChange={setDaysBeforeDue}>
+                  <SelectTrigger id="tasky-automation-days" className="h-9 w-full" data-testid="tasky-automation-days">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[1, 2, 3, 4, 5, 6, 7].map((day) => (
+                      <SelectItem key={day} value={String(day)}>{day} {day === 1 ? "day" : "days"} before</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             ) : null}
 
