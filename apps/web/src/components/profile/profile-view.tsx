@@ -415,7 +415,7 @@ export function ProfileView() {
                   <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
                   {extras.location}
                 </span>
-              ) : null>
+              ) : null}
             </div>
           </div>
 
