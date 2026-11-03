@@ -1,13 +1,8 @@
 /**
- * Profile probe - the identity hub, faithful to the product reference.
- * Covers: identity header (avatar + camera, name + Pro Member badge, job
- * title, email/location/joined meta, Edit Profile), 4-tab bar, Personal
- * form (prefilled fields + PATCH save flow + header sync), Account tab
- * (status badge, visibility switch with persistence, real data export),
- * danger zone (type-DELETE confirm), Security tab (real password age, 2FA
- * badge, login-notifications switch, live sessions dialog with revoke),
- * Notifications (seeded toggles + persistence + always-on security), edit
- * focus, mobile 390px, light theme, console integrity.
+ * Profile probe - the Euforia trader identity and account hub.
+ * Covers connected profile identity, trader context, 4-tab navigation,
+ * real profile fields + PATCH save flow, linked broker accounts, visibility,
+ * export, danger zone, security overview, notifications and responsive UI.
  */
 const { chromium } = require("playwright");
 
@@ -59,16 +54,15 @@ async function login(page) {
     const heroLast = heroTokens.slice(1).join(" ");
     const heroInitials = heroTokens.slice(0, 2).map((part) => part.charAt(0).toUpperCase()).join("");
     check("hero name rendered", heroName.length > 0, heroName);
-    check("Pro Member badge", /Pro Member/.test(await page.locator('[data-testid="profile-plan-badge"]').innerText().catch(() => "")));
+    check("no fabricated subscription badge", await page.locator('[data-testid="profile-plan-badge"]').count() === 0);
     check(
-      "job title subtitle",
-      /Senior Product Designer/.test(await page.locator('[data-testid="profile-hero-title"]').innerText().catch(() => "")),
+      "trader profile fallback subtitle",
+      /Trading journal profile/.test(await page.locator('[data-testid="profile-hero-title"]').innerText().catch(() => "")),
     );
     const metaText = await page.locator('[data-testid="profile-card"]').innerText();
     const seededEmail = (await page.inputValue('[data-testid="profile-email"]')).trim();
     check("meta email matches form", metaText.includes(seededEmail), seededEmail);
-    check("meta location", metaText.includes("San Francisco, CA"));
-    check("meta joined March 2023", metaText.includes("Joined March 2023"));
+    check("demo location and joined date are absent", !metaText.includes("San Francisco, CA") && !metaText.includes("Joined March 2023"));
     check(
       "avatar initials from name",
       (await page.locator('[data-testid="profile-avatar"]').innerText().catch(() => "")).trim().startsWith(heroInitials),
@@ -85,9 +79,9 @@ async function login(page) {
     check("first name matches hero", (await page.inputValue('[data-testid="profile-first-name"]')) === heroFirst, heroFirst);
     check("last name matches hero", (await page.inputValue('[data-testid="profile-last-name"]')) === heroLast, heroLast);
     check("email prefilled non-empty", (await page.inputValue('[data-testid="profile-email"]')).includes("@"));
-    check("phone prefilled", (await page.inputValue('[data-testid="profile-phone"]')) === "+1 (555) 123-4567");
-    check("company prefilled", (await page.inputValue('[data-testid="profile-company"]')) === "Acme Inc.");
-    check("location prefilled", (await page.inputValue('[data-testid="profile-location"]')) === "San Francisco, CA");
+    check("phone has no fabricated demo value", (await page.inputValue('[data-testid="profile-phone"]')) !== "+1 (555) 123-4567");
+    check("broker field has no fabricated company", (await page.inputValue('[data-testid="profile-company"]')) !== "Acme Inc.");
+    check("location has no fabricated city", (await page.inputValue('[data-testid="profile-location"]')) !== "San Francisco, CA");
     check("trading bio field is available", await page.locator('[data-testid="profile-bio"]').count() === 1);
     check("save disabled when clean", !(await page.locator('[data-testid="profile-save"]').isEnabled()));
 
@@ -129,7 +123,9 @@ async function login(page) {
     await page.waitForTimeout(400);
     check("account panel visible", await page.locator('[data-testid="profile-panel-account"]').isVisible().catch(() => false));
     check("status badge Active", /Active/.test(await page.locator('[data-testid="profile-status-badge"]').innerText()));
-    check("plan row", /Pro Plan - \$29\/month/.test(await page.locator('[data-testid="profile-row-plan"]').innerText()));
+    check("subscription plan row removed", await page.locator('[data-testid="profile-row-plan"]').count() === 0);
+    check("trading accounts row present", await page.locator('[data-testid="profile-row-trading-accounts"]').isVisible());
+    check("Manage Accounts opens the Accounts module", await page.locator('[data-testid="profile-manage-trading-accounts"]').getAttribute("href") === "/accounts");
     check(
       "visibility switch starts checked",
       await page.locator('[data-testid="profile-visibility-switch"]').getAttribute("data-state").then((v) => v === "checked"),

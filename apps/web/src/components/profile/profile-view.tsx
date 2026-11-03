@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 import {
   Camera,
-  CalendarDays,
+  BriefcaseBusiness,
   Download,
   KeyRound,
   Loader2,
@@ -31,19 +32,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { useProfile, useRevokeSessions, useSecurityOverview, useUpdateProfile } from "@/lib/api/queries";
+import { useTradingAccounts, useProfile, useRevokeSessions, useSecurityOverview, useUpdateProfile } from "@/lib/api/queries";
 import { apiErrorMessage } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 /**
- * /profile - the identity hub, faithful to the product reference: identity
- * header card (avatar + camera, name + plan badge, job title, contact meta,
- * Edit Profile), then a 4-tab bar - Personal (2-column identity form),
- * Account (status, plan, visibility, export + danger zone), Security (real
- * security-overview rows: password age, 2FA, login alerts, live sessions)
- * and Notifications (channel preferences). API-backed fields save through
- * PATCH /me; the reference's extra fields and preference toggles persist
- * locally (same local-by-design contract as Tasky/Events).
+ * /profile - the Euforia trader identity hub: API-backed account identity,
+ * locally editable trading context, linked broker-account status, security
+ * posture and journal notification preferences.
  */
 
 /* ── Local documents (extras + preferences) ────────────────────────────── */
@@ -53,7 +49,6 @@ type ProfileExtras = {
   jobTitle: string;
   company: string;
   location: string;
-  joinedAt: string; // ISO date - rendered "Joined March 2023".
 };
 
 type ProfilePrefs = {
@@ -66,11 +61,10 @@ const EXTRAS_KEY = "cosmoz.profile.extras.v1";
 const PREFS_KEY = "cosmoz.profile.prefs.v1";
 
 const EXTRAS_SEED: ProfileExtras = {
-  phone: "+1 (555) 123-4567",
-  jobTitle: "Senior Product Designer",
-  company: "Acme Inc.",
-  location: "San Francisco, CA",
-  joinedAt: "2023-03-01",
+  phone: "",
+  jobTitle: "",
+  company: "",
+  location: "",
 };
 
 const PREFS_SEED: ProfilePrefs = {
@@ -83,7 +77,18 @@ function loadExtras(): ProfileExtras {
   if (typeof window === "undefined") return EXTRAS_SEED;
   try {
     const raw = window.localStorage.getItem(EXTRAS_KEY);
-    if (raw) return { ...EXTRAS_SEED, ...(JSON.parse(raw) as Partial<ProfileExtras>) };
+    if (raw) {
+      const saved = JSON.parse(raw) as Partial<ProfileExtras>;
+      return {
+        ...EXTRAS_SEED,
+        ...saved,
+        // Clear old sample values only; preserve anything the user entered.
+        phone: saved.phone === "+1 (555) 123-4567" ? "" : saved.phone ?? "",
+        jobTitle: saved.jobTitle === "Senior Product Designer" ? "" : saved.jobTitle ?? "",
+        company: saved.company === "Acme Inc." ? "" : saved.company ?? "",
+        location: saved.location === "San Francisco, CA" ? "" : saved.location ?? "",
+      };
+    }
   } catch {
     // Corrupted snapshot - fall through to the seed.
   }
@@ -127,10 +132,6 @@ function formatRelative(iso: string): string {
   if (Math.abs(hours) < 24) return rtf.format(-hours, "hour");
   const days = Math.round(hours / 24);
   return rtf.format(-days, "day");
-}
-
-function formatJoined(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }
 
 /** A settings row - label + description left, control right, hairline rules. */
@@ -189,6 +190,11 @@ export function ProfileView() {
   const updateProfile = useUpdateProfile();
   const security = useSecurityOverview();
   const revokeSessions = useRevokeSessions();
+  const accountsQuery = useTradingAccounts();
+  const tradingAccounts = accountsQuery.data?.accounts ?? [];
+  const connectedTradingAccounts = tradingAccounts.filter(
+    (account) => account.connection?.status === "CONNECTED" || account.connection?.status === "CONNECTING",
+  );
 
   // ── Editable identity (API-backed) ─────────────────────────────────────
   const [firstName, setFirstName] = React.useState("");
@@ -352,7 +358,7 @@ export function ProfileView() {
       <header className="space-y-1">
         <h1 className="page-title">Profile</h1>
         <p className="text-sm text-muted-foreground">
-          Your identity, account, security and notification preferences - one place.
+          Your trader identity, connected accounts and journal preferences.
         </p>
       </header>
 
@@ -389,29 +395,27 @@ export function ProfileView() {
               <h2 className="truncate font-heading text-2xl font-extrabold tracking-tight" data-testid="profile-hero-name">
                 {data.name}
               </h2>
-              <span
-                className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground"
-                data-testid="profile-plan-badge"
-              >
-                Pro Member
-              </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground" data-testid="profile-hero-title">
-              {extras.jobTitle}
+              {extras.jobTitle || "Trading journal profile"}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
               <span className="inline-flex min-w-0 items-center gap-1.5" data-testid="profile-meta-email">
                 <Mail className="size-3.5 shrink-0" aria-hidden="true" />
                 <span className="truncate">{data.email}</span>
               </span>
-              <span className="inline-flex items-center gap-1.5" data-testid="profile-meta-location">
-                <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
-                {extras.location}
-              </span>
-              <span className="inline-flex items-center gap-1.5" data-testid="profile-meta-joined">
-                <CalendarDays className="size-3.5 shrink-0" aria-hidden="true" />
-                Joined {formatJoined(extras.joinedAt)}
-              </span>
+              {extras.company ? (
+                <span className="inline-flex items-center gap-1.5" data-testid="profile-meta-broker">
+                  <BriefcaseBusiness className="size-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{extras.company}</span>
+                </span>
+              ) : null}
+              {extras.location ? (
+                <span className="inline-flex items-center gap-1.5" data-testid="profile-meta-location">
+                  <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
+                  {extras.location}
+                </span>
+              ) : null>
             </div>
           </div>
 
@@ -442,8 +446,8 @@ export function ProfileView() {
         {/* ── Personal ───────────────────────────────────────────────────── */}
         <TabsContent value="personal" className="mt-0" data-testid="profile-panel-personal">
           <SectionCard
-            title="Personal Information"
-            description="Update your personal details and profile information."
+            title="Trader Profile"
+            description="Keep your contact details and trading context up to date."
             testid="profile-personal-card"
           >
             <form onSubmit={onSave} className="grid gap-x-6 gap-y-5 pb-4 pt-2 sm:grid-cols-2" data-testid="profile-form">
@@ -492,25 +496,27 @@ export function ProfileView() {
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="profile-job-title">Job Title</Label>
+                <Label htmlFor="profile-job-title">Trading Role / Style</Label>
                 <Input
                   id="profile-job-title"
                   value={extras.jobTitle}
                   onChange={(event) => setExtras((prev) => ({ ...prev, jobTitle: event.target.value }))}
                   data-testid="profile-job-title"
+                  placeholder="e.g. Day trader, swing trader"
                 />
               </div>
               <div className="grid gap-1.5">
-                <Label htmlFor="profile-company">Company</Label>
+                <Label htmlFor="profile-company">Broker / Prop Firm</Label>
                 <Input
                   id="profile-company"
                   value={extras.company}
                   onChange={(event) => setExtras((prev) => ({ ...prev, company: event.target.value }))}
                   data-testid="profile-company"
+                  placeholder="e.g. IC Markets, Axi, PU Prime"
                 />
               </div>
               <div className="grid gap-1.5 sm:col-span-2">
-                <Label htmlFor="profile-bio">Bio</Label>
+                <Label htmlFor="profile-bio">Trading Bio</Label>
                 <Textarea
                   id="profile-bio"
                   value={bio}
@@ -518,6 +524,7 @@ export function ProfileView() {
                   data-testid="profile-bio"
                   rows={3}
                   maxLength={280}
+                  placeholder="Describe your approach, preferred markets or trading goals."
                   className="resize-y"
                 />
               </div>
@@ -549,7 +556,7 @@ export function ProfileView() {
         <TabsContent value="account" className="mt-0 space-y-5 sm:space-y-6" data-testid="profile-panel-account">
           <SectionCard
             title="Account Settings"
-            description="Manage your account preferences and subscription."
+            description="Account status, connected brokers and data controls for your journal."
             testid="profile-account-card"
           >
             <div className="divide-y divide-border">
@@ -558,14 +565,19 @@ export function ProfileView() {
                   Active
                 </span>
               </SettingRow>
-              <SettingRow title="Subscription Plan" description="Pro Plan - $29/month" testid="profile-row-plan">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toast.info("Subscriptions are not active in the demo build")}
-                  data-testid="profile-manage-subscription"
-                >
-                  Manage Subscription
+              <SettingRow
+                title="Trading Accounts"
+                description={
+                  accountsQuery.isLoading
+                    ? "Loading trading accounts…"
+                    : tradingAccounts.length === 0
+                      ? "No broker accounts connected yet. Connect an account to sync your journal."
+                      : `${tradingAccounts.length} account${tradingAccounts.length === 1 ? "" : "s"} registered · ${connectedTradingAccounts.length} connected or connecting.`
+                }
+                testid="profile-row-trading-accounts"
+              >
+                <Button variant="outline" size="sm" asChild data-testid="profile-manage-trading-accounts">
+                  <Link href="/accounts">Manage Accounts</Link>
                 </Button>
               </SettingRow>
               <SettingRow
@@ -717,8 +729,8 @@ export function ProfileView() {
                 />
               </SettingRow>
               <SettingRow
-                title="Marketing Emails"
-                description="Receive emails about new features and updates"
+                title="Product Updates"
+                description="Receive occasional updates about Euforia features and improvements."
                 testid="profile-row-notif-marketing"
               >
                 <Switch
@@ -729,8 +741,8 @@ export function ProfileView() {
                 />
               </SettingRow>
               <SettingRow
-                title="Weekly Summary"
-                description="Get a weekly summary of your activity"
+                title="Weekly Trading Recap"
+                description="Get a weekly summary of your journal activity and trading performance."
                 testid="profile-row-notif-weekly"
               >
                 <Switch
