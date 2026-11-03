@@ -1,5 +1,5 @@
 /**
- * Verify - header sidebar toggle (PanelLeft), Profile rebuild (4 tabs),
+ * Verify - header sidebar toggle (PanelLeft), trader Profile (4 tabs),
  * Tasky horizontal board (add column + bottom scrollbar), Events calendar
  * categories (My calendar / Favorite / Other + sort + star).
  *
@@ -92,11 +92,8 @@ const check = (name, ok, extra = "") => {
 
   const heroName = (await page.locator('[data-testid="profile-hero-name"]').innerText()).trim();
   check("hero shows CONNECTED profile name", heroName === connectedName, `${heroName} vs ${connectedName}`);
-  const proBadge = await page.locator('[data-testid="profile-card"] span', { hasText: "Pro Member" }).count();
-  check("'Pro Member' badge present", proBadge >= 1);
-  check("hero meta has email + location + joined", (
-    (await page.locator('[data-testid="profile-card"]').innerText()).includes("Joined March 2023")
-  ));
+  check("no fabricated Pro subscription badge", await page.locator('[data-testid="profile-plan-badge"]').count() === 0);
+  check("profile header has connected email", (await page.locator('[data-testid="profile-card"]').innerText()).includes("@"));
   await page.screenshot({ path: `${SHOTS}/hpt-profile-personal.png` });
 
   // Tabs
@@ -122,8 +119,13 @@ const check = (name, ok, extra = "") => {
   await page.locator('[data-testid="profile-tab-account"]').click();
   const accountText = await page.locator('[data-testid="profile-panel-account"]').innerText();
   check(
-    "Account: status/subscription/visibility/export rows",
-    ["Account Status", "Subscription Plan", "Account Visibility", "Data Export"].every((t) => accountText.includes(t)),
+    "Account: status/trading accounts/visibility/export rows",
+    ["Account Status", "Trading Accounts", "Account Visibility", "Data Export"].every((t) => accountText.includes(t)) &&
+      !accountText.includes("Subscription Plan"),
+  );
+  check(
+    "Manage Accounts opens broker accounts module",
+    await page.locator('[data-testid="profile-manage-trading-accounts"]').getAttribute("href") === "/accounts",
   );
   check("Account: Active badge + Danger Zone", (await page.locator('[data-testid="profile-danger-zone"]').innerText()).includes("Delete Account"));
   const visSwitch = page.locator('[data-testid="profile-visibility-switch"]');

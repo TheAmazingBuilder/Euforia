@@ -88,7 +88,7 @@ async function login(page) {
     check("phone prefilled", (await page.inputValue('[data-testid="profile-phone"]')) === "+1 (555) 123-4567");
     check("company prefilled", (await page.inputValue('[data-testid="profile-company"]')) === "Acme Inc.");
     check("location prefilled", (await page.inputValue('[data-testid="profile-location"]')) === "San Francisco, CA");
-    check("bio prefilled non-empty", (await page.inputValue('[data-testid="profile-bio"]')).length > 0);
+    check("trading bio field is available", await page.locator('[data-testid="profile-bio"]').count() === 1);
     check("save disabled when clean", !(await page.locator('[data-testid="profile-save"]').isEnabled()));
 
     console.log("\n[3] Personal save flow (PATCH /me + header sync)");

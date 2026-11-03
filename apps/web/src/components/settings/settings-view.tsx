@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   BellRing,
   CandlestickChart,
@@ -11,7 +12,6 @@ import {
   NotebookPen,
   Palette,
   Search,
-  Settings as SettingsIcon,
   UserCog,
   type LucideIcon,
 } from "lucide-react";
@@ -155,14 +155,6 @@ export const SETTINGS_FINDER_META = CATEGORIES.map((category) => ({
   keywords: category.keywords.join(" "),
 }));
 
-function readInitialCategory(): string {
-  if (typeof window === "undefined") return CATEGORIES[0]!.id;
-  const hash = window.location.hash.replace("#", "");
-  return CATEGORIES.some((category) => category.id === hash)
-    ? hash
-    : CATEGORIES[0]!.id;
-}
-
 /** Key-order-stable stringify - safe deep comparison for the modified badge. */
 function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value) ?? "null";
@@ -197,7 +189,10 @@ function useModifiedDomains(): Set<string> {
 }
 
 export function SettingsView() {
-  const [active, setActive] = React.useState<string>(readInitialCategory);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawTab = searchParams.get("tab") ?? "trading";
+  const active = CATEGORIES.some((category) => category.id === rawTab) ? rawTab : "trading";
   const [query, setQuery] = React.useState("");
   const modifiedDomains = useModifiedDomains();
   const { dict } = useI18n();
@@ -207,18 +202,22 @@ export function SettingsView() {
     description: dict.settings.categories[category.id]?.description ?? category.description,
   });
 
-  // Deep links stay live - back/forward and manual hash edits work.
-  React.useEffect(() => {
-    const onHashChange = () => setActive(readInitialCategory());
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
+  const selectCategory = React.useCallback((id: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id === "trading") params.delete("tab");
+    else params.set("tab", id);
+    const queryString = params.toString();
+    router.replace(queryString ? `/settings?${queryString}` : "/settings", { scroll: false });
+  }, [router, searchParams]);
 
-  const selectCategory = (id: string) => {
-    setActive(id);
-    // replaceState: no scroll jump, but the URL stays shareable.
-    window.history.replaceState(null, "", `#${id}`);
-  };
+  // Keep existing /settings#category bookmarks working during the transition.
+  React.useEffect(() => {
+    if (searchParams.has("tab")) return;
+    const legacyHash = window.location.hash.slice(1);
+    if (CATEGORIES.some((category) => category.id === legacyHash)) {
+      selectCategory(legacyHash);
+    }
+  }, [searchParams, selectCategory]);
 
   const needle = query.trim().toLowerCase();
   const visibleCategories = needle
@@ -244,10 +243,7 @@ export function SettingsView() {
   return (
     <div className="mx-auto flex w-full max-w-7xl flex-col gap-6">
       <header className="space-y-1">
-        <h1 className="flex items-center gap-2 page-title">
-          <SettingsIcon className="size-6 text-accent" aria-hidden="true" />
-          {dict.settings.view.title}
-        </h1>
+        <h1 className="page-title">{dict.settings.view.title}</h1>
         <p className="text-sm text-muted-foreground">
           {dict.settings.view.subtitle}
         </p>
@@ -279,39 +275,43 @@ export function SettingsView() {
       </div>
 
       <div className="space-y-5">
-        <nav aria-label={dict.settings.view.categoriesNavAria} data-testid="settings-category-nav">
-          <div className="flex min-w-0 gap-1 overflow-x-auto border-b border-border pb-px">
-            {visibleCategories.map((category) => {
-              const Icon = category.icon;
-              const isActive = category.id === effectiveActive;
-              return (
-                <button
-                  key={category.id}
-                  type="button"
-                  onClick={() => selectCategory(category.id)}
-                  aria-current={isActive ? "page" : undefined}
-                  data-testid={"settings-nav-" + category.id}
-                  className={cn(
-                    "inline-flex min-h-10 shrink-0 items-center gap-2 rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
-                    isActive
-                      ? "border-foreground bg-foreground text-background"
-                      : "border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )}
-                >
-                  <Icon className="size-4 shrink-0" aria-hidden="true" />
-                  <span className="whitespace-nowrap">{categoryMeta(category).label}</span>
-                  {modifiedDomains.has(category.id) && (
-                    <span
-                      className="ml-0.5 size-1.5 shrink-0 rounded-full bg-accent"
-                      title="This section differs from the default values"
-                      aria-label="Modified from defaults"
-                      data-testid={"settings-modified-" + category.id}
-                    />
-                  )}
-                </button>
-              );
-            })}
-          </div>
+        <nav
+          role="tablist"
+          aria-label={dict.settings.view.categoriesNavAria}
+          className="flex min-w-0 gap-1 overflow-x-auto border-b border-border pb-px"
+          data-testid="settings-category-nav"
+        >
+          {visibleCategories.map((category) => {
+            const isActive = category.id === effectiveActive;
+            return (
+              <button
+                key={category.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                aria-controls={`settings-panel-${category.id}`}
+                id={`settings-tab-${category.id}`}
+                onClick={() => selectCategory(category.id)}
+                data-testid={"settings-nav-" + category.id}
+                className={cn(
+                  "whitespace-nowrap rounded-t-md border-b-2 px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring",
+                  isActive
+                    ? "border-b-2 border-accent text-foreground"
+                    : "border-b-2 border-transparent text-muted-foreground hover:text-foreground",
+                )}
+              >
+                <span className="whitespace-nowrap">{categoryMeta(category).label}</span>
+                {modifiedDomains.has(category.id) && (
+                  <span
+                    className="ml-1.5 inline-block size-1.5 rounded-full bg-accent align-middle"
+                    title="This section differs from the default values"
+                    aria-label="Modified from defaults"
+                    data-testid={"settings-modified-" + category.id}
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {visibleCategories.length === 0 ? (
@@ -322,7 +322,14 @@ export function SettingsView() {
 
         <div className="min-w-0" data-testid="settings-content">
           {activeCategory ? (
-            <activeCategory.Component />
+            <div
+              role="tabpanel"
+              tabIndex={0}
+              id={`settings-panel-${activeCategory.id}`}
+              aria-labelledby={`settings-tab-${activeCategory.id}`}
+            >
+              <activeCategory.Component />
+            </div>
           ) : (
             <div className="rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
               Choose a category above to get started.

@@ -528,7 +528,7 @@ export function TradeForm({ seed }: TradeFormProps) {
       </div>
 
       {/* Prices & times - numbers first */}
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor="trade-entry-price">{T.entryPrice}</Label>
           <input
@@ -543,13 +543,14 @@ export function TradeForm({ seed }: TradeFormProps) {
             autoFocus
           />
         </div>
-        <div className="space-y-1.5">
+        <div className="min-w-0 space-y-1.5">
           <Label>{T.entryTime}</Label>
           <DateTimePicker
             value={values.entryAtLocal}
             onChange={(entryAtLocal) => patch({ entryAtLocal })}
             ariaLabel={T.entryTime}
             data-testid="trade-entry-at"
+            compact
           />
         </div>
         {closed ? (
@@ -567,13 +568,14 @@ export function TradeForm({ seed }: TradeFormProps) {
                 className={inputClasses}
               />
             </div>
-            <div className="space-y-1.5">
+            <div className="min-w-0 space-y-1.5">
               <Label>{T.exitTime}</Label>
               <DateTimePicker
                 value={values.exitAtLocal}
                 onChange={(exitAtLocal) => patch({ exitAtLocal })}
                 ariaLabel={T.exitTime}
                 data-testid="trade-exit-at"
+                compact
               />
             </div>
           </>

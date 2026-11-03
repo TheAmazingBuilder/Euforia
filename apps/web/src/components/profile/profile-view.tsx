@@ -434,7 +434,7 @@ export function ProfileView() {
               data-testid={`profile-tab-${value}`}
               className="rounded-md border border-transparent text-xs font-medium text-muted-foreground capitalize transition-colors data-[state=active]:border-border data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-none sm:text-sm"
             >
-              {value}
+              {value === "account" ? "Accounts" : value}
             </TabsTrigger>
           ))}
         </TabsList>

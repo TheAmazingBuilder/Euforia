@@ -11,9 +11,8 @@ Retrospective	After the session	"Logging 6 trades fast" — exit section visible
 NOT two forms: the same form adapts. One mental model to learn.
 
 3. Entry points
-Permanent floating "+ Trade" button (sidebar desktop, bottom-bar mobile)
+Permanent "+ Trade" action in the application shell (desktop and mobile navigation)
 N shortcut from anywhere
-Discreet ghost button: "Setup seen, not taken" (G)
 From a playbook strategy: "Trade this setup" → pre-filled form
 4. ACT 1 — Capture
 Field spec
@@ -37,7 +36,6 @@ Thin live-updating strip: "Today: 2/3 trades · 0.8%/2% risk budget · 1 loss".T
 Keyboard shortcuts (desktop)
 Key	Action
 N	New trade (from anywhere)
-G	Ghost trade
 ←/→ or B/S	Direction
 Tab	Logical order: entry → exit → size
 Enter	Submit / next act
@@ -81,10 +79,11 @@ Screenshots	Upload / paste (Ctrl+V) / camera (mobile)	Before/after, annotation l
 At the reveal: Enter = finish, N = new trade
 New form retains context: same instrument, strategy, session — only priceschange. Default entry time = previous trade's exit time
 Target: < 15 seconds per additional trade
-8. Ghost Trade — 10-second capture
-Minimal card: instrument combobox, direction (▲ / ▼ / —), single-selectreason chips (Fear, Discipline, Out of playbook, No valid setup, Missedexecution), [Log it].
-
-Deferred settlement: next day or week, a soft notification — "YourTuesday BOOM500, how did it play out?" → 2 taps: would have won / lost /don't know (+ optional estimated R). This settlement feeds Discipline Savedand Hesitation Cost. Without it, ghost trades stay vague intentions.
+8. Skipped-setup capture (retired from the active UI)
+The "Setup seen, not taken" capture flow is not exposed in the current Euforia
+interface. Its historical API routes and persisted records remain in the
+backend for compatibility; the sidebar, mobile navigation, command palette,
+and G keyboard shortcut must not expose this flow.
 
 9. Open trades panel (Session Live)
 Compact cards: instrument, direction badge, open duration, entry, initialSL/TP, potential R:R, actions [Close] [Modify SL] [emotion quick-log] [Note].
@@ -100,7 +99,6 @@ Speed	Shortcuts	Oversized chips, thumb-zone buttons
 Screenshots	Upload / Ctrl+V	Camera + gallery
 Reveal	Skippable animation	Same + haptic feedback
 Resilience	Draft localStorage	Offline queue: POSTs replay when network returns
-Ghost trade	G	Dedicated button in bottom bar
 11. Validations (amber, non-blocking, auto-dismiss on fix)
 "Exit beyond your SL — stop moved?"
 "Size 10× your usual — confirm?" (active after ~20 trades of history)
@@ -122,7 +120,7 @@ In-trade emotion	PATCH /trades/:id/psychology
 Reflect screen	GET /trades/:id/review	Detected mistakes + similar past trades (V2)
 Confirm/dismiss mistake	PATCH /trades/:id/mistakes/:mistakeId	{ confirmed: bool }
 "To grade" queue	GET /trades?graded=false	Navbar badge
-Ghost trade	POST /skipped-trades	+ PATCH /skipped-trades/:id/settle
+Legacy skipped-setup records	POST /skipped-trades	Backend compatibility only; no active UI entry point
 CSV import (V2)	POST /imports	Idempotent via existing externalRef
 13. API invariants
 The client NEVER sends pnl, rMultiple, computed MFE — server computes.

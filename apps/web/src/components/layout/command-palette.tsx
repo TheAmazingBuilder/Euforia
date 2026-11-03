@@ -10,7 +10,6 @@ import {
   BookOpen,
   CircleHelp,
   Droplet,
-  Ghost,
   GraduationCap,
   Library,
   Moon,
@@ -27,7 +26,6 @@ import { SIDEBAR_ITEMS } from "@/lib/navigation";
 import { SETTINGS_FINDER_META } from "@/components/settings/settings-view";
 import { useI18n } from "@/i18n/i18n-provider";
 import { useAcademySearch, useInstruments, useStrategies, useTrades } from "@/lib/api/queries";
-import { openGhostModal } from "@/lib/hooks/use-ghost-modal";
 import { openTradeModal } from "@/lib/hooks/use-trade-modal";
 import { openShortcutsOverlay } from "@/lib/hooks/use-shortcuts-overlay";
 import {
@@ -215,15 +213,6 @@ export function CommandPalette() {
         run: () => openTradeModal(),
       },
       {
-        id: "action-ghost",
-        label: "Log ghost trade",
-        hint: "G",
-        keywords: "setup seen not taken skipped observation",
-        icon: Ghost,
-        group: "Actions",
-        run: () => openGhostModal(),
-      },
-      {
         id: "action-shortcuts",
         label: "Keyboard shortcuts",
         hint: "?",
@@ -251,7 +240,7 @@ export function CommandPalette() {
       keywords: `settings preferences ${category.description} ${category.keywords}`,
       icon: category.icon,
       group: "Settings" as const,
-      run: () => router.push(`/settings#${category.id}`),
+      run: () => router.push(`/settings?tab=${encodeURIComponent(category.id)}`),
     }));
 
     const academyTabs: PaletteItem[] = [

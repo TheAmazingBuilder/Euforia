@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3 } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, LocateFixed } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -199,6 +199,7 @@ type DateTimePickerProps = {
   disabled?: boolean;
   className?: string;
   "data-testid"?: string;
+  compact?: boolean;
 };
 
 function currentLocalDateTime(): string {
@@ -215,6 +216,7 @@ export function DateTimePicker({
   disabled = false,
   className,
   "data-testid": testId,
+  compact = false,
 }: DateTimePickerProps) {
   const pieces = value.split("T");
   const date = pieces[0] ?? "";
@@ -223,14 +225,21 @@ export function DateTimePicker({
   const updateTime = (nextTime: string) => onChange(date ? date + "T" + (nextTime || "00:00") : value);
 
   return (
-    <div className={cn("grid grid-cols-[minmax(0,1fr)_minmax(0,.72fr)_auto] gap-2", className)} aria-label={ariaLabel}>
-      <DatePicker value={date} onChange={updateDate} disabled={disabled} ariaLabel="Entry date"
+    <div className={cn(compact ? "grid grid-cols-[minmax(0,1fr)_minmax(0,.92fr)_2.5rem] gap-2" : "grid grid-cols-[minmax(0,1fr)_minmax(0,.72fr)_auto] gap-2", className)} aria-label={ariaLabel}>
+      <DatePicker value={date} onChange={updateDate} disabled={disabled} ariaLabel={`${ariaLabel} date`}
         data-testid={testId ? testId + "-date" : undefined} />
-      <TimePicker value={time} onChange={updateTime} disabled={disabled} ariaLabel="Entry time"
+      <TimePicker value={time} onChange={updateTime} disabled={disabled} ariaLabel={`${ariaLabel} time`}
         data-testid={testId ? testId + "-time" : undefined} />
-      <Button type="button" variant="outline" disabled={disabled} onClick={() => onChange(currentLocalDateTime())}
-        className="h-10 px-3">
-        Now
+      <Button
+        type="button"
+        variant="outline"
+        disabled={disabled}
+        onClick={() => onChange(currentLocalDateTime())}
+        aria-label={`Set ${ariaLabel.toLowerCase()} to now`}
+        title="Set to current date and time"
+        className={cn("h-10 shrink-0", compact ? "w-10 px-0" : "px-3")}
+      >
+        {compact ? <LocateFixed className="size-4" aria-hidden="true" /> : "Now"}
       </Button>
     </div>
   );
