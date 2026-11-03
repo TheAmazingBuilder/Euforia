@@ -96,7 +96,7 @@ function isNoise(text) {
 
     await page.locator('[data-testid="oryon-legend"]').waitFor({ state: "visible", timeout: 30_000 });
     const legend = await page.locator('[data-testid="oryon-legend"]').textContent();
-    check("legend shows instrument", /XAUUSD/.test(legend ?? ""), legend ?? "");
+    check("legend shows instrument", /XAU\/?USD/.test(legend ?? ""), legend ?? "");
     check("legend shows OHLC", /[OHC]/.test(legend ?? "") && /\d/.test(legend ?? ""));
 
     const source = await page.locator('[data-testid="oryon-source-badge"]').textContent();
@@ -108,7 +108,7 @@ function isNoise(text) {
     const canvasAfterTf = await page.locator('[data-testid="oryon-chart-canvas"] canvas').count();
     const legendAfterTf = await page.locator('[data-testid="oryon-legend"]').textContent();
     check("timeframe switch: no duplicated chart instance", canvasAfterTf === canvasBaseline, `count=${canvasAfterTf}`);
-    check("timeframe switch keeps instrument", /XAUUSD/.test(legendAfterTf ?? ""));
+    check("timeframe switch keeps instrument", /XAU\/?USD/.test(legendAfterTf ?? ""));
 
     // ── 6. Instrument switch (palette) ─────────────────────────────────────
     await page.locator('[data-testid="oryon-instrument-trigger"]').click();
@@ -116,7 +116,7 @@ function isNoise(text) {
     await page.locator('[data-testid="oryon-instrument-option-EURUSD"]').click();
     await page.waitForTimeout(2_000);
     const legendAfterInstrument = await page.locator('[data-testid="oryon-legend"]').textContent();
-    check("instrument switch updates chart", /EURUSD/.test(legendAfterInstrument ?? ""), legendAfterInstrument ?? "");
+    check("instrument switch updates chart", /EUR\/?USD/.test(legendAfterInstrument ?? ""), legendAfterInstrument ?? "");
 
     // ── 7. Right utility panels ────────────────────────────────────────────
     await page.locator('[data-testid="oryon-notifications-toggle"]').click();

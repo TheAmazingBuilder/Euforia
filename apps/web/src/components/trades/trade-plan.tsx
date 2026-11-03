@@ -49,6 +49,7 @@ import {
 import { useInstruments } from "@/lib/api/queries";
 import { useI18n } from "@/i18n/i18n-provider";
 import { cn } from "@/lib/utils";
+import { formatInstrumentSymbol } from "@/lib/utils/instrument";
 
 const inputClasses =
   "h-9 w-full rounded-md border border-border bg-background px-3 font-mono text-sm tabular-nums outline-none transition-colors placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring";
@@ -416,7 +417,7 @@ function PlanCard({ plan, linked, T, onOpen, onLink, onUnlink, onDelete }: PlanC
       </div>
       <div className="mt-1.5 flex items-center justify-between gap-2">
         <span className="font-mono text-[10px] uppercase tabular-nums text-muted-foreground">
-          {plan.symbol}
+          {formatInstrumentSymbol(plan.symbol)}
           {plan.timeframe !== null ? ` · ${plan.timeframe}` : ""}
           {" · "}
           {T.updated} {formatStamp(plan.updatedAt)}
@@ -562,7 +563,7 @@ function PlanDetailDialog({
             </DialogTitle>
           </div>
           <DialogDescription className="font-mono text-[11px] uppercase tabular-nums">
-            {plan.symbol}
+            {formatInstrumentSymbol(plan.symbol)}
             {plan.timeframe !== null ? ` · ${plan.timeframe}` : ""} · {T.created}{" "}
             {formatStamp(plan.createdAt)}
           </DialogDescription>
