@@ -6,7 +6,7 @@ import { MailerService, type MailMessage } from "../../src/modules/identity/mail
 
 export interface MailCapture {
   messages: MailMessage[];
-  lastVerificationToken(): string;
+  lastVerificationToken(to?: string): string;
   lastResetToken(): string;
   clear(): void;
 }
@@ -22,8 +22,11 @@ export function captureMail(_app: NestFastifyApplication): MailCapture {
   const tokenFrom = (url: string) => new URL(url).searchParams.get("token") as string;
   return {
     messages,
-    lastVerificationToken() {
-      const last = [...messages].reverse().find((m) => m.kind === "EMAIL_VERIFICATION" || m.kind === "EMAIL_CHANGE");
+    lastVerificationToken(to?: string) {
+      const last = [...messages].reverse().find((m) =>
+        (m.kind === "EMAIL_VERIFICATION" || m.kind === "EMAIL_CHANGE") &&
+        (to === undefined || m.to.toLowerCase() === to.toLowerCase()),
+      );
       if (!last) throw new Error("no verification mail captured");
       return tokenFrom(last.actionUrl);
     },
@@ -90,14 +93,16 @@ export async function authenticatedUser(
   }
   let verificationToken: string;
   try {
-    verificationToken = mail.lastVerificationToken();
+    // E2E cases can register multiple users concurrently. Match the message
+    // by recipient instead of consuming/clearing a process-wide mailbox: one
+    // user's verification must never steal another user's token.
+    verificationToken = mail.lastVerificationToken(email);
   } catch {
     const response = registered.json() as { status?: string; verificationExpiresAt?: string | null; delivery?: string };
     throw new Error(
       `register succeeded without a captured verification message (status=${String(response.status)}, delivery=${String(response.delivery)}, expiresAt=${String(response.verificationExpiresAt)}); inspect the test MailerService transport seam`,
     );
   }
-  mail.clear();
   const verified = await app.inject({
     method: "POST",
     url: "/api/v1/auth/email/verify",
