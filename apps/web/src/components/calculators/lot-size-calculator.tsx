@@ -267,9 +267,13 @@ export function LotSizeCalculator() {
                     data-testid={`lotsize-direction-${option.value.toLowerCase()}`}
                     className={cn(
                       "h-10 rounded-md border text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
-                      active
-                        ? "border-foreground bg-foreground text-background"
-                        : "border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground",
+                      option.value === "BUY"
+                        ? active
+                          ? "border-direction-buy bg-direction-buy/15 text-direction-buy"
+                          : "border-direction-buy/30 bg-direction-buy/5 text-direction-buy/80 hover:border-direction-buy/60 hover:bg-direction-buy/10"
+                        : active
+                          ? "border-direction-sell bg-direction-sell/15 text-direction-sell"
+                          : "border-direction-sell/30 bg-direction-sell/5 text-direction-sell/80 hover:border-direction-sell/60 hover:bg-direction-sell/10",
                     )}
                   >
                     {option.label}
@@ -406,7 +410,7 @@ export function LotSizeCalculator() {
             type="button"
             onClick={() => setAttempted(true)}
             data-testid="lotsize-calculate"
-            className="h-11 w-full rounded-md bg-foreground text-sm font-semibold text-background outline-none transition-colors hover:bg-foreground/85 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="h-11 w-full rounded-md bg-action-edit text-sm font-semibold text-white outline-none transition-colors hover:bg-action-edit-hover focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {T.form.calculate}
           </button>

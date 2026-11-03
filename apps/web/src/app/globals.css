@@ -50,6 +50,7 @@
   --direction-buy: #3EBE8C;
   --direction-sell: #E05B5B;
   --warning: #D9A03F;
+  --chart-card-surface: #204699;
   --ring: #4E6EE0;
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
@@ -89,6 +90,7 @@
   --direction-buy: #41C393;
   --direction-sell: #E26363;
   --warning: #DCA748;
+  --chart-card-surface: #204699;
   --ring: #5578E6;
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
@@ -118,6 +120,7 @@
   --direction-buy: #3fb950;
   --direction-sell: #f85149;
   --warning: #d29922;
+  --chart-card-surface: #183765;
   --ring: #2975ed;
   --radius: 8px;
   --destructive-foreground: #ffffff;
@@ -142,6 +145,7 @@
   --direction-buy: #12805C;
   --direction-sell: #C03E3E;
   --warning: #8F6418;
+  --chart-card-surface: #EAF0FF;
   --ring: #2E4FC4;
   --radius: 8px;
   /* authorized addition: destructive-foreground (shadcn needs it) */
@@ -182,6 +186,7 @@
   --direction-buy: #41C393;
   --direction-sell: #E26363;
   --warning: #F0B84B;
+  --chart-card-surface: #1C3470;
   --ring: #8B5CF6;
   --radius: 8px;
   --destructive-foreground: #FFFFFF;
@@ -291,6 +296,7 @@
   --color-warning: var(--warning);
   --color-direction-buy: var(--direction-buy);
   --color-direction-sell: var(--direction-sell);
+  --color-chart-card: var(--chart-card-surface);
 
   /* Academy category hues (identity inks per teaching track) */
   --color-cat-fund: var(--cat-fund);
@@ -700,6 +706,122 @@
 .market-ticker-track:focus-within {
   animation-play-state: paused;
 }
+
+/* Compact provider ticker: prices stay on one horizontal line and the
+   connection state remains anchored outside the animated quote sequence. */
+.market-ticker {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: stretch;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 0.85rem;
+  background: var(--background);
+}
+.market-ticker-viewport {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+.market-ticker-track { align-items: stretch; }
+.market-ticker-track-static { animation: none; }
+.market-ticker-item {
+  display: flex;
+  min-width: 10.5rem;
+  align-items: center;
+  gap: 0.65rem;
+  border-right: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  padding: 0.75rem 0.9rem;
+  white-space: nowrap;
+}
+.market-ticker-symbol {
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+}
+.market-ticker-price {
+  color: var(--text-primary);
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.market-ticker-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-variant-numeric: tabular-nums;
+}
+.market-ticker-change[data-direction="up"] { color: var(--profit); }
+.market-ticker-change[data-direction="down"] { color: var(--loss); }
+.market-ticker-change[data-direction="flat"],
+.market-ticker-change[data-direction="unknown"] { color: var(--text-muted); }
+.market-ticker-status {
+  z-index: 1;
+  display: flex;
+  min-width: 5.5rem;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border-left: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+  background: var(--background);
+  padding: 0 0.85rem;
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.055em;
+}
+.market-ticker-status[data-status="LIVE"] { color: var(--action-edit); }
+.market-ticker-status[data-status="PARTIAL"],
+.market-ticker-status[data-status="STALE"] { color: var(--warning); }
+.market-ticker-status[data-status="NO LIVE"],
+.market-ticker-status[data-status="CONNECTING"] { color: var(--text-muted); }
+.market-ticker-status-indicator {
+  width: 0.4rem;
+  height: 0.4rem;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: currentColor;
+}
+.market-ticker-status[data-status="LIVE"] .market-ticker-status-indicator {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action-edit) 14%, transparent);
+}
+.market-ticker-empty {
+  display: flex;
+  min-height: 3.5rem;
+  align-items: center;
+  padding: 0 1rem;
+  color: var(--text-muted);
+  font-size: 0.6875rem;
+}
+
+/* Consistent card feedback, without transform changes that would interfere
+   with draggable dashboard widgets or chart pointer interactions. */
+@media (hover: hover) and (pointer: fine) {
+  [data-slot="card"] {
+    transition:
+      box-shadow 180ms cubic-bezier(0.2, 0.7, 0.2, 1),
+      background-color 180ms ease;
+  }
+  [data-slot="card"]:hover {
+    box-shadow:
+      0 8px 20px rgb(0 0 0 / 0.14),
+      0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
+  }
+  [data-slot="card"]:has([data-chart-visual]) {
+    background-color: var(--chart-card-surface);
+  }
+  [data-slot="card"]:has([data-chart-visual]):hover {
+    box-shadow:
+      0 12px 28px rgb(0 0 0 / 0.22),
+      0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+}
+[data-chart-visual] { cursor: crosshair; }
 
 @media (prefers-reduced-motion: reduce) {
   .market-ticker-track {

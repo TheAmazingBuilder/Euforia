@@ -43,6 +43,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { DatePicker } from "@/components/shared/date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import { ConfirmDialog } from "@/components/settings/settings-primitives";
 import { cn } from "@/lib/utils";
@@ -807,22 +815,20 @@ export function ApiKeysPanel({
             </div>
             <div className="grid gap-1.5">
               <Label htmlFor="api-key-expiry">Expiration</Label>
-              <select
-                id="api-key-expiry"
+              <Select
                 value={expiresInDays === null ? "never" : String(expiresInDays)}
-                onChange={(event) =>
-                  setExpiresInDays(
-                    event.target.value === "never" ? null : Number(event.target.value),
-                  )
-                }
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm"
-                data-testid="api-key-expiry"
+                onValueChange={(value) => setExpiresInDays(value === "never" ? null : Number(value))}
               >
-                <option value="30">30 days</option>
-                <option value="60">60 days</option>
-                <option value="90">90 days - recommended</option>
-                <option value="never">Never expires (weakens the protection score)</option>
-              </select>
+                <SelectTrigger id="api-key-expiry" className="h-9 w-full" data-testid="api-key-expiry">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">30 days</SelectItem>
+                  <SelectItem value="60">60 days</SelectItem>
+                  <SelectItem value="90">90 days - recommended</SelectItem>
+                  <SelectItem value="never">Never expires (weakens the protection score)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
@@ -956,59 +962,57 @@ export function EventsPanel({
         <div className="grid gap-3 rounded-lg border border-border bg-background/50 p-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             <span>Event type</span>
-            <select
+            <Select
               value={filters.type}
-              onChange={(event) =>
-                onFiltersChange({
-                  ...filters,
-                  type: event.target.value as EventHistoryFilters["type"],
-                })
+              onValueChange={(value) =>
+                onFiltersChange({ ...filters, type: value as EventHistoryFilters["type"] })
               }
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground"
-              aria-label="Filter events by type"
             >
-              <option value="ALL">All event types</option>
-              {eventTypes.map(([type, meta]) => (
-                <option key={type} value={type}>
-                  {meta.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-9 w-full" aria-label="Filter events by type">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All event types</SelectItem>
+                {eventTypes.map(([type, meta]) => (
+                  <SelectItem key={type} value={type}>{meta.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             <span>Outcome</span>
-            <select
+            <Select
               value={filters.outcome}
-              onChange={(event) =>
-                onFiltersChange({
-                  ...filters,
-                  outcome: event.target.value as EventHistoryFilters["outcome"],
-                })
+              onValueChange={(value) =>
+                onFiltersChange({ ...filters, outcome: value as EventHistoryFilters["outcome"] })
               }
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground"
-              aria-label="Filter events by outcome"
             >
-              <option value="ALL">All outcomes</option>
-              <option value="SUCCESS">Success</option>
-              <option value="FAILURE">Failure</option>
-            </select>
+              <SelectTrigger className="h-9 w-full" aria-label="Filter events by outcome">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All outcomes</SelectItem>
+                <SelectItem value="SUCCESS">Success</SelectItem>
+                <SelectItem value="FAILURE">Failure</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-events-from">
             <span>From (UTC)</span>
-            <Input
+            <DatePicker
               id="security-events-from"
-              type="date"
               value={filters.from}
-              onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })}
+              onChange={(value) => onFiltersChange({ ...filters, from: value })}
+              ariaLabel="Filter events from date (UTC)"
             />
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-events-to">
             <span>To (UTC)</span>
-            <Input
+            <DatePicker
               id="security-events-to"
-              type="date"
               value={filters.to}
-              onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })}
+              onChange={(value) => onFiltersChange({ ...filters, to: value })}
+              ariaLabel="Filter events to date (UTC)"
             />
           </label>
           <div className="flex items-end justify-end sm:col-span-2 lg:col-span-4">
@@ -1131,38 +1135,38 @@ export function LoginHistoryPanel({
         <div className="grid gap-3 rounded-lg border border-border bg-background/50 p-3 sm:grid-cols-2 lg:grid-cols-3">
           <label className="grid gap-1 text-xs font-medium text-muted-foreground">
             <span>Sign-in result</span>
-            <select
+            <Select
               value={filters.outcome}
-              onChange={(event) =>
-                onFiltersChange({
-                  ...filters,
-                  outcome: event.target.value as LoginHistoryFilters["outcome"],
-                })
+              onValueChange={(value) =>
+                onFiltersChange({ ...filters, outcome: value as LoginHistoryFilters["outcome"] })
               }
-              className="h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground"
-              aria-label="Filter sign-ins by result"
             >
-              <option value="ALL">All sign-ins</option>
-              <option value="SUCCESS">Successful</option>
-              <option value="FAILURE">Failed</option>
-            </select>
+              <SelectTrigger className="h-9 w-full" aria-label="Filter sign-ins by result">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">All sign-ins</SelectItem>
+                <SelectItem value="SUCCESS">Successful</SelectItem>
+                <SelectItem value="FAILURE">Failed</SelectItem>
+              </SelectContent>
+            </Select>
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-logins-from">
             <span>From (UTC)</span>
-            <Input
+            <DatePicker
               id="security-logins-from"
-              type="date"
               value={filters.from}
-              onChange={(event) => onFiltersChange({ ...filters, from: event.target.value })}
+              onChange={(value) => onFiltersChange({ ...filters, from: value })}
+              ariaLabel="Filter sign-ins from date (UTC)"
             />
           </label>
           <label className="grid gap-1 text-xs font-medium text-muted-foreground" htmlFor="security-logins-to">
             <span>To (UTC)</span>
-            <Input
+            <DatePicker
               id="security-logins-to"
-              type="date"
               value={filters.to}
-              onChange={(event) => onFiltersChange({ ...filters, to: event.target.value })}
+              onChange={(value) => onFiltersChange({ ...filters, to: value })}
+              ariaLabel="Filter sign-ins to date (UTC)"
             />
           </label>
           <div className="flex items-end justify-end sm:col-span-2 lg:col-span-3">

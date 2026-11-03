@@ -111,6 +111,7 @@ export function EChart({ option, className, ariaLabel }: EChartProps) {
       ref={containerRef}
       role="img"
       aria-label={ariaLabel}
+      data-chart-visual=""
       className={className}
     />
   );

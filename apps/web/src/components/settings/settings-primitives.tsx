@@ -11,6 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -229,10 +236,7 @@ export function SettingsRow({ label, hint, htmlFor, children, stacked, testid }:
 
 // ── Controls ────────────────────────────────────────────────────────────────
 
-const selectClasses =
-  "h-9 w-full rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition-colors focus:border-accent sm:w-56";
-
-/** Native select styled like the profile screen - accessible by default. */
+/** Settings uses the same Radix selector as the rest of the application. */
 export function SettingsSelect({
   value,
   onChange,
@@ -247,19 +251,22 @@ export function SettingsSelect({
   ariaLabel?: string;
 }) {
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      className={selectClasses}
-      data-testid={testid}
-      aria-label={ariaLabel}
-    >
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger
+        className="h-9 w-full sm:w-56"
+        data-testid={testid}
+        aria-label={ariaLabel}
+      >
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option) => (
+          <SelectItem key={option.value} value={option.value}>
+            {option.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 

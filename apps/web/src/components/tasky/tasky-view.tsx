@@ -62,6 +62,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { DatePicker } from "@/components/shared/date-time-picker";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateTaskySavedView, useDeleteTaskyAttachment, useDeleteTaskySavedView, useDownloadTaskyAttachment, useRemindTaskyCard, useSaveTaskyBoard, useTaskyBoard, useTaskyCardAttachments, useTaskySavedViews, useUploadTaskyAttachment } from "@/lib/api/queries";
@@ -1030,80 +1037,83 @@ export function TaskyView() {
           </div>
           <div className="min-w-0">
             <label htmlFor="tasky-priority-filter" className="sr-only">Filter by priority</label>
-            <select
-              id="tasky-priority-filter"
-              value={priorityFilter}
-              onChange={(event) => { setPriorityFilter(event.target.value as "all" | Priority); setActiveSavedViewId(null); }}
-              data-testid="tasky-priority-filter"
-              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="all">All priorities</option>
-              <option value="Urgent">Urgent</option>
-              <option value="High">High</option>
-              <option value="Medium">Medium</option>
-              <option value="Low">Low</option>
-            </select>
+            <Select value={priorityFilter} onValueChange={(value) => { setPriorityFilter(value as "all" | Priority); setActiveSavedViewId(null); }}>
+              <SelectTrigger id="tasky-priority-filter" className="h-9 w-full" data-testid="tasky-priority-filter" aria-label="Filter by priority">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All priorities</SelectItem>
+                <SelectItem value="Urgent">Urgent</SelectItem>
+                <SelectItem value="High">High</SelectItem>
+                <SelectItem value="Medium">Medium</SelectItem>
+                <SelectItem value="Low">Low</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="min-w-0">
             <label htmlFor="tasky-due-filter" className="sr-only">Filter by due date</label>
-            <select
-              id="tasky-due-filter"
-              value={dueFilter}
-              onChange={(event) => { setDueFilter(event.target.value as "all" | "overdue" | "upcoming" | "no-date"); setActiveSavedViewId(null); }}
-              data-testid="tasky-due-filter"
-              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="all">Any due date</option>
-              <option value="overdue">Overdue</option>
-              <option value="upcoming">Due today or later</option>
-              <option value="no-date">No due date</option>
-            </select>
+            <Select value={dueFilter} onValueChange={(value) => { setDueFilter(value as "all" | "overdue" | "upcoming" | "no-date"); setActiveSavedViewId(null); }}>
+              <SelectTrigger id="tasky-due-filter" className="h-9 w-full" data-testid="tasky-due-filter" aria-label="Filter by due date">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Any due date</SelectItem>
+                <SelectItem value="overdue">Overdue</SelectItem>
+                <SelectItem value="upcoming">Due today or later</SelectItem>
+                <SelectItem value="no-date">No due date</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="min-w-0">
             <label htmlFor="tasky-category-filter" className="sr-only">Filter by category</label>
-            <select id="tasky-category-filter" value={categoryFilter}
-              onChange={(event) => { setCategoryFilter(event.target.value); setActiveSavedViewId(null); }}
-              data-testid="tasky-category-filter"
-              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-              <option value="all">All categories</option>
-              {categories.map((category) => <option key={category} value={category}>{category}</option>)}
-            </select>
+            <Select value={categoryFilter} onValueChange={(value) => { setCategoryFilter(value); setActiveSavedViewId(null); }}>
+              <SelectTrigger id="tasky-category-filter" className="h-9 w-full" data-testid="tasky-category-filter" aria-label="Filter by category">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All categories</SelectItem>
+                {categories.map((category) => <SelectItem key={category} value={category}>{category}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="min-w-0">
             <label htmlFor="tasky-assignee-filter" className="sr-only">Filter by assignee</label>
-            <select id="tasky-assignee-filter" value={assigneeFilter}
-              onChange={(event) => { setAssigneeFilter(event.target.value); setActiveSavedViewId(null); }}
-              data-testid="tasky-assignee-filter"
-              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-              <option value="all">All assignees</option>
-              {assignees.map((assignee) => <option key={assignee} value={assignee}>{assignee}</option>)}
-            </select>
+            <Select value={assigneeFilter} onValueChange={(value) => { setAssigneeFilter(value); setActiveSavedViewId(null); }}>
+              <SelectTrigger id="tasky-assignee-filter" className="h-9 w-full" data-testid="tasky-assignee-filter" aria-label="Filter by assignee">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All assignees</SelectItem>
+                {assignees.map((assignee) => <SelectItem key={assignee} value={assignee}>{assignee}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="min-w-0">
             <label htmlFor="tasky-status-filter" className="sr-only">Filter by status</label>
-            <select id="tasky-status-filter" value={statusFilter}
-              onChange={(event) => { setStatusFilter(event.target.value); setActiveSavedViewId(null); }}
-              data-testid="tasky-status-filter"
-              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
-              <option value="all">All statuses</option>
-              {columns.map((column) => <option key={column.id} value={column.id}>{column.title}</option>)}
-            </select>
+            <Select value={statusFilter} onValueChange={(value) => { setStatusFilter(value); setActiveSavedViewId(null); }}>
+              <SelectTrigger id="tasky-status-filter" className="h-9 w-full" data-testid="tasky-status-filter" aria-label="Filter by status">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                {columns.map((column) => <SelectItem key={column.id} value={column.id}>{column.title}</SelectItem>)}
+              </SelectContent>
+            </Select>
           </div>
           <div className="min-w-0">
             <label htmlFor="tasky-sort-order" className="sr-only">Sort cards</label>
-            <select
-              id="tasky-sort-order"
-              value={sortOrder}
-              onChange={(event) => { setSortOrder(event.target.value as TaskySortOrder); setActiveSavedViewId(null); }}
-              data-testid="tasky-sort-order"
-              className="h-9 w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
-            >
-              <option value="manual">Manual order</option>
-              <option value="title">Title A–Z</option>
-              <option value="due">Due date</option>
-              <option value="priority">Priority</option>
-              <option value="created">Created date</option>
-            </select>
+            <Select value={sortOrder} onValueChange={(value) => { setSortOrder(value as TaskySortOrder); setActiveSavedViewId(null); }}>
+              <SelectTrigger id="tasky-sort-order" className="h-9 w-full" data-testid="tasky-sort-order" aria-label="Sort cards">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="manual">Manual order</SelectItem>
+                <SelectItem value="title">Title A–Z</SelectItem>
+                <SelectItem value="due">Due date</SelectItem>
+                <SelectItem value="priority">Priority</SelectItem>
+                <SelectItem value="created">Created date</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <Button
             type="button"
@@ -1130,19 +1140,25 @@ export function TaskyView() {
         <div className="flex flex-col gap-2 border-t border-border/70 pt-3 sm:flex-row sm:items-center sm:justify-between" data-testid="tasky-saved-view-controls">
           <div className="flex min-w-0 flex-wrap items-center gap-2">
             <label htmlFor="tasky-saved-view-select" className="sr-only">Apply a saved view</label>
-            <select
-              id="tasky-saved-view-select"
-              value={activeSavedViewId ?? ""}
-              onChange={(event) => applySavedView(event.target.value)}
+            <Select
+              value={activeSavedViewId ?? undefined}
+              onValueChange={applySavedView}
               disabled={savedViewsQuery.isLoading}
-              data-testid="tasky-saved-view-select"
-              className="h-9 min-w-48 max-w-full rounded-lg border border-input bg-background px-2.5 text-sm outline-none focus-visible:ring-3 focus-visible:ring-ring/50"
             >
-              <option value="">Saved views ({savedViewsQuery.data?.views.length ?? 0}/20)</option>
-              {(savedViewsQuery.data?.views ?? []).map((view) => (
-                <option key={view.id} value={view.id}>{view.name}</option>
-              ))}
-            </select>
+              <SelectTrigger
+                id="tasky-saved-view-select"
+                className="h-9 min-w-48 max-w-full"
+                data-testid="tasky-saved-view-select"
+                aria-label="Apply a saved view"
+              >
+                <SelectValue placeholder={`Saved views (${savedViewsQuery.data?.views.length ?? 0}/20)`} />
+              </SelectTrigger>
+              <SelectContent>
+                {(savedViewsQuery.data?.views ?? []).map((view) => (
+                  <SelectItem key={view.id} value={view.id}>{view.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {activeSavedViewId ? (
               <Button type="button" size="sm" variant="outline" onClick={() => void deleteActiveSavedView()}
                 disabled={savedViewDelete.isPending} data-testid="tasky-saved-view-delete">

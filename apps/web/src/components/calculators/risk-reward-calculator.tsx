@@ -79,12 +79,14 @@ function ModeToggle<T extends string>({
   value,
   onChange,
   name,
+  activeTone = "default",
 }: {
   label: string;
   options: readonly { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
   name: string;
+  activeTone?: "default" | "edit";
 }) {
   return (
     <div className="space-y-1.5">
@@ -102,7 +104,9 @@ function ModeToggle<T extends string>({
               className={cn(
                 "flex-1 rounded-md border px-2.5 py-1.5 text-xs font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
                 active
-                  ? "border-foreground bg-foreground text-background"
+                  ? activeTone === "edit"
+                    ? "border-action-edit/40 bg-action-edit/10 text-action-edit shadow-sm"
+                    : "border-foreground bg-foreground text-background"
                   : "border-border bg-background text-muted-foreground hover:border-foreground/30 hover:text-foreground",
               )}
             >
@@ -370,6 +374,7 @@ export function RiskRewardCalculator() {
 
             <ModeToggle
               name="rr-risk"
+              activeTone="edit"
               label={T.form.riskMode}
               value={values.riskMode}
               onChange={(mode) => setValues((prev) => ({ ...prev, riskMode: mode }))}
