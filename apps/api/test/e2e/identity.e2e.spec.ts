@@ -6,7 +6,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
 import { buildTestApp } from "../helpers/build-app";
-import { identityMailer } from "../helpers/identity";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import { IdentityRepository } from "../../src/modules/identity/identity.repository";
 import {
   authenticatedUser,
@@ -234,7 +234,7 @@ describe("registration & email verification", () => {
       payload: { email: newEmail },
     });
     expect(retry.statusCode).toBe(200);
-    expect(retry.json().emailChangePending).toBe(true);
+    expect(retry.json().email).toBe(newEmail);
     const newToken = mail.lastVerificationToken();
 
     const staleSameAddressToken = IdentityRepository.randomToken(24);

@@ -2,7 +2,6 @@
  * Identity e2e helpers - real AppModule, real database, captured mail.
  */
 import type { NestFastifyApplication } from "@nestjs/platform-fastify";
-import { IdentityModule } from "../../src/modules/identity/identity.module";
 import { MailerService, type MailMessage } from "../../src/modules/identity/mailer.service";
 
 export interface MailCapture {
@@ -12,15 +11,10 @@ export interface MailCapture {
   clear(): void;
 }
 
-/** Resolve MailerService from the owning IdentityModule, not another re-export. */
-export function identityMailer(app: NestFastifyApplication): MailerService {
-  return app.select(IdentityModule).get(MailerService, { strict: true });
-}
-
-/** Swap the mailer transport for a capturing one (DI seam on MailerService). */
-export function captureMail(app: NestFastifyApplication): MailCapture {
+/** Shared mail transport capture for every MailerService instance in the E2E app. */
+export function captureMail(_app: NestFastifyApplication): MailCapture {
   const messages: MailMessage[] = [];
-  identityMailer(app).useTransport({
+  MailerService.useTestTransport({
     send: async (message) => {
       messages.push(message);
     },

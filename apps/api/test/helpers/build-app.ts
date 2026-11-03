@@ -9,6 +9,7 @@ import { AppModule } from "../../src/app.module";
 import { configureApp, createAdapter } from "../../src/app.setup";
 import { loadAppConfig } from "../../src/config/app-config";
 import { PrismaService } from "../../src/infrastructure/prisma/prisma.service";
+import { MailerService } from "../../src/modules/identity/mailer.service";
 import { ProbeController } from "./probe.controller";
 
 export interface TestAppOptions {
@@ -21,6 +22,7 @@ export interface TestAppOptions {
 }
 
 export async function buildTestApp(options: TestAppOptions = {}): Promise<NestFastifyApplication> {
+  MailerService.clearTestTransportOverride();
   // Explicitly pin auth delivery behavior before the memoized config is read.
   process.env.AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
   process.env.SMTP_USER = "";

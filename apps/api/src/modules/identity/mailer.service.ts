@@ -125,7 +125,22 @@ export class ConsoleMailTransport implements MailTransport {
 
 @Injectable()
 export class MailerService {
+  private static testTransportOverride: MailTransport | null = null;
   private transport: MailTransport;
+
+  /**
+   * Shared test-only mail seam. Nest can instantiate a MailerService in more
+   * than one imported module context; the integration harness needs one
+   * deterministic transport across that whole application graph.
+   */
+  static useTestTransport(transport: MailTransport): void {
+    MailerService.testTransportOverride = transport;
+  }
+
+  /** Called before each E2E app is compiled to prevent cross-suite leakage. */
+  static clearTestTransportOverride(): void {
+    MailerService.testTransportOverride = null;
+  }
   /** Phase 17 - bounded operational telemetry (never user content). */
   private readonly deliveries: MailDeliveryRecord[] = [];
   private sentCount = 0;
@@ -169,7 +184,7 @@ export class MailerService {
   /** Single delivery funnel: outcome recorded, failures rethrown unchanged. */
   private async deliver(message: MailMessage): Promise<void> {
     try {
-      await this.transport.send(message);
+      await (MailerService.testTransportOverride ?? this.transport).send(message);
       this.sentCount += 1;
       this.pushDelivery(message.kind, "SENT");
     } catch (error) {
