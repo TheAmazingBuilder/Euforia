@@ -55,21 +55,21 @@ export function formatInstrumentSymbol(symbol: string, assetClass?: AssetClass):
   const isForex = assetClass === "FOREX" ||
     (assetClass === undefined && /^[A-Z]{6}$/.test(canonical) &&
       FX_CURRENCIES.has(canonical.slice(0, 3)) && FX_CURRENCIES.has(canonical.slice(3, 6)));
-  if (isForex && /^[A-Z]{6}$/.test(canonical)) return \`\${canonical.slice(0, 3)}/\${canonical.slice(3)}\`;
+  if (isForex && /^[A-Z]{6}$/.test(canonical)) return canonical.slice(0, 3) + "/" + canonical.slice(3);
   const isCrypto = assetClass === "CRYPTO" ||
     (assetClass === undefined && CRYPTO_QUOTES.some((quote) => canonical.endsWith(quote)));
   if (isCrypto) {
     const quote = CRYPTO_QUOTES.find((candidate) => canonical.endsWith(candidate));
-    if (quote !== undefined && canonical.length > quote.length) return \`\${canonical.slice(0, -quote.length)}/\${quote}\`;
+    if (quote !== undefined && canonical.length > quote.length) return canonical.slice(0, -quote.length) + "/" + quote;
   }
   const isMetal = assetClass === "METAL" ||
     (assetClass === undefined && /^(XAU|XAG|XPT|XPD)USD$/.test(canonical));
-  if (isMetal && canonical.endsWith("USD")) return \`\${canonical.slice(0, -3)}/USD\`;
+  if (isMetal && canonical.endsWith("USD")) return canonical.slice(0, -3) + "/USD";
   if (assetClass === "SYNTHETIC" || assetClass === undefined) {
     const known = SYNTHETIC_LABELS[canonical];
     if (known !== undefined) return known;
     const volatility = canonical.match(/^VOL(\d+)(\(1S\))?$/);
-    if (volatility !== null) return \`Volatility \${volatility[1]}\${volatility[2] ? " (1s)" : ""}\`;
+    if (volatility !== null) return "Volatility " + volatility[1] + (volatility[2] ? " (1s)" : "");
   }
   // Actual exchange codes (NQ, ES, GC, CL, DXY, etc.) remain intact.
   return symbol;
