@@ -34,6 +34,10 @@ export default defineConfig({
           include: ["test/e2e/**/*.spec.ts"],
           globalSetup: ["test/global-setup.ts"],
           setupFiles: ["test/setup.ts"],
+          // Suites share one PostgreSQL database; serial files prevent
+          // cross-suite races on unique rows and running sync records.
+          fileParallelism: false,
+          maxWorkers: 1,
         }
       : {}),
   },

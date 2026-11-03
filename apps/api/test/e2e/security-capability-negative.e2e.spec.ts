@@ -131,16 +131,13 @@ describe("security does not own trading accounts or integrations (§23/§24)", (
     }
   });
 
-  it("keeps connectedAccounts a projection slot - never raw credentials", async () => {
+  it("does not expose account projections or raw credentials in Security overview", async () => {
     const a = await authenticatedUser(app, mail);
     const overview = await injectJson(a.authHeader, "GET", "/api/v1/security/overview");
-    expect(Array.isArray(overview.body.connectedAccounts)).toBe(true);
-    // A projection of connection metadata, not a vault - the schema forbids
-    // secrets here and the Integrations context does not exist server-side yet.
-    for (const account of overview.body.connectedAccounts) {
-      expect(Object.keys(account)).not.toContain("credentials");
-      expect(Object.keys(account)).not.toContain("credential");
-    }
+    // Account metadata belongs to the Accounts read model; it is intentionally
+    // absent from the Security posture aggregate.
+    expect(overview.body.connectedAccounts).toBeUndefined();
+    expect(SECRET_PATTERN.test(overview.raw)).toBe(false);
   });
 });
 

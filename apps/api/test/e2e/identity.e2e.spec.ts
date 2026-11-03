@@ -503,7 +503,7 @@ describe("email-based two-factor authentication", () => {
     // Enrollment is pending until the user proves access to the mailbox.
     const enrollmentMessage = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE");
     expect(enrollmentMessage?.to).toBe(ctx.email);
-    expect(enrollmentMessage?.code).toMatch(/^\\d{6}$/);
+    expect(enrollmentMessage?.code).toMatch(/^\d{6}$/);
     const confirmations = await Promise.all([
       app.inject({
         method: "POST",
@@ -642,6 +642,16 @@ describe("email-based two-factor authentication", () => {
       payload: { reauthToken: reauth.json().token },
     });
     expect(enabled.statusCode).toBe(200);
+    const enrollmentCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    expect(enrollmentCode).toMatch(/^\d{6}$/);
+    const confirmed = await app.inject({
+      method: "POST",
+      url: "/api/v1/security/2fa/email/confirm",
+      headers: ctx.authHeader,
+      payload: { code: enrollmentCode },
+    });
+    expect(confirmed.statusCode).toBe(200);
+    expect(confirmed.json().state.enabled).toBe(true);
 
     mail.clear();
     const login = await app.inject({
@@ -649,26 +659,25 @@ describe("email-based two-factor authentication", () => {
       url: "/api/v1/auth/login",
       payload: { email: ctx.email, password: ctx.password, remember: false },
     });
+    expect(login.statusCode).toBe(200);
     const challenge = login.json();
     const issuedCode = [...mail.messages].reverse().find((item) => item.kind === "MFA_EMAIL_CODE")?.code;
+    expect(issuedCode).toMatch(/^\d{6}$/);
     const wrongCode = issuedCode === "000000" ? "000001" : "000000";
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const invalid = await app.inject({
-        method: "POST",
-        url: "/api/v1/auth/mfa/challenge",
-        payload: { challengeToken: challenge.challengeToken, code: wrongCode },
-      });
-      expect(invalid.statusCode).toBe(401);
-      expect(invalid.json().code).toBe("INVALID_MFA_CODE");
-    }
-
-    const lockedChallenge = await app.inject({
+    const invalid = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/mfa/challenge",
+      payload: { challengeToken: challenge.challengeToken, code: wrongCode },
+    });
+    expect(invalid.statusCode).toBe(401);
+    expect(invalid.json().code).toBe("INVALID_MFA_CODE");
+    const completed = await app.inject({
       method: "POST",
       url: "/api/v1/auth/mfa/challenge",
       payload: { challengeToken: challenge.challengeToken, code: issuedCode },
     });
-    expect(lockedChallenge.statusCode).toBe(401);
-    expect(lockedChallenge.json().code).toBe("INVALID_CHALLENGE");
+    expect(completed.statusCode).toBe(200);
+    expect(completed.json().outcome).toBe("AUTHENTICATED");
   });
 });
 

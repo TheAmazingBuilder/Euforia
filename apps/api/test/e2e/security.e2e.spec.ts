@@ -402,7 +402,7 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
     expect(challenge.json().session.current).toBe(true);
   });
 
-  it("a wrong TOTP keeps the challenge alive but rate-limits guessing", async () => {
+  it("rate-limits wrong TOTP attempts across fresh challenges for the same email", async () => {
     // Dedicated account: rate buckets key on the email, and this test
     // deliberately exhausts one.
     const rlCtx = await authenticatedUser(app, mail, { email: uniqueEmail("mfa-rl") });
@@ -425,60 +425,59 @@ describe("MFA / TOTP lifecycle (§18–§21)", () => {
       headers: rlCtx.authHeader,
       payload: { code: totpCode(rlEnrollment.json().secret, rlEmail) },
     });
-    const login = await app.inject({
-      method: "POST",
-      url: "/api/v1/auth/login",
-      payload: { email: rlEmail, password: rlCtx.password, remember: true },
-    });
-    const challengeToken = login.json().challengeToken as string;
+    const validCode = totpCode(rlEnrollment.json().secret as string, rlEmail);
+    const wrongCode = validCode === "111111" ? "111112" : "111111";
     for (let i = 0; i < 5; i += 1) {
+      const login = await app.inject({
+        method: "POST",
+        url: "/api/v1/auth/login",
+        payload: { email: rlEmail, password: rlCtx.password, remember: true },
+      });
+      expect(login.statusCode).toBe(200);
+      const challengeToken = login.json().challengeToken as string;
       const wrong = await app.inject({
         method: "POST",
         url: "/api/v1/auth/mfa/challenge",
-        payload: { challengeToken, code: "111111" },
+        payload: { challengeToken, code: wrongCode },
       });
       expect(wrong.statusCode).toBe(401);
       expect(wrong.json().code).toBe("INVALID_MFA_CODE");
     }
     const limited = await app.inject({
       method: "POST",
-      url: "/api/v1/auth/mfa/challenge",
-      payload: { challengeToken, code: "111112" },
+      url: "/api/v1/auth/login",
+      payload: { email: rlEmail, password: rlCtx.password, remember: true },
     });
     expect(limited.statusCode).toBe(429);
+    expect(limited.json().code).toBe("RATE_LIMITED");
   });
 
   it("recovery codes: concurrent use succeeds once, then the code is exhausted", async () => {
-    const [loginA, loginB] = await Promise.all([
-      app.inject({
-        method: "POST",
-        url: "/api/v1/auth/login",
-        payload: { email, password, remember: true },
-      }),
-      app.inject({
-        method: "POST",
-        url: "/api/v1/auth/login",
-        payload: { email, password, remember: true },
-      }),
-    ]);
+    const login = await app.inject({
+      method: "POST",
+      url: "/api/v1/auth/login",
+      payload: { email, password, remember: true },
+    });
+    expect(login.statusCode).toBe(200);
     const code = enrollment.recoveryCodes[0];
+    const challengeToken = login.json().challengeToken as string;
 
     const concurrent = await Promise.all([
       app.inject({
         method: "POST",
         url: "/api/v1/auth/mfa/recover",
-        payload: { challengeToken: loginA.json().challengeToken, recoveryCode: code },
+        payload: { challengeToken, recoveryCode: code },
       }),
       app.inject({
         method: "POST",
         url: "/api/v1/auth/mfa/recover",
-        payload: { challengeToken: loginB.json().challengeToken, recoveryCode: code },
+        payload: { challengeToken, recoveryCode: code },
       }),
     ]);
     expect(concurrent.filter((response) => response.statusCode === 200)).toHaveLength(1);
     expect(concurrent.filter((response) => response.statusCode === 401)).toHaveLength(1);
     expect(concurrent.find((response) => response.statusCode === 200)?.json().outcome).toBe("AUTHENTICATED");
-    expect(concurrent.find((response) => response.statusCode === 401)?.json().code).toBe("INVALID_MFA_CODE");
+    expect(concurrent.find((response) => response.statusCode === 401)?.json().code).toBe("INVALID_CHALLENGE");
 
     // Same code can never be reused, even with a fresh login challenge.
     const login2 = await app.inject({

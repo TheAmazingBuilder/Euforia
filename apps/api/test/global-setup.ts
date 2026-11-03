@@ -49,6 +49,11 @@ function prismaCliPath(): string {
 
 export default async function globalSetup(): Promise<void> {
   process.env.NODE_ENV = "test";
+  process.env.AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
+  // E2E mail is captured through MailerService.useTransport(). Never inherit
+  // any developer/runner SMTP credentials into this integration suite.
+  process.env.SMTP_USER = "";
+  process.env.SMTP_APP_PASSWORD = "";
 
   // 0. HERMETIC ENGINE PINNING - the e2e suite documents and asserts the
   // DETERMINISTIC engine's scenario buckets (fixture nonces are calibrated

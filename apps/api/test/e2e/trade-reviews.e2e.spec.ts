@@ -290,7 +290,7 @@ describe("trade reviews - eligibility", () => {
 
   it("404 for unknown trades and invalid uuids", async () => {
     const user = await authenticatedUser(app, mail);
-    const missing = await putReview(user.authHeader, "00000000-0000-0000-0000-000000000042");
+    const missing = await putReview(user.authHeader, "00000000-0000-4000-8000-000000000042");
     expect(missing.statusCode).toBe(404);
     expect(missing.json().code).toBe("TRADE_REVIEW_TRADE_NOT_FOUND");
 
@@ -435,7 +435,7 @@ describe("trade reviews - upsert lifecycle", () => {
 
     const missing = await app.inject({
       method: "PATCH",
-      url: "/api/v1/reviews/00000000-0000-0000-0000-000000000042",
+      url: "/api/v1/reviews/00000000-0000-4000-8000-000000000042",
       headers: user.authHeader,
       payload: { entryQuality: 3 },
     });
@@ -1000,16 +1000,16 @@ describe("trade reviews - security battery", () => {
     void aTrade;
   });
 
-  it("the URL tradeId is authoritative - a forged body tradeId is ignored (§24)", async () => {
+  it("rejects a forged body tradeId instead of accepting a second identity source (§24)", async () => {
     const user = await authenticatedUser(app, mail);
     const owned = await closedTrade(user);
 
     const res = await putReview(user.authHeader, owned.trade.id as string, {
-      tradeId: "00000000-0000-0000-0000-000000000099", // forged - ignored
+      tradeId: "00000000-0000-4000-8000-000000000099",
     });
-    expect(res.statusCode).toBe(200);
-    const row = reviewRowSchema.parse(res.json());
-    expect(row.tradeId).toBe(owned.trade.id);
+    // The route parameter remains authoritative; unknown DTO fields are
+    // rejected rather than silently accepted as an override.
+    expect(res.statusCode).toBe(400);
   });
 
   it("error responses never leak internals (§73)", async () => {

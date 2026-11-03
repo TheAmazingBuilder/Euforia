@@ -88,7 +88,15 @@ export async function authenticatedUser(
   if (registered.statusCode !== 201) {
     throw new Error(`register failed: ${registered.statusCode} ${registered.body}`);
   }
-  const verificationToken = mail.lastVerificationToken();
+  let verificationToken: string;
+  try {
+    verificationToken = mail.lastVerificationToken();
+  } catch {
+    const response = registered.json() as { status?: string; verificationExpiresAt?: string | null; delivery?: string };
+    throw new Error(
+      `register succeeded without a captured verification message (status=${String(response.status)}, delivery=${String(response.delivery)}, expiresAt=${String(response.verificationExpiresAt)}); inspect the test MailerService transport seam`,
+    );
+  }
   mail.clear();
   const verified = await app.inject({
     method: "POST",

@@ -671,7 +671,7 @@ describe("trade plans - security battery", () => {
     const user = await authenticatedUser(app, mail);
     const missing = await app.inject({
       method: "GET",
-      url: "/api/v1/trade-plans/00000000-0000-0000-0000-000000000002",
+      url: "/api/v1/trade-plans/00000000-0000-4000-8000-000000000002",
       headers: user.authHeader,
     });
     expect(missing.statusCode).toBe(404);

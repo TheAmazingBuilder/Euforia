@@ -1058,7 +1058,7 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
     };
     expect(rotated.bridgeKeyId).not.toBe(pairing.bridgeKeyId);
     expect(rotated.secret).not.toBe(pairing.secret);
-    expect(rotated.ea.version).toBe("1.0.2");
+    expect(rotated.ea.version).toBe("1.0.3");
     const afterRotation = await bridgeApp.get(PrismaService).tradingConnection.findUnique({
       where: { accountId: account.id },
       select: { status: true },
@@ -1404,12 +1404,12 @@ describe("trading-accounts - MT5 bridge ingest (public, HMAC)", () => {
   });
 
   it("accepts EA v1.0.0 epoch-SECONDS timestamps (magnitude detection) and activates the pairing", async () => {
-    const { pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
+    const { account, pairing } = await pairedBridgeAccount(`88${Math.random().toString().slice(2, 8)}`);
     const envelope = {
       eventId: "ea-e2e-seconds-1",
       kind: "ACCOUNT_INFO",
       payload: {
-        externalAccountId: "52988790",
+        externalAccountId: account.externalAccountId,
         currency: "USD",
         leverage: "500",
         server: "ICMarketsSC-MT5",

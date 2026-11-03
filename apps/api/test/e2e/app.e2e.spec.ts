@@ -39,7 +39,11 @@ describe("health endpoints (unversioned infrastructure)", () => {
   it("GET /health/ready → readiness including the database", async () => {
     const res = await app.inject({ method: "GET", url: "/health/ready" });
     expect(res.statusCode).toBe(200);
-    expect(res.json()).toEqual({ status: "ok", checks: { database: "up" } });
+    const body = res.json();
+    expect(body.status).toBe("ok");
+    expect(body.checks.database).toBe("up");
+    // Redis is optional: its state is diagnostic and does not gate readiness.
+    expect(body.checks.redis).toBeDefined();
   });
 
   it("health endpoints are NOT behind /api/v1 (infrastructure namespace)", async () => {

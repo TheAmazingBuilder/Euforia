@@ -21,6 +21,10 @@ export interface TestAppOptions {
 }
 
 export async function buildTestApp(options: TestAppOptions = {}): Promise<NestFastifyApplication> {
+  // Explicitly pin auth delivery behavior before the memoized config is read.
+  process.env.AUTH_REQUIRE_EMAIL_VERIFICATION = "true";
+  process.env.SMTP_USER = "";
+  process.env.SMTP_APP_PASSWORD = "";
   const config = loadAppConfig();
 
   const builder = Test.createTestingModule({

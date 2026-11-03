@@ -90,23 +90,21 @@ describe("environment validation fails safely at startup", () => {
     }
   });
 
-  it("SECURITY: production without explicit CORS origins is rejected", () => {
-    // In production the wildcard default must never silently apply.
-    const result = validateEnv({
-      NODE_ENV: "production",
+  it("SECURITY: production rejects wildcard CORS after unrelated settings validate", () => {
+    const productionConfig = {
+      NODE_ENV: "production" as const,
       DATABASE_URL: "postgresql://u:p@h/db",
       AUTH_JWT_SECRET: "prod-jwt-secret-0123456789abcdef0123456789",
       AUTH_MFA_ENCRYPTION_KEY: "h0mEbiEr05Qkg5f8Duz4PrOups2o69gGx+LIEdXAuvU=",
       ACCOUNTS_CREDENTIALS_ENCRYPTION_KEY: "Mck3U8lb0RHzT7eDlBd7hgmE5FpYm0ZOSJB3ZfA4GFo=",
-      // Integration Hub (B14) - webhook-secret vault key (required since B14).
       INTEGRATIONS_WEBHOOK_ENCRYPTION_KEY: "u4xveSMFK0EL4Wp6XsBmPWcimrrG7Tg9KxLFRnGzc1M=",
-    });
-    // Schema default still applies here by design (dev default); the
-    // production gate is enforced in two layers:
-    // (1) wildcard "*" is always rejected,
-    // (2) deployment contract requires explicit origins (documented).
-    expect(Array.isArray(result.CORS_ORIGINS)).toBe(true);
-    expect(() => validateEnv({ DATABASE_URL: "postgresql://u:p@h/db", CORS_ORIGINS: "*" })).toThrow(
+      SMTP_USER: "ci-mail@example.test",
+      SMTP_APP_PASSWORD: "ci-only-app-password",
+      WEB_APP_URL: "https://app.euforia.test",
+    };
+    const result = validateEnv(productionConfig);
+    expect(result.CORS_ORIGINS).toEqual(["http://localhost:3000"]);
+    expect(() => validateEnv({ ...productionConfig, CORS_ORIGINS: "*" })).toThrow(
       /must not contain/,
     );
   });
