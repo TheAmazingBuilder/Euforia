@@ -24,6 +24,9 @@ const INSTRUMENTS = [
   ["7d1e5a6c-1fa8-4b6e-9d5c-6a2f9e1b1005", "BOOM500", "Boom 500 Index", "SYNTHETIC", "USD", "0.01", 2, "1"],
   ["8e2f6b7d-2ab9-4c7f-8e6d-7b3a0f2c1006", "CRASH500", "Crash 500 Index", "SYNTHETIC", "USD", "0.01", 2, "1"],
   ["9f3a7c8e-3bca-4d8a-9f7e-8c4b1a3d1007", "VOL75(1s)", "Volatility 75 (1s) Index", "SYNTHETIC", "USD", "0.01", 2, "1"],
+  ["a04b8d9f-4cdb-4e9a-af80-9d5c2b7e1008", "USDJPY", "US Dollar / Japanese Yen", "FOREX", "JPY", "0.01", 3, "100000"],
+  ["c26d0f1b-6eef-4a1c-8ba2-bf7e4d9a1010", "US30", "Dow Jones 30", "INDEX", "USD", "1", 1, "1"],
+  ["d37e102c-7ff0-4b2d-9cb3-c08f5eab1011", "NAS100", "Nasdaq 100", "INDEX", "USD", "1", 1, "1"],
 ];
 
 const SQL = `
@@ -66,6 +69,6 @@ const before = await client.query('SELECT count(*)::int AS n FROM "Instrument"')
 await client.query(SQL);
 const after = await client.query('SELECT count(*)::int AS n FROM "Instrument"');
 console.log(
-  `instruments: ${before.rows[0].n} → ${after.rows[0].n} (seeded 7, ON CONFLICT skipped)`,
+  `instruments: ${before.rows[0].n} → ${after.rows[0].n} (seeded 10, ON CONFLICT skipped)`,
 );
 await client.end();
